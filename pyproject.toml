@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dsp2"
+description = "A model of the SNES DSP-2 coprocessor, with its commands proved rather than sampled."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+dynamic = ["version"]
+keywords = ["dsp2", "upd77c25", "snes", "emulator", "coprocessor", "conformance"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: System :: Emulators",
+]
+
+[project.urls]
+Homepage = "https://github.com/gufranco/snes-dsp2-python"
+Source = "https://github.com/gufranco/snes-dsp2-python"
+Issues = "https://github.com/gufranco/snes-dsp2-python/issues"
+
+[tool.setuptools]
+packages = ["dsp2"]
+
+[tool.setuptools.dynamic]
+version = { attr = "dsp2.version.VERSION" }
+
+[tool.setuptools.exclude-package-data]
+dsp2 = ["*.test.py"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF", "PL", "BLE", "C4", "N", "A", "T20", "PTH"]
+ignore = [
+  "PLR0913",
+  "PLR2004",
+  "PLR0912",
+  "PLR0915",
+  "PLR0911",
+  "PLC0415",
+  "PLR0917",
+  "E501",
+  # N818 wants every exception to end in Error. The control flow signals here are
+  # named the way CPython names its own: StopIteration, SystemExit and
+  # GeneratorExit carry no suffix either. The exceptions that report a genuine
+  # failure do end in Error.
+  "N818",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# A test file sits beside the module it covers and is named after it, so its
+# module name carries a dot that N999 rejects. The layout is deliberate: a
+# module and its tests are read together.
+"*.test.py" = ["PLR2004", "N999"]
+# These are command line tools. Printing is their output, not a stray debug
+# statement left behind, and routing it through a logger would put a level and
+# a timestamp in front of a report meant to be read by a person.
+"conformance/*.py" = ["T201"]
+
+[tool.coverage.run]
+source = ["dsp2", "conformance"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+exclude_also = [
+  # The command line guard hands argv to a function that is itself tested, so
+  # there is nothing behind it left to exercise. Importing the module to cover
+  # the guard would run the tool rather than test it.
+  'if __name__ == "__main__":',
+]
