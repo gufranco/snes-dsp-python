@@ -7,14 +7,24 @@ this module is that machine and nothing else. What each command computes lives i
 `commands`, as functions of their input, which is what allows them to be proved
 rather than merely exercised.
 
-Nothing here starts clean. The parameter RAM is the chip's own memory and the
-chip never clears it, so it holds whatever the previous command left. That is not
-a detail: the rescale reads past the data it was given, straight into whatever is
-sitting there.
+The state machine is modelled the way the hardware carries it rather than the way
+it reads best, because the two differ in a place that matters. Three of the
+commands take a length before their data, and the chip remembers between calls
+that a length has already been given. It also decides whether to expect data at
+all by looking at the length byte itself: a length of zero leaves the chip
+waiting for a command instead, with that memory still set. So a zero length does
+not cancel a command, it arms one, and the next byte on the port is read as a new
+command rather than as data. A model that resets on a zero length looks tidier
+and answers differently.
+
+Nothing here starts clean either. The parameter RAM is the chip's own memory and
+the chip never clears it, so it holds whatever the previous command left. That is
+not a detail: the rescale reads past the data it was given, straight into
+whatever is sitting there.
 """
 
 from . import commands
-from .memory import UNSET_SEED, parameter_ram, scramble
+from .memory import PARAMETER_BYTES, UNSET_SEED, parameter_ram, scramble
 
 IDLE_BYTE = 0xFF
 
@@ -26,31 +36,19 @@ COMMAND_MULTIPLY = 0x09
 COMMAND_SCALE = 0x0D
 COMMAND_SYNC = 0x0F
 
-_FIXED_INPUT = {
+HEADER_INPUT = {
     COMMAND_TILE: commands.TILE_BYTES,
     COMMAND_TRANSPARENT: 1,
-    COMMAND_MULTIPLY: commands.MULTIPLY_BYTES,
-}
-
-_PRODUCES_OUTPUT = frozenset(
-    {COMMAND_TILE, COMMAND_MERGE, COMMAND_MIRROR, COMMAND_MULTIPLY, COMMAND_SCALE}
-)
-
-_LENGTH_COUNT = {
     COMMAND_MERGE: 1,
     COMMAND_MIRROR: 1,
+    COMMAND_MULTIPLY: commands.MULTIPLY_BYTES,
     COMMAND_SCALE: 2,
 }
-
-_PAYLOAD_SIZE = {
-    COMMAND_MERGE: lambda lengths: 2 * lengths[0],
-    COMMAND_MIRROR: lambda lengths: lengths[0],
-    COMMAND_SCALE: lambda lengths: (lengths[0] + 1) >> 1,
-}
+"""How many bytes each command wants before it first acts, lengths included."""
 
 LARGEST_LENGTH = 0xFF
 
-LARGEST_PAYLOAD = max(size([LARGEST_LENGTH, LARGEST_LENGTH]) for size in _PAYLOAD_SIZE.values())
+LARGEST_PAYLOAD = 2 * LARGEST_LENGTH
 """The most bytes any command can ask for, which the parameter RAM must hold."""
 
 
@@ -65,94 +63,109 @@ class Chip:
 
     def __init__(self, fill=None, seed=UNSET_SEED):
         self.parameter_ram = parameter_ram(fill=fill, seed=seed)
-        self.transparent = scramble(1, seed)[0] & 0x0F if fill is None else 0x00
-        self._reset()
-
-    def _reset(self):
-        self.command = None
-        self.lengths = []
-        self.in_index = 0
-        self.payload_length = 0
+        self.transparent = scramble(1, seed)[0] if fill is None else 0x00
         self.output = b""
-        self.output_count = 0
-        self.output_index = 0
-        self._wanted_lengths = 0
-        self._wanted_parameters = 0
 
-    @property
-    def payload(self):
-        """The bytes the current command was given, without the RAM behind them."""
-        return bytes(self.parameter_ram[: self.payload_length])
+        self.waiting_for_command = True
+        self.command = 0x00
+        self.in_count = 0
+        self.in_index = 0
+        self.out_count = 0
+        self.out_index = 0
+
+        self.merge_armed = False
+        self.merge_length = 0
+        self.mirror_armed = False
+        self.mirror_length = 0
+        self.scale_armed = False
+        self.scale_in_length = 0
+        self.scale_out_length = 0
 
     @property
     def pending_output(self):
-        return max(0, self.output_count - self.output_index)
+        return max(0, self.out_count - self.out_index)
 
     def write(self, value):
-        """Take one byte from the cartridge, and run the command once it is whole."""
+        """Take one byte from the cartridge, and act once the chip has enough."""
         value &= 0xFF
 
-        if self.command is None:
+        if self.waiting_for_command:
             self.command = value
-            self.lengths = []
             self.in_index = 0
-            self.payload_length = 0
-            self._wanted_lengths = _LENGTH_COUNT.get(value, 0)
-            self._wanted_parameters = _FIXED_INPUT.get(value, 0)
-            if self._wanted_lengths == 0 and self._wanted_parameters == 0:
-                self._run()
-            return
+            self.waiting_for_command = False
+            self.in_count = HEADER_INPUT.get(value, 0)
+        else:
+            if self.in_index < PARAMETER_BYTES:
+                self.parameter_ram[self.in_index] = value
+            self.in_index += 1
 
-        if self._wanted_lengths > 0:
-            self.lengths.append(value)
-            self._wanted_lengths -= 1
-            if self._wanted_lengths == 0:
-                self._wanted_parameters = self._payload_size()
-                self.in_index = 0
-                self.payload_length = 0
-                if self._wanted_parameters == 0:
-                    self._run()
-            return
+        if self.in_count == self.in_index:
+            self.waiting_for_command = True
+            self.out_index = 0
+            self._act(value)
 
-        self.parameter_ram[self.in_index] = value
-        self.in_index += 1
-        self.payload_length = self.in_index
-        self._wanted_parameters -= 1
-        if self._wanted_parameters == 0:
-            self._run()
+    def _arm(self, name, wanted, value):
+        """Record the lengths, then decide whether data follows them.
 
-    def _payload_size(self):
-        """How many bytes the command still wants, once its lengths have arrived.
-
-        This is never larger than the parameter RAM, and that is a property of the
-        protocol rather than luck. A length arrives as a single byte, so the
-        largest it can be is 255, and the hungriest command is the merge at two
-        runs of that, which is 510 against a RAM of 512. So the write above needs
-        no bounds check; `LARGEST_PAYLOAD` states the bound and a test pins it.
+        A non zero length means data comes next. A zero length leaves the chip
+        waiting for a command, and the arming stays set, so the next appearance
+        of this command runs it immediately with the length it was given.
         """
-        return _PAYLOAD_SIZE[self.command](self.lengths)
+        setattr(self, f"{name}_armed", True)
+        self.in_index = 0
+        self.in_count = wanted
+        if value:
+            self.waiting_for_command = False
 
-    def _run(self):
-        payload = self.payload
+    def _act(self, value):
         command = self.command
-        self.command = None
-        self.output_index = 0
 
         if command == COMMAND_TILE:
-            self.output = commands.tile(payload)
-        elif command == COMMAND_TRANSPARENT:
-            self.transparent = payload[0] & 0x0F
-        elif command == COMMAND_MERGE:
-            self.output = commands.merge(self.transparent, payload, self.lengths[0])
-        elif command == COMMAND_MIRROR:
-            self.output = commands.mirror(payload, self.lengths[0])
-        elif command == COMMAND_MULTIPLY:
-            self.output = commands.multiply(payload)
-        elif command == COMMAND_SCALE:
-            self.output = commands.scale(self.parameter_ram, self.lengths[0], self.lengths[1])
+            self.out_count = commands.TILE_BYTES
+            self.output = commands.tile(bytes(self.parameter_ram[: commands.TILE_BYTES]))
 
-        if command in _PRODUCES_OUTPUT:
-            self.output_count = len(self.output)
+        elif command == COMMAND_TRANSPARENT:
+            self.transparent = self.parameter_ram[0]
+
+        elif command == COMMAND_MULTIPLY:
+            self.out_count = commands.MULTIPLY_BYTES
+            self.output = commands.multiply(bytes(self.parameter_ram[: commands.MULTIPLY_BYTES]))
+
+        elif command == COMMAND_MERGE:
+            if self.merge_armed:
+                self.merge_armed = False
+                self.out_count = self.merge_length
+                self.output = commands.merge(
+                    self.transparent,
+                    bytes(self.parameter_ram[: 2 * self.merge_length]),
+                    self.merge_length,
+                )
+            else:
+                self.merge_length = self.parameter_ram[0]
+                self._arm("merge", 2 * self.merge_length, value)
+
+        elif command == COMMAND_MIRROR:
+            if self.mirror_armed:
+                self.mirror_armed = False
+                self.out_count = self.mirror_length
+                self.output = commands.mirror(
+                    bytes(self.parameter_ram[: self.mirror_length]), self.mirror_length
+                )
+            else:
+                self.mirror_length = self.parameter_ram[0]
+                self._arm("mirror", self.mirror_length, value)
+
+        elif command == COMMAND_SCALE:
+            if self.scale_armed:
+                self.scale_armed = False
+                self.out_count = self.scale_out_length
+                self.output = commands.scale(
+                    self.parameter_ram, self.scale_in_length, self.scale_out_length
+                )
+            else:
+                self.scale_in_length = self.parameter_ram[0]
+                self.scale_out_length = self.parameter_ram[1]
+                self._arm("scale", (self.scale_in_length + 1) >> 1, value)
 
     def read(self):
         """The next byte of the finished result, or the idle byte.
@@ -163,10 +176,10 @@ class Chip:
         a result read only in part can be read again from its start. That is what
         the hardware does, and it is visible behaviour rather than an accident.
         """
-        if self.output_count == 0:
+        if self.out_count == 0:
             return IDLE_BYTE
-        value = self.output[self.output_index]
-        self.output_index += 1
-        if self.output_index == self.output_count:
-            self.output_count = 0
+        value = self.output[self.out_index]
+        self.out_index += 1
+        if self.out_index == self.out_count:
+            self.out_count = 0
         return value

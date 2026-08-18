@@ -18,11 +18,12 @@
   <a href="#quick-start">Quick start</a> &nbsp;|&nbsp;
   <a href="#the-commands">Commands</a> &nbsp;|&nbsp;
   <a href="#how-this-is-proved">How this is proved</a> &nbsp;|&nbsp;
+  <a href="#the-corpus-and-why-it-can-ship">Why the corpus is legal</a> &nbsp;|&nbsp;
   <a href="#the-rescale-reads-past-its-own-data">The rescale</a> &nbsp;|&nbsp;
   <a href="https://github.com/gufranco/snes-dsp2-python/issues">Issues</a>
 </p>
 
-**6** commands · **1** exhaustively proved bit permutation · **1,048,576** merge inputs checked · **1,139,246** reads agreeing with a reference validated on **71,970,987** recorded bytes · **110** tests · **100%** statement and branch coverage
+**6** commands · **1** exhaustively proved bit permutation · shapes from **1,804,133** real cartridge commands · **257** corpus exchanges against the reference chip · **95,784** reads agreeing with snes9x · **100%** statement and branch coverage
 
 ```python
 from dsp2 import Dsp
@@ -161,20 +162,55 @@ The walk is bounded by the **output** length, not by the data it was given. With
 | Multiply | Compared against arithmetic across the 16-bit range | Settled |
 | Mirror | Reversal and nibble-swap properties, plus its own inverse | Settled |
 | Rescale | Fixed-point walk, including reads past the payload and wrapping in RAM | Behavioural |
-| Whole chip | 1,139,246 reads against a reference validated on 71,970,987 recorded bytes | Differential |
+| Whole chip | 95,784 reads against snes9x's own `dsp2.cpp` | Differential, independent implementation |
+| Real command shapes | Every command, length and transition a cartridge actually uses | Measured from 1,804,133 real commands |
 
-The differential is the one that ties this to real hardware. The reference it agrees with is the implementation that drove a full playthrough of the cartridge with zero wrong bytes, so agreement with it carries that evidence across without shipping any of it.
+The differential is the one that ties this to real hardware, and it found a real bug. The chip latches per command whether a length has already been given, and decides whether data follows by looking at the length byte itself. A length of zero therefore does not cancel a command; it arms one, and the next byte on the port is read as a new command. A tidier model that resets on a zero length passes every ordinary test and answers differently here.
 
-### Replaying a recording of your own
+### The corpus, and why it can ship
 
-[`conformance/corpus.py`](conformance/corpus.py) replays a recording of real chip traffic and reports what disagreed.
+The DSP-2 has no published per-instruction suite, so the evidence is a recording of a real cartridge driving a real chip. A recording holds two separable things, and only one of them can leave your machine.
+
+| Part of a recording | What it is | Ships? |
+|:--------------------|:-----------|:-------|
+| Payload bytes | The game's graphics, encoded | Never |
+| Which commands were issued | How a program drives a peripheral | Yes |
+| The lengths asked for | Interface parameters | Yes |
+| The order commands came in | Program behaviour | Yes |
+
+The second group is functional rather than authored. It is dictated by the chip's interface, not chosen by an artist, and that is the distinction copyright draws in [17 U.S.C. 102(b)](https://www.law.cornell.edu/uscode/text/17/102) and in `Feist` for facts. [`conformance/capture.py`](conformance/capture.py) produces exactly that and never writes a payload byte.
+
+So [`conformance/corpus.json`](conformance/corpus.json) is built in three steps:
+
+1. **Shapes measured from real hardware.** `1,804,133 commands issued by a cartridge to its DSP-2. Every command it uses, every length it asks for, and every transition between commands is reproduced.
+2. **Payloads generated from a seed.** The bytes filling those shapes are arithmetic, not artwork, produced by `port_for` in [`conformance/corpus.py`](conformance/corpus.py).
+3. **Answers computed by the reference chip.** Expected outputs come from snes9x's `dsp2.cpp`, not from this implementation, so agreement is a cross-check rather than a restatement.
+
+The result is real in the way that matters and synthetic in the way it must be. A bug that only appears on a length the cartridge actually uses is caught; a byte of the game is not shipped.
 
 ```bash
-python3 conformance/corpus.py path/to/corpus.json
-#   no corpus at path/to/corpus.json; make one from a cartridge you own
+python3 conformance/corpus.py
+#   257 exchanges from conformance/corpus.json, against snes9x 1.63 dsp2.cpp
+#   shapes measured from 1804133 real commands
+#   257 agreed, 0 did not
 ```
 
-No corpus ships with this repository and none ever will. A missing recording is not a failing model, so the run says so and passes.
+> [!IMPORTANT]
+> This reasoning is how the repository is built, not legal advice. If you plan to redistribute anything derived from a cartridge, the safe rule is the one used here: publish behaviour, never content.
+
+### Recording your own cartridge
+
+None of the above replaces decoding real payloads. If you own the game, record its port traffic and turn it into a shape profile:
+
+```bash
+python3 conformance/capture.py trace.bin shapes.json 28 12 13
+#   1804133 commands, 7 kinds, from trace.bin
+#   16 distinct length shapes
+```
+
+The log format is deliberately dumb: fixed-size records with a kind byte and a value byte at offsets you name, so a trace from any emulator or logic capture is read by pointing the offsets at the right columns rather than by writing a parser. The trailing arguments above are record size, kind offset and value offset.
+
+That profile stays on your machine, and so does any corpus built from it with real payloads. The shipped corpus is what the reasoning above allows to travel.
 
 ## Models
 

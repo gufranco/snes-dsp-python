@@ -47,10 +47,17 @@ class TransparentTest(unittest.TestCase):
 
         self.assertEqual(machine.transparent, 0x07)
 
-    def test_only_the_low_nibble_of_the_colour_is_kept(self):
+    def test_the_whole_byte_of_the_colour_is_kept(self):
         machine = feed(clean_chip(), [unit.COMMAND_TRANSPARENT, 0xF3])
 
-        self.assertEqual(machine.transparent, 0x03)
+        self.assertEqual(machine.transparent, 0xF3)
+
+    def test_only_the_low_nibble_of_the_colour_decides_transparency(self):
+        machine = feed(clean_chip(), [unit.COMMAND_TRANSPARENT, 0xF2])
+
+        feed(machine, [unit.COMMAND_MERGE, 0x01, 0x11, 0x22])
+
+        self.assertEqual(drain(machine, 1), bytes([0x11]))
 
     def test_setting_the_colour_produces_nothing_to_read(self):
         machine = feed(clean_chip(), [unit.COMMAND_TRANSPARENT, 0x07])
@@ -179,7 +186,7 @@ class ProtocolTest(unittest.TestCase):
     def test_a_write_keeps_only_the_low_byte(self):
         machine = feed(clean_chip(), [unit.COMMAND_TRANSPARENT, 0x1FF])
 
-        self.assertEqual(machine.transparent, 0x0F)
+        self.assertEqual(machine.transparent, 0xFF)
 
     def test_no_command_can_ask_for_more_than_the_ram_holds(self):
         self.assertLessEqual(unit.LARGEST_PAYLOAD, PARAMETER_BYTES)
@@ -189,14 +196,45 @@ class ProtocolTest(unittest.TestCase):
 
         feed(machine, [unit.COMMAND_MERGE, 0xFF, *([0x11] * 510)])
 
-        self.assertEqual(machine.payload_length, unit.LARGEST_PAYLOAD)
+        self.assertEqual(machine.in_index, unit.LARGEST_PAYLOAD)
 
-    def test_a_length_of_zero_runs_the_command_with_no_payload(self):
+    def test_a_rescale_of_no_input_leaves_the_chip_taking_bytes_forever(self):
+        machine = feed(clean_chip(), [unit.COMMAND_SCALE, 0x00, 0x04])
+
+        feed(machine, [0x11] * (PARAMETER_BYTES + 8))
+
+        self.assertGreater(machine.in_index, PARAMETER_BYTES)
+
+    def test_that_stuck_state_never_writes_past_the_parameter_ram(self):
+        machine = feed(clean_chip(), [unit.COMMAND_SCALE, 0x00, 0x04])
+
+        feed(machine, [0x11] * (PARAMETER_BYTES + 8))
+
+        self.assertEqual(len(machine.parameter_ram), PARAMETER_BYTES)
+
+    def test_a_length_of_zero_produces_nothing(self):
         machine = feed(clean_chip(), [unit.COMMAND_MIRROR, 0x00])
 
         self.assertEqual(machine.read(), unit.IDLE_BYTE)
 
-    def test_a_length_of_zero_leaves_the_chip_ready_for_the_next_command(self):
+    def test_a_length_of_zero_leaves_the_chip_waiting_for_a_command(self):
+        machine = feed(clean_chip(), [unit.COMMAND_MIRROR, 0x00])
+
+        self.assertTrue(machine.waiting_for_command)
+
+    def test_a_length_of_zero_arms_the_command_rather_than_cancelling_it(self):
+        machine = feed(clean_chip(), [unit.COMMAND_MIRROR, 0x00])
+
+        self.assertTrue(machine.mirror_armed)
+
+    def test_an_armed_command_runs_at_once_with_the_length_it_was_given(self):
+        machine = feed(clean_chip(), [unit.COMMAND_MIRROR, 0x00])
+
+        feed(machine, [unit.COMMAND_MIRROR, 0x02, 0xAB, 0xCD])
+
+        self.assertEqual(machine.read(), unit.IDLE_BYTE)
+
+    def test_a_length_of_zero_still_leaves_the_chip_ready_for_other_commands(self):
         machine = feed(clean_chip(), [unit.COMMAND_MIRROR, 0x00])
 
         feed(machine, [unit.COMMAND_MULTIPLY, 0x03, 0x00, 0x03, 0x00])
