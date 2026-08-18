@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1>dsp2</h1>
+<h1>DSP-2</h1>
 
 <strong>A model of the SNES DSP-2, with its commands proved rather than sampled.</strong>
 
