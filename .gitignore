@@ -7,3 +7,10 @@ dist/
 build/
 *.egg-info/
 .DS_Store
+
+# Firmware images belong to whoever wrote them. A copy you already own goes
+# here, and nothing in it is ever committed.
+firmware/*
+!firmware/README.md
+*.rom
+*.bin
