@@ -27,14 +27,16 @@ value instead of wrapping round to the start.
 The arithmetic is fixed point in three formats, and which one a field is in is
 not recoverable from the field. It is written down here in the names.
 
-What is here and what is not. The port protocol is complete, and so are the seven
-commands that finish in one go and the single-player track projection, which is
-the first of the renderers. Each is compared against the chip's own reference.
+What is here and what is not. The port protocol is complete, and so are the eight
+commands that finish in one go and four of the renderers: the single-player
+track, the fork that leaves it, the multi-player track, and the pair of solid
+shapes. Each is compared against the chip's own reference.
 
-The remaining renderers are not here yet, and asking for one raises rather than
-returning nothing. A command that quietly produced no output would be
-indistinguishable from a road with no segments in it, which is a real answer this
-chip can give, so silence is the one response this module must not make.
+The sprite projection and the two lit track projections are not here yet, and
+asking for one raises rather than returning nothing. A command that quietly
+produced no output would be indistinguishable from a road with no segments in it,
+which is a real answer this chip can give, so silence is the one response this
+module must not make.
 """
 
 PARAMETER_BYTES = 512
@@ -163,6 +165,10 @@ TURNOFF = 0x8001
 
 VISIBLE_BELOW = 0x00EB
 
+FORK_LEFT = 0xC001
+
+FORK_RIGHT = 0x3FFF
+
 
 class Unimplemented(Exception):
     pass
@@ -184,8 +190,23 @@ def inverse(value):
     The table is sixty four entries and the argument is clamped into it rather
     than checked, so a run of segments longer than the table quietly reuses the
     last entry instead of dividing by the number it was given.
+
+    One over one is the entry that does not fit. The table holds it as 0x8000 and
+    the lookup hands back a signed word, so the reciprocal of one comes back
+    negative and a run of a single line steps the wrong way. Every caller then
+    negates that step again, which is why it is only a single line that is
+    affected and why the two mistakes are not visible as one.
     """
-    return INVERSE[min(max(value, 0), 63)]
+    return signed16(INVERSE[min(max(value, 0), 63)])
+
+
+def clamp(value, low, high):
+    """A screen position pulled inside its window, low edge first.
+
+    The order is load bearing. A window whose edges are the wrong way round
+    settles on the high edge rather than on the low one.
+    """
+    return min(max(value, low), high)
 
 
 def sign_extend_low(value):
@@ -261,6 +282,15 @@ class Dsp4:
         self.poly_cx_right = 0
         self.poly_ptr = 0
         self.poly_raster = 0
+        self.solid_clip_left = [[0, 0], [0, 0]]
+        self.solid_clip_right = [[0, 0], [0, 0]]
+        self.solid_cx = [[0, 0], [0, 0]]
+        self.solid_ptr = [[0, 0], [0, 0]]
+        self.solid_bottom = [[0, 0], [0, 0]]
+        self.solid_top = [[0, 0], [0, 0]]
+        self.solid_raster = [[0, 0], [0, 0]]
+        self.solid_start = [0, 0]
+        self.solid_plane = [0, 0]
 
     def take_dword(self):
         at = self.in_index
@@ -392,6 +422,7 @@ class Dsp4:
             0x000A: self._angles,
             0x000B: self._set_sprite,
             0x0001: self._project_track,
+            0x0008: self._render_solid,
             0x0007: self._project_turnoff,
             0x000D: self._project_shared_track,
             0x000E: self._select_shared,
@@ -621,6 +652,160 @@ class Dsp4:
             self.poly_ptr = signed16(self.poly_ptr - 4)
             scroll_x = signed32(scroll_x + step_x)
             scroll_y = signed32(scroll_y + step_y)
+
+    def _take_pair_of_pairs(self, into):
+        """Four words that belong to two shapes, each with a left and a right."""
+        into[0][0] = self.take_word()
+        into[0][1] = self.take_word()
+        into[1][0] = self.take_word()
+        into[1][1] = self.take_word()
+
+    def _skip_words(self, count):
+        """Input the chip is handed and does nothing with."""
+        for _ in range(count):
+            self.take_word()
+
+    def _render_solid(self):
+        """Two solid shapes, given as the window edges that carve them out.
+
+        The track projections hand back scanline segments to be drawn. This one
+        hands back a pair of window positions per scanline, so the shape is what
+        the window leaves visible rather than anything drawn into it. Two shapes
+        are carried at once because the road can be beside itself at a fork.
+
+        Both shapes are projected from the same distance, but a shape whose
+        shaping words carry either of two particular values is projected from the
+        second shape's origin rather than its own. That is how the fork is drawn
+        without a second command.
+        """
+        self._take_pair_of_pairs(self.solid_clip_right)
+        self._take_pair_of_pairs(self.solid_clip_left)
+        self._skip_words(8)
+        self._take_pair_of_pairs(self.solid_cx)
+        self._take_pair_of_pairs(self.solid_ptr)
+        self._take_pair_of_pairs(self.solid_bottom)
+        self._take_pair_of_pairs(self.solid_top)
+        self._skip_words(4)
+
+        self.distance = self.take_word()
+        view_x, view_y, envelope = self._take_shape_guides()
+
+        self.solid_start = [view_x[0], view_x[1]]
+        self.solid_raster = [[view_y[0], view_y[0]], [view_y[1], view_y[1]]]
+        self.solid_plane = [self.distance, self.distance]
+        self._open_solid_window(view_x, envelope)
+
+        while True:
+            yield 2
+            self.distance = self.take_word()
+            if self.distance == END_OF_TRACK:
+                break
+
+            yield 16
+            view_x, view_y, envelope = self._take_shape_guides()
+            self.clear_output()
+            for polygon in (0, 1):
+                self._solid_one_shape(polygon, view_x, view_y, envelope)
+
+        self.clear_output()
+        self.put_word(0)
+
+    def _take_shape_guides(self):
+        """Where each shape sits this stretch, and how its two edges are pulled."""
+        view_x = [0, 0]
+        view_y = [0, 0]
+        envelope = [[0, 0], [0, 0]]
+        view_x[0] = self.take_word()
+        view_y[0] = self.take_word()
+        view_x[1] = self.take_word()
+        view_y[1] = self.take_word()
+        self._take_pair_of_pairs(envelope)
+        return view_x, view_y, envelope
+
+    def _open_solid_window(self, view_x, envelope):
+        """The window the first shape starts from, which is the only output of the opening."""
+        left = clamp(
+            signed16(self.solid_cx[0][0] - view_x[0] + envelope[0][0]),
+            self.solid_clip_left[0][0],
+            self.solid_clip_right[0][0],
+        )
+        right = clamp(
+            signed16(self.solid_cx[0][1] - view_x[0] + envelope[0][1]),
+            self.solid_clip_left[0][1],
+            self.solid_clip_right[0][1],
+        )
+
+        self.clear_output()
+        self.put_byte(left & 0xFF)
+        self.put_byte(right & 0xFF)
+
+    def _solid_one_shape(self, polygon, view_x, view_y, envelope):
+        """How many scanlines this shape covers, and the window on each of them."""
+        self.segments = signed16(self.solid_raster[polygon][0] - view_y[polygon])
+        if self.segments > 0:
+            self.solid_raster[polygon] = [view_y[polygon], view_y[polygon]]
+        else:
+            self.segments = 0
+
+        if view_y[polygon] < self.solid_top[polygon][0]:
+            self.segments = 0
+
+        self.put_word(self.segments)
+
+        source = polygon
+        if self.segments:
+            if (envelope[polygon][0] & 0xFFFF) == FORK_LEFT or envelope[polygon][1] == FORK_RIGHT:
+                source = 1
+            self._solid_rasterise(polygon, source, view_x, envelope)
+
+        self.solid_start[polygon] = view_x[source]
+
+    def _solid_rasterise(self, polygon, source, view_x, envelope):
+        """Walk the two window edges down the shape, one scanline at a time."""
+        near_left = signed16((envelope[polygon][0] * self.solid_plane[source]) >> 15)
+        far_left = signed16((envelope[polygon][0] * self.distance) >> 15)
+        near_right = signed16((envelope[polygon][1] * self.solid_plane[source]) >> 15)
+        far_right = signed16((envelope[polygon][1] * self.distance) >> 15)
+
+        step_left = self._solid_step(view_x[source], near_left, far_left, source)
+        step_right = self._solid_step(view_x[source], near_right, far_right, source)
+        edge_left = sign_extend_whole(
+            self.solid_cx[polygon][0] - self.solid_start[source] + near_left
+        )
+        edge_right = sign_extend_whole(
+            self.solid_cx[polygon][1] - self.solid_start[source] + near_right
+        )
+        self.solid_plane[polygon] = self.distance
+
+        for _ in range(self.segments):
+            edge_left = signed32(edge_left + step_left)
+            edge_right = signed32(edge_right + step_right)
+            left = clamp(
+                signed16(edge_left >> 16),
+                self.solid_clip_left[polygon][0],
+                self.solid_clip_right[polygon][0],
+            )
+            right = clamp(
+                signed16(edge_right >> 16),
+                self.solid_clip_left[polygon][1],
+                self.solid_clip_right[polygon][1],
+            )
+            self.put_word(self.solid_ptr[polygon][0])
+            self.put_byte(left & 0xFF)
+            self.put_byte(right & 0xFF)
+            self.solid_ptr[polygon][0] = signed16(self.solid_ptr[polygon][0] - 4)
+            self.solid_ptr[polygon][1] = signed16(self.solid_ptr[polygon][1] - 4)
+
+    def _solid_step(self, near_x, near_env, far_env, source):
+        """How far one edge moves per scanline, negated when there is only one.
+
+        A single scanline takes the step backwards. It reads as a mistake and it
+        is what the chip does, so a shape one line tall leans the other way.
+        """
+        near = signed16(near_x + near_env)
+        far = signed16(self.solid_start[source] + far_env)
+        step = signed32((far - near) * inverse(self.segments) << 1)
+        return signed32(-step) if self.segments == 1 else step
 
     def _project_shared_track(self):
         """The multi-player road, which is the single-player one without the forks.

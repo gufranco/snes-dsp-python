@@ -237,9 +237,9 @@ class UnfinishedTest(unittest.TestCase):
 
     def test_a_renderer_says_it_is_not_here_rather_than_going_quiet(self):
         chip = dsp4.Dsp4()
-        chip.write(0x08)
+        chip.write(0x09)
         chip.write(0x00)
-        for _ in range(89):
+        for _ in range(13):
             chip.write(0)
 
         with self.assertRaises(dsp4.Unimplemented):
@@ -572,6 +572,177 @@ class SharedTrackTest(unittest.TestCase):
         chip.write(0x80)
 
         self.assertEqual(chip.in_count, 6)
+
+
+class SolidRendererTest(unittest.TestCase):
+    """Two shapes given as the window edges that carve them out."""
+
+    def opening(self, top=0, left_clip=0, right_clip=255, envelope=(0, 0, 0, 0)):
+        clip_right = word(right_clip) * 4
+        clip_left = word(left_clip) * 4
+        unknown = word(0) * 8
+        centre = word(128) * 4
+        pointer = word(0x1000) * 4
+        bottom = word(200) * 4
+        clip_top = word(top) * 4
+        return (
+            clip_right
+            + clip_left
+            + unknown
+            + centre
+            + pointer
+            + bottom
+            + clip_top
+            + word(0) * 4
+            + word(0x2000)
+            + word(0)
+            + word(180)
+            + word(0)
+            + word(180)
+            + word(envelope[0])
+            + word(envelope[1])
+            + word(envelope[2])
+            + word(envelope[3])
+        )
+
+    def shape(self, first_y=170, second_y=170, envelope=(0, 0, 0, 0)):
+        return (
+            word(0)
+            + word(first_y)
+            + word(0)
+            + word(second_y)
+            + word(envelope[0])
+            + word(envelope[1])
+            + word(envelope[2])
+            + word(envelope[3])
+        )
+
+    def stretch(self, chip, distance=0x2000, **shaping):
+        for value in word(distance):
+            chip.write(value)
+        for value in self.shape(**shaping):
+            chip.write(value)
+        return chip
+
+    def test_the_opening_hands_back_the_window_the_first_shape_starts_from(self):
+        chip = started(0x0008, self.opening())
+
+        self.assertEqual(answered(chip, 2), [128, 128])
+
+    def test_a_window_edge_outside_its_clip_is_pulled_back_to_it(self):
+        chip = started(0x0008, self.opening(left_clip=200, right_clip=255))
+
+        self.assertEqual(answered(chip, 2), [200, 200])
+
+    def test_a_clip_whose_edges_are_the_wrong_way_round_settles_on_the_high_one(self):
+        chip = started(0x0008, self.opening(left_clip=200, right_clip=100))
+
+        self.assertEqual(answered(chip, 2), [100, 100])
+
+    def test_it_asks_for_two_bytes_once_the_opening_is_in(self):
+        chip = started(0x0008, self.opening())
+
+        self.assertEqual(chip.in_count, 2)
+
+    def test_and_for_sixteen_more_once_it_has_a_distance(self):
+        chip = started(0x0008, self.opening())
+        answered(chip, chip.out_count)
+
+        for value in word(0x2000):
+            chip.write(value)
+
+        self.assertEqual(chip.in_count, 16)
+
+    def test_a_shape_that_has_not_moved_covers_no_scanlines(self):
+        chip = started(0x0008, self.opening())
+        answered(chip, chip.out_count)
+        self.stretch(chip, second_y=180)
+
+        self.assertEqual(answered(chip, 2), [10, 0])
+
+    def test_a_shape_above_its_top_clip_covers_none_either(self):
+        chip = started(0x0008, self.opening(top=200))
+        answered(chip, chip.out_count)
+        self.stretch(chip)
+
+        self.assertEqual(answered(chip, 2), [0, 0])
+
+    def test_each_scanline_carries_a_pointer_and_two_window_edges(self):
+        chip = started(0x0008, self.opening())
+        answered(chip, chip.out_count)
+        self.stretch(chip, first_y=178, second_y=180)
+
+        found = answered(chip, 6)
+
+        self.assertEqual(found[:2], [2, 0])
+        self.assertEqual(found[2:4], word(0x1000))
+
+    def test_the_pointer_walks_backwards_four_bytes_at_a_time(self):
+        chip = started(0x0008, self.opening())
+        answered(chip, chip.out_count)
+        self.stretch(chip, first_y=178, second_y=180)
+        answered(chip, chip.out_count)
+        self.stretch(chip, first_y=176, second_y=180)
+
+        found = answered(chip, 4)
+
+        self.assertEqual(found[2:4], word(0x1000 - 8))
+
+    def test_a_shape_shaped_by_the_fork_word_is_projected_from_the_other_one(self):
+        chip = started(0x0008, self.opening())
+        answered(chip, chip.out_count)
+        self.stretch(chip, first_y=178, second_y=180, envelope=(-0x3FFF, 0, 0, 0))
+
+        self.assertEqual(chip.solid_start[0], chip.solid_start[1])
+
+    def test_and_so_is_one_shaped_by_the_other_fork_word(self):
+        chip = started(0x0008, self.opening())
+        answered(chip, chip.out_count)
+        self.stretch(chip, first_y=178, second_y=180, envelope=(0, 0x3FFF, 0, 0))
+
+        self.assertEqual(chip.solid_start[0], chip.solid_start[1])
+
+    def test_the_track_ends_on_a_single_zero_word(self):
+        chip = started(0x0008, self.opening())
+        answered(chip, chip.out_count)
+
+        for value in word(-0x8000):
+            chip.write(value)
+
+        self.assertEqual(answered(chip, 2), [0, 0])
+        self.assertTrue(chip.waiting)
+
+
+class ReciprocalTest(unittest.TestCase):
+    def test_one_over_nothing_is_nothing(self):
+        self.assertEqual(dsp4.inverse(0), 0)
+
+    def test_one_over_one_comes_back_negative_because_the_table_does_not_fit(self):
+        self.assertEqual(dsp4.inverse(1), -0x8000)
+
+    def test_every_other_entry_is_positive(self):
+        for value in range(2, 64):
+            self.assertGreater(dsp4.inverse(value), 0)
+
+    def test_a_run_longer_than_the_table_reuses_its_last_entry(self):
+        self.assertEqual(dsp4.inverse(200), dsp4.inverse(63))
+
+    def test_and_a_negative_run_its_first(self):
+        self.assertEqual(dsp4.inverse(-5), dsp4.inverse(0))
+
+
+class ClampTest(unittest.TestCase):
+    def test_a_value_inside_its_window_is_left_alone(self):
+        self.assertEqual(dsp4.clamp(50, 0, 100), 50)
+
+    def test_one_below_it_is_pulled_up(self):
+        self.assertEqual(dsp4.clamp(-5, 0, 100), 0)
+
+    def test_one_above_it_is_pulled_down(self):
+        self.assertEqual(dsp4.clamp(500, 0, 100), 100)
+
+    def test_a_window_the_wrong_way_round_settles_on_the_high_edge(self):
+        self.assertEqual(dsp4.clamp(50, 100, 0), 0)
 
 
 class ReadingTest(unittest.TestCase):

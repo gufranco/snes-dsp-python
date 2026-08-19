@@ -60,7 +60,13 @@ PROJECT_TURNOFF = 0x0007
 
 PROJECT_SHARED = 0x000D
 
-PROJECTIONS = (PROJECT_TRACK, PROJECT_TURNOFF, PROJECT_SHARED)
+RENDER_SOLID = 0x0008
+
+FORK_LEFT = -0x3FFF
+
+FORK_RIGHT = 0x3FFF
+
+PROJECTIONS = (PROJECT_TRACK, PROJECT_TURNOFF, PROJECT_SHARED, RENDER_SOLID)
 
 END_OF_TRACK = (0x00, 0x80)
 
@@ -154,6 +160,52 @@ def _branch_shape(source):
     )
 
 
+def _pair_of_pairs(source, low, high):
+    """Four words that belong to two shapes, each with a left and a right."""
+    return [byte for _ in range(4) for byte in _word(source.randrange(low, high))]
+
+
+def _solid(source):
+    """Two solid shapes: the window they are carved from, and where they start."""
+    return (
+        _pair_of_pairs(source, 200, 256)
+        + _pair_of_pairs(source, 0, 40)
+        + _pair_of_pairs(source, -0x4000, 0x4000)
+        + _pair_of_pairs(source, -0x4000, 0x4000)
+        + _pair_of_pairs(source, 0, 256)
+        + _pair_of_pairs(source, 0x0400, 0x4000)
+        + _pair_of_pairs(source, 150, 224)
+        + _pair_of_pairs(source, 0, 180)
+        + _pair_of_pairs(source, -0x4000, 0x4000)
+        + _word(source.randrange(0x0400, 0x4000))
+        + _solid_shape(source)
+    )
+
+
+def _solid_shape(source):
+    """Where each shape sits this stretch, and how its two edges are pulled."""
+    return (
+        _word(source.randrange(-256, 256))
+        + _word(source.randrange(150, 200))
+        + _word(source.randrange(-256, 256))
+        + _word(source.randrange(150, 200))
+        + _envelope(source)
+        + _envelope(source)
+        + _envelope(source)
+        + _envelope(source)
+    )
+
+
+def _envelope(source):
+    """One shaping word, which now and then names the fork rather than a nudge."""
+    picked = source.randrange(0, 6)
+    if picked == 0:
+        return _word(FORK_LEFT)
+    if picked == 1:
+        return _word(FORK_RIGHT)
+    return _word(source.randrange(-64, 64))
+
+
 def command_for(seed):
     """Which of the three projections a seed exercises."""
     return PROJECTIONS[seed % len(PROJECTIONS)]
@@ -163,8 +215,18 @@ def steps_for(seed):
     """The whole exchange for one road, as writes and reads in order."""
     source = random.Random(seed)
     command = command_for(seed)
-    opening = {PROJECT_TRACK: _road, PROJECT_TURNOFF: _branch, PROJECT_SHARED: _shared}[command]
-    following = _branch_shape if command == PROJECT_TURNOFF else _curvature
+    opening = {
+        PROJECT_TRACK: _road,
+        PROJECT_TURNOFF: _branch,
+        PROJECT_SHARED: _shared,
+        RENDER_SOLID: _solid,
+    }[command]
+    following = {
+        PROJECT_TRACK: _curvature,
+        PROJECT_TURNOFF: _branch_shape,
+        PROJECT_SHARED: _curvature,
+        RENDER_SOLID: _solid_shape,
+    }[command]
 
     steps = [(WRITE, command & 0xFF), (WRITE, command >> 8)]
     steps += [(WRITE, value) for value in opening(source)]
