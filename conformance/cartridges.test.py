@@ -148,6 +148,31 @@ class DirectoryTest(unittest.TestCase):
     def test_and_from_the_repository_when_none_is(self):
         self.assertEqual(cartridges.directory({}).name, "cartridges")
 
+    def test_the_project_this_sits_inside_is_looked_at_too(self):
+        self.assertIn(cartridges.ALONGSIDE, cartridges.directories({}))
+
+    def test_a_named_directory_comes_before_either_of_them(self):
+        found = cartridges.directories({cartridges.DIRECTORY_VARIABLE: "/x"})
+
+        self.assertEqual(found[0], Path("/x"))
+
+    def test_the_first_place_that_is_actually_there_is_the_one_used(self):
+        import tempfile
+
+        here = Path(tempfile.mkdtemp())
+
+        self.assertEqual(cartridges.directory({}, places=[Path("/nowhere"), here]), here)
+
+    def test_and_when_no_place_is_there_the_folder_here_is_named(self):
+        chosen = cartridges.directory({}, places=[Path("/nowhere"), Path("/nor/here")])
+
+        self.assertEqual(chosen, cartridges.DEFAULT_DIRECTORY)
+
+    def test_a_named_directory_wins_even_when_it_is_not_there(self):
+        chosen = cartridges.directory({cartridges.DIRECTORY_VARIABLE: "/nowhere"})
+
+        self.assertEqual(chosen, Path("/nowhere"))
+
     def test_a_directory_that_is_not_there_yields_nothing(self):
         self.assertEqual(list(cartridges.found(Path("/nowhere/at/all"))), [])
 

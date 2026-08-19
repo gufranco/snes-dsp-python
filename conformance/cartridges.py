@@ -32,6 +32,14 @@ DIRECTORY_VARIABLE = "SNES_CARTRIDGE_DIR"
 
 DEFAULT_DIRECTORY = ROOT / "cartridges"
 
+ALONGSIDE = ROOT.parent / "cartridges"
+"""Where a project carrying this one as a submodule keeps its own library.
+
+Standalone, the directory in this repository is the one that matters. As a
+submodule the parent owns the library, and asking its owner for a second copy of
+four gigabytes because the path moved is not a reasonable thing to do.
+"""
+
 READABLE_SUFFIXES = (".sfc", ".smc")
 
 DIGESTS = ("crc32", "md5", "sha1", "sha256")
@@ -43,8 +51,8 @@ DIGEST_WIDTHS = {"crc32": 8, "md5": 32, "sha1": 40, "sha256": 64}
 WHY_NOT = (
     "no cartridge was found: this reads the routine inside a game that drives the"
     " part, and a game belongs to whoever made it, so a copy you already own goes"
-    " in the cartridges directory of this repository or wherever"
-    f" {DIRECTORY_VARIABLE} points"
+    " in the cartridges directory of this repository, or of the project this one"
+    f" sits inside, or wherever {DIRECTORY_VARIABLE} points"
 )
 
 
@@ -85,10 +93,27 @@ def manifest(path=None):
         return json.load(handle)
 
 
-def directory(environment=None):
-    """Where cartridges are looked for: what was named, or the ignored folder here."""
+def directories(environment=None):
+    """Everywhere a cartridge is looked for, nearest intent first."""
     named = (environment if environment is not None else os.environ).get(DIRECTORY_VARIABLE)
-    return Path(named) if named else DEFAULT_DIRECTORY
+    places = [Path(named)] if named else []
+    return (*places, DEFAULT_DIRECTORY, ALONGSIDE)
+
+
+def directory(environment=None, places=None):
+    """Where to look: what was named, or the first place that is actually there.
+
+    A named directory wins even when it is empty or missing. Quietly falling back
+    from a path somebody typed turns their typo into a run that skips its tests
+    and reports success, which is the failure this whole file exists to avoid.
+    """
+    named = (environment if environment is not None else os.environ).get(DIRECTORY_VARIABLE)
+    if named:
+        return Path(named)
+    for place in places if places is not None else directories(environment):
+        if place.is_dir():
+            return place
+    return DEFAULT_DIRECTORY
 
 
 def identify(image, catalogue=None):
