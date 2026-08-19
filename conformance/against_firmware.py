@@ -79,7 +79,16 @@ WHY_NOT_FIRMWARE = (
 )
 
 DUMPS_THE_MASK_ROM = 0x1F
-"""One command hands back the part's own table rather than an answer."""
+"""One command hands back the part's own table rather than an answer.
+
+The model refuses it unless a table is handed to it, because a table that is
+absent is not a table of zeroes. Here the table comes out of the image its owner
+supplied, which is the only place one exists, so the command is swept like any
+other rather than skipped.
+"""
+
+DUMPED_WORDS = 1024
+"""How much of the table that command hands back."""
 
 NOT_SWEPT_YET = ("dsp3",)
 """The DSP-3 is clocked rather than commanded, and needs a driver of its own.
@@ -169,6 +178,31 @@ class Console:
         return low | high << 8
 
 
+def _with_aliases(wanted, aliases):
+    """Argument counts for every command byte, including the ones that alias another.
+
+    A third of this part's command space is aliases: bytes that do the same thing
+    as another byte. The model says which is which, and sweeping them against the
+    microcode is the only way to know whether it is right about that rather than
+    merely consistent with itself.
+    """
+    found = {command: words * 2 for command, words in wanted.items()}
+    for alias, canonical in aliases.items():
+        found[alias] = found[canonical]
+    return found
+
+
+def table_of(part):
+    """The constant table inside an image, as the words the part reads from it."""
+    found = _processor()
+    if found is None:
+        return None
+    identity, path = images()[part]
+    image = path.read_bytes()
+    held = image[identity.program_words * 3 :]
+    return [held[at] << 8 | held[at + 1] for at in range(0, len(held), 2)]
+
+
 class Microcode:
     """One model here, the commands it answers, and how its console drives it."""
 
@@ -189,7 +223,10 @@ class Microcode:
             yield command, [chance.randrange(limit) for _ in range(wanted)]
 
     def from_model(self, command, arguments):
-        chip = snesdsp.Dsp(model=self.part, **self.build)
+        options = dict(self.build)
+        if projector.ALIASES.get(command, command) in projector.DUMP_OFFSET:
+            options["data_rom"] = table_of(self.part)
+        chip = snesdsp.Dsp(model=self.part, **options)
         chip.write(command)
         for value in arguments:
             chip.write(value & 0xFF)
@@ -217,12 +254,8 @@ class Microcode:
 MICROCODES = (
     Microcode(
         part="dsp1",
-        commands=set(projector.WORDS_WANTED) - {DUMPS_THE_MASK_ROM},
-        arguments={
-            command: words * 2
-            for command, words in projector.WORDS_WANTED.items()
-            if command != DUMPS_THE_MASK_ROM
-        },
+        commands=set(projector.WORDS_WANTED) | set(projector.ALIASES),
+        arguments=_with_aliases(projector.WORDS_WANTED, projector.ALIASES),
         argument_width=2,
         answer_width=2,
         polls=True,
@@ -230,12 +263,8 @@ MICROCODES = (
     ),
     Microcode(
         part="dsp1b",
-        commands=set(projector.WORDS_WANTED) - {DUMPS_THE_MASK_ROM},
-        arguments={
-            command: words * 2
-            for command, words in projector.WORDS_WANTED.items()
-            if command != DUMPS_THE_MASK_ROM
-        },
+        commands=set(projector.WORDS_WANTED) | set(projector.ALIASES),
+        arguments=_with_aliases(projector.WORDS_WANTED, projector.ALIASES),
         argument_width=2,
         answer_width=2,
         polls=True,

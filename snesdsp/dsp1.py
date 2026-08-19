@@ -116,6 +116,19 @@ RASTER_COMMANDS = (0x0A, 0x1A)
 
 DUMP_DATA_ROM = 0x1F
 
+DUMP_OFFSET = {
+    0x1F: 0,
+    0x37: 1,
+    0x3F: 1,
+}
+"""Where in the table each of the three dumping bytes begins.
+
+They are not three spellings of one command. Measured against both images with
+several arguments, 0x1F hands back the table from its first word and the other two
+hand it back from its second, and the argument does not move either. Treating them
+as plain aliases shifts every word of the two by one.
+"""
+
 WORDS_WANTED = {
     0x00: 2,
     0x01: 4,
@@ -147,9 +160,27 @@ WORDS_WANTED = {
     0x2B: 3,
     0x2D: 3,
     0x2F: 1,
+    0x37: 1,
+    0x3F: 1,
     0x38: 4,
 }
 """How many words each command takes. The chip counts bytes, so these are doubled."""
+
+NEARLY_ALIASED = {
+    0x34: 0x14,
+}
+"""Command bytes answered as another one, knowing they are not quite it.
+
+Measured against the microcode: 0x34 gives the same answer as 0x14 on 77 of 120
+random inputs and differs by between ten below and sixteen above on the rest. It
+is the attitude command computed slightly differently rather than a separate one,
+the way 0x20 is the multiply computed slightly differently, but the difference is
+scattered rather than a single rule and has not been derived.
+
+So it is answered as 0x14, which is right about two thirds of the time and within a
+few units otherwise, and named here rather than hidden inside the alias table where
+it would read as settled.
+"""
 
 ALIASES = {
     0x05: 0x01,
@@ -176,14 +207,12 @@ ALIASES = {
     0x34: 0x14,
     0x35: 0x01,
     0x36: 0x06,
-    0x37: 0x1F,
     0x39: 0x0D,
     0x3A: 0x1A,
     0x3B: 0x0B,
     0x3C: 0x1C,
     0x3D: 0x0D,
     0x3E: 0x0E,
-    0x3F: 0x1F,
 }
 """The bytes that mean the same thing as another byte, which is most of them.
 
@@ -504,6 +533,8 @@ class Dsp1:
             0x1C: self._turn_in_space,
             0x1D: lambda: self._to_matrix(1),
             0x1F: self._dump_data_rom,
+            0x37: self._dump_data_rom,
+            0x3F: self._dump_data_rom,
             0x20: self._multiply_forcing_odd,
             0x21: lambda: self._set_matrix(2),
             0x23: lambda: self._from_matrix(2),
@@ -722,7 +753,8 @@ class Dsp1:
                 "rather than behaviour and is not shipped here; construct the chip "
                 "with data_rom= to answer it"
             )
-        self._put(list(self.data_rom[:DATA_ROM_WORDS]))
+        start = DUMP_OFFSET[self.command]
+        self._put(list(self.data_rom[start : start + DATA_ROM_WORDS]))
 
     def _set_camera(self):
         """Where the camera is, where it looks, and what that does to the horizon."""

@@ -88,6 +88,44 @@ class ArithmeticTest(unittest.TestCase):
         self.assertEqual(dsp1.halved_if_unnegatable(-0x4000, 3), (-0x4000, 3))
 
 
+class NearAliasTest(unittest.TestCase):
+    def test_the_bytes_that_are_not_quite_aliases_are_named(self):
+        self.assertIn(0x34, dsp1.NEARLY_ALIASED)
+
+    def test_each_one_names_the_command_it_is_answered_as(self):
+        for command, answered_as in dsp1.NEARLY_ALIASED.items():
+            self.assertEqual(dsp1.ALIASES[command], answered_as)
+
+    def test_and_that_command_is_one_the_chip_has(self):
+        for answered_as in dsp1.NEARLY_ALIASED.values():
+            self.assertIn(answered_as, dsp1.WORDS_WANTED)
+
+
+class DumpTest(unittest.TestCase):
+    def a_table(self):
+        return list(range(0x100, 0x100 + dsp1.DATA_ROM_WORDS))
+
+    def dumped(self, command, count=4):
+        chip = asked(command, word(0), data_rom=self.a_table())
+        return [read_word(chip) for _ in range(count)]
+
+    def test_the_plain_dump_starts_at_the_beginning_of_the_table(self):
+        self.assertEqual(self.dumped(0x1F), self.a_table()[:4])
+
+    def test_two_of_its_aliases_start_one_word_further_in(self):
+        for command in (0x37, 0x3F):
+            self.assertEqual(self.dumped(command), self.a_table()[1:5], hex(command))
+
+    def test_every_byte_that_dumps_says_where_it_starts(self):
+        for command in dsp1.DUMP_OFFSET:
+            self.assertIsInstance(dsp1.DUMP_OFFSET[command], int)
+
+    def test_a_dump_without_a_table_is_refused_rather_than_guessed(self):
+        for command in dsp1.DUMP_OFFSET:
+            with self.assertRaises(dsp1.DataRomMissing):
+                asked(command, word(0))
+
+
 class LengthTest(unittest.TestCase):
     def a_length(self, revision, triple):
         payload = []
