@@ -72,7 +72,7 @@ The recording still has a job, and it is kept: this model agrees byte for byte w
 
 The DSP-4 does not fit that argument, and gets a different one. It is a renderer rather than a calculator: nothing it does is a small pure function, and several of its commands cannot finish in one go. So it is held to a corpus of roads generated from seeds and answered by the chip's own reference, 140 of them and 725,032 bytes, covering every one of its seven renderers. That comparison found two defects in this model and one in the reference.
 
-The reference driver takes the chip as an argument rather than being built around one of them, which is why adding the third and fourth microcodes is a matter of writing the model rather than of building the evidence first.
+Those corpora are recordings. They were taken from the reference implementations once and are replayed here forever after, which is why this repository is Python throughout and needs nothing else installed to check itself. New evidence now comes from a stronger direction: the microcode the cartridge itself carries, run on a model of the processor it is masked into.
 
 <table>
 <tr>
@@ -259,9 +259,8 @@ chip = Dsp(model="dsp2")
 | `dsp4` | modelled | 512 bytes | Fifteen commands, seven of them renderers. Aliases: `dsp-4`, `upd77c25dsp4`, `nintendodsp4` |
 | `dsp1a` | refused by name | | The middle mask. No image of it has been measured here |
 
-The reference driver in [`conformance/ref/`](conformance/ref/) already carries all
-four and takes the chip as an argument, so adding one is a matter of writing the
-model and the corpus rather than of building the evidence first.
+Each of the four has its own recorded corpus, replayed by its own runner, and none
+of them needs anything installed to run.
 
 ### The DSP-1 was masked three times
 
@@ -462,7 +461,6 @@ conformance/
   dsp1corpus.py   whole sessions generated from seeds, answered by the reference
   dsp3corpus.py   whole sessions generated from seeds, answered by the reference
   dsp4corpus.py   roads generated from seeds, answered by the reference
-  ref/            the driver around the four reference implementations
 ```
 
 Each module has its tests beside it as `<module>.test.py`, so a module and the cases that pin its behaviour are read together.

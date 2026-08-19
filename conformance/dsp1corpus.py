@@ -16,16 +16,21 @@ reference's version of that command is broken in two ways besides, reading past
 its own output buffer and then past its own table, so there would be nothing to
 compare against even if there were something to ship.
 
+The corpus was recorded from the reference implementation named in this file
+and is replayed here. It is a recording rather than a live comparison: the
+implementation it came from is a separate work in another language, and this
+repository is Python throughout, so what it carries is the evidence rather
+than the tooling that produced it. New evidence comes from a different and
+stronger direction now, in `conformance/against_firmware.py`, which runs the
+microcode the cartridge itself carries.
+
 Usage:
     python3 conformance/dsp1corpus.py [--corpus PATH]
-    python3 conformance/dsp1corpus.py --record --driver PATH
 """
 
 import base64
 import json
 import random
-import struct
-import subprocess
 import sys
 from pathlib import Path
 
@@ -33,7 +38,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from snesdsp import dsp1
 
-USAGE = "usage: dsp1corpus.py [--corpus PATH] [--record --driver PATH] [--cases N]"
+USAGE = "usage: dsp1corpus.py [--corpus PATH] [--cases N]"
 
 DEFAULT_CORPUS = Path(__file__).resolve().parent / "dsp1corpus.json"
 
@@ -42,8 +47,6 @@ WRITE = "w"
 READ = "r"
 
 CASES = 80
-
-DRIVER_TIMEOUT = 120
 
 REPORT_LIMIT = 5
 
@@ -92,10 +95,8 @@ class Usage(Exception):
 
 
 class Options:
-    def __init__(self, corpus=None, driver=None, record=False, cases=CASES):
+    def __init__(self, corpus=None, cases=CASES):
         self.corpus = corpus
-        self.driver = driver
-        self.record = record
         self.cases = cases
 
 
@@ -207,19 +208,6 @@ def replay(steps):
     return answers
 
 
-def ask(steps, driver):
-    """The session through the reference, whose answers are the ones recorded."""
-    payload = struct.pack("<I", 1) + bytes(RAM_BYTES) + struct.pack("<I", len(steps))
-    for kind, value in steps:
-        payload += bytes([ord(kind), value])
-    done = subprocess.run(
-        [driver, "dsp1"], input=payload, capture_output=True, check=False, timeout=DRIVER_TIMEOUT
-    )
-    if done.returncode:
-        raise Usage(f"the reference driver failed: {done.stderr.decode(errors='replace').strip()}")
-    return list(done.stdout[4:])
-
-
 def encode(answers):
     """Answers as one string, because a byte per line is a file nobody can read."""
     return base64.b64encode(bytes(answers)).decode("ascii")
@@ -234,21 +222,6 @@ def load(path=None):
     """The corpus, from where it was asked for or from the one that ships."""
     with Path(path or DEFAULT_CORPUS).open() as handle:
         return json.load(handle)
-
-
-def record(driver, wanted):
-    """Ask the reference for the answers to every session."""
-    cases = [
-        {"seed": seed, "expected": encode(ask(steps_for(seed), driver))} for seed in range(wanted)
-    ]
-    return {
-        "comment": (
-            "Sessions generated from seeds and answered by the chip's own reference. "
-            "The command that hands back the chip's mask ROM is not among them."
-        ),
-        "reference": "snes9x dsp1.cpp, through conformance/ref",
-        "cases": cases,
-    }
 
 
 def disagreement(expected, actual):
@@ -266,18 +239,13 @@ def options(argv):
     rest = list(argv)
     while rest:
         item = rest.pop(0)
-        if item == "--record":
-            chosen.record = True
-            continue
-        if item not in ("--corpus", "--driver", "--cases"):
+        if item not in ("--corpus", "--cases"):
             raise Usage(USAGE)
         if not rest:
             raise Usage(USAGE)
         value = rest.pop(0)
         if item == "--corpus":
             chosen.corpus = value
-        elif item == "--driver":
-            chosen.driver = value
         else:
             chosen.cases = int(value)
     return chosen
@@ -285,15 +253,6 @@ def options(argv):
 
 def run(argv):
     chosen = options(argv)
-    if chosen.record:
-        if not chosen.driver:
-            print("recording needs --driver, which is where the reference was built")
-            return 2
-        found = record(chosen.driver, chosen.cases)
-        Path(chosen.corpus or DEFAULT_CORPUS).write_text(json.dumps(found, indent=2) + "\n")
-        print(f"recorded {len(found['cases'])} sessions")
-        return 0
-
     corpus = load(chosen.corpus)
     failed = 0
     checked = 0

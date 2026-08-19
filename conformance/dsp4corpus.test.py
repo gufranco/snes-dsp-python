@@ -1,5 +1,4 @@
 import json
-import stat
 import sys
 import tempfile
 import unittest
@@ -145,61 +144,8 @@ class RunTest(unittest.TestCase):
         with self.assertRaises(dsp4corpus.Usage):
             dsp4corpus.options(["--corpus"])
 
-
-class RecordTest(unittest.TestCase):
-    def scripted(self, body):
-        where = Path(tempfile.mkdtemp()) / "fake"
-        where.write_text(body)
-        where.chmod(where.stat().st_mode | stat.S_IXUSR)
-        return where
-
-    def answering(self):
-        return self.scripted("#!/bin/sh\ncat > /dev/null\nprintf 'AAAA????'\n")
-
-    def test_a_driver_that_fails_is_reported_rather_than_recorded(self):
-        wrong = self.scripted("#!/bin/sh\ncat > /dev/null\nexit 1\n")
-
-        with self.assertRaises(dsp4corpus.Usage):
-            dsp4corpus.ask(dsp4corpus.steps_for(0), str(wrong))
-
-    def test_an_answer_survives_being_written_down_and_read_back(self):
-        self.assertEqual(
-            dsp4corpus.expected_of({"expected": dsp4corpus.encode([1, 2, 3])}), [1, 2, 3]
-        )
-
-    def test_asking_a_driver_returns_what_it_said_past_the_count(self):
-        found = dsp4corpus.ask(dsp4corpus.steps_for(0), str(self.answering()))
-
-        self.assertEqual(found, [ord("?")] * 4)
-
-    def test_recording_asks_the_driver_for_every_case_it_keeps(self):
-        found = dsp4corpus.record(str(self.answering()), 3)
-
-        self.assertEqual(len(found["cases"]), 3)
-
-    def test_recording_walks_past_the_roads_the_buffer_cannot_carry(self):
-        found = dsp4corpus.record(str(self.answering()), dsp4corpus.OVERRUNNING_SEED + 2)
-        recorded = {case["seed"] for case in found["cases"]}
-
-        self.assertNotIn(dsp4corpus.OVERRUNNING_SEED, recorded)
-
-    def test_and_says_where_the_answers_came_from(self):
-        found = dsp4corpus.record(str(self.answering()), 1)
-
-        self.assertIn("reference", found)
-
-    def test_recording_writes_the_corpus_where_it_was_asked(self):
-        where = Path(tempfile.mkdtemp()) / "recorded.json"
-
-        answered = dsp4corpus.run(
-            ["--record", "--driver", str(self.answering()), "--corpus", str(where), "--cases", "2"]
-        )
-
-        self.assertEqual(answered, 0)
-        self.assertEqual(len(json.loads(where.read_text())["cases"]), 2)
-
-    def test_recording_without_a_driver_says_so(self):
-        self.assertEqual(dsp4corpus.run(["--record"]), 2)
+    def test_the_number_of_cases_can_be_set(self):
+        self.assertEqual(dsp4corpus.options(["--cases", "7"]).cases, 7)
 
 
 class ReportLimitTest(unittest.TestCase):

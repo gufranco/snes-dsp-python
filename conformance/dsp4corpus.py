@@ -23,16 +23,21 @@ decided by the layout of a C struct. That is a property of that program rather
 than of the chip, so cases that reach it are not recorded. Every case that is
 recorded stays inside the buffer the hardware has.
 
+The corpus was recorded from the reference implementation named in this file
+and is replayed here. It is a recording rather than a live comparison: the
+implementation it came from is a separate work in another language, and this
+repository is Python throughout, so what it carries is the evidence rather
+than the tooling that produced it. New evidence comes from a different and
+stronger direction now, in `conformance/against_firmware.py`, which runs the
+microcode the cartridge itself carries.
+
 Usage:
     python3 conformance/dsp4corpus.py [--corpus PATH]
-    python3 conformance/dsp4corpus.py --record --driver PATH
 """
 
 import base64
 import json
 import random
-import struct
-import subprocess
 import sys
 from pathlib import Path
 
@@ -40,7 +45,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from snesdsp import dsp4
 
-USAGE = "usage: dsp4corpus.py [--corpus PATH] [--record --driver PATH] [--cases N]"
+USAGE = "usage: dsp4corpus.py [--corpus PATH] [--cases N]"
 
 DEFAULT_CORPUS = Path(__file__).resolve().parent / "dsp4corpus.json"
 
@@ -53,8 +58,6 @@ BUFFER_BYTES = 512
 CASES = 140
 
 STRETCHES = 4
-
-DRIVER_TIMEOUT = 120
 
 REPORT_LIMIT = 5
 
@@ -126,10 +129,8 @@ class Usage(Exception):
 
 
 class Options:
-    def __init__(self, corpus=None, driver=None, record=False, cases=CASES):
+    def __init__(self, corpus=None, cases=CASES):
         self.corpus = corpus
-        self.driver = driver
-        self.record = record
         self.cases = cases
 
 
@@ -511,43 +512,10 @@ def replay(steps):
     return answers
 
 
-def ask(steps, driver):
-    """The case through the reference, whose answers are the ones recorded."""
-    payload = struct.pack("<I", 1) + bytes(dsp4.PARAMETER_BYTES) + struct.pack("<I", len(steps))
-    for kind, value in steps:
-        payload += bytes([ord(kind), value])
-    done = subprocess.run(
-        [driver, "dsp4"], input=payload, capture_output=True, check=False, timeout=DRIVER_TIMEOUT
-    )
-    if done.returncode:
-        raise Usage(f"the reference driver failed: {done.stderr.decode(errors='replace').strip()}")
-    return list(done.stdout[4:])
-
-
 def load(path=None):
     """The corpus, from where it was asked for or from the one that ships."""
     with Path(path or DEFAULT_CORPUS).open() as handle:
         return json.load(handle)
-
-
-def record(driver, wanted):
-    """Ask the reference for the answers, keeping only cases the buffer can carry."""
-    cases = []
-    seed = 0
-    while len(cases) < wanted:
-        steps = steps_for(seed)
-        seed += 1
-        if not fits(steps):
-            continue
-        cases.append({"seed": seed - 1, "expected": encode(ask(steps, driver))})
-    return {
-        "comment": (
-            "Cases generated from seeds and answered by the chip's own reference. "
-            "Cases whose output would not fit the chip's 512 byte buffer are not here."
-        ),
-        "reference": "snes9x dsp4.cpp, through conformance/ref",
-        "cases": cases,
-    }
 
 
 def encode(answers):
@@ -575,18 +543,13 @@ def options(argv):
     rest = list(argv)
     while rest:
         item = rest.pop(0)
-        if item == "--record":
-            chosen.record = True
-            continue
-        if item not in ("--corpus", "--driver", "--cases"):
+        if item not in ("--corpus", "--cases"):
             raise Usage(USAGE)
         if not rest:
             raise Usage(USAGE)
         value = rest.pop(0)
         if item == "--corpus":
             chosen.corpus = value
-        elif item == "--driver":
-            chosen.driver = value
         else:
             chosen.cases = int(value)
     return chosen
@@ -594,15 +557,6 @@ def options(argv):
 
 def run(argv):
     chosen = options(argv)
-    if chosen.record:
-        if not chosen.driver:
-            print("recording needs --driver, which is where the reference was built")
-            return 2
-        found = record(chosen.driver, chosen.cases)
-        Path(chosen.corpus or DEFAULT_CORPUS).write_text(json.dumps(found, indent=2) + "\n")
-        print(f"recorded {len(found['cases'])} cases")
-        return 0
-
     corpus = load(chosen.corpus)
     failed = 0
     checked = 0
