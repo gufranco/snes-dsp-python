@@ -14,3 +14,10 @@ firmware/*
 !firmware/README.md
 *.rom
 *.bin
+
+# Cartridges belong to whoever made them. A copy you already own goes here,
+# under whatever name it already has, and nothing in it is ever committed.
+cartridges/*
+!cartridges/README.md
+*.sfc
+*.smc
