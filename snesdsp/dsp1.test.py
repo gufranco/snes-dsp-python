@@ -11,8 +11,8 @@ def word(value):
     return [value & 0xFF, (value >> 8) & 0xFF]
 
 
-def asked(command, payload=(), data_rom=None):
-    chip = dsp1.Dsp1(data_rom=data_rom)
+def asked(command, payload=(), data_rom=None, revision=None):
+    chip = dsp1.Dsp1(data_rom=data_rom, **({"revision": revision} if revision else {}))
     chip.write(command)
     for value in payload:
         chip.write(value)
@@ -207,10 +207,34 @@ class MemoryTest(unittest.TestCase):
 
         self.assertEqual(read_word(chip), 0)
 
-    def test_the_size_command_answers_the_size_it_always_answers(self):
+    def test_the_size_command_answers_the_word_that_names_the_mask(self):
         chip = asked(0x2F, word(0))
 
-        self.assertEqual(read_word(chip), 0x100)
+        self.assertEqual(read_word(chip), dsp1.VERSION_WORD[dsp1.FIRST_MASK])
+
+    def test_the_later_mask_answers_a_different_word_there(self):
+        chip = asked(0x2F, word(0), revision=dsp1.CORRECTED_MASK)
+
+        self.assertEqual(read_word(chip), dsp1.VERSION_WORD[dsp1.CORRECTED_MASK])
+
+    def test_and_the_two_words_are_not_the_same(self):
+        self.assertNotEqual(
+            dsp1.VERSION_WORD[dsp1.FIRST_MASK], dsp1.VERSION_WORD[dsp1.CORRECTED_MASK]
+        )
+
+    def test_every_mask_the_chip_answers_to_has_a_word_of_its_own(self):
+        for revision in dsp1.MASKS:
+            self.assertIn(revision, dsp1.VERSION_WORD)
+
+    def test_a_mask_the_chip_does_not_have_is_refused(self):
+        with self.assertRaises(dsp1.UnknownMask):
+            dsp1.Dsp1(revision="dsp1z")
+
+    def test_a_chip_remembers_which_mask_it_is(self):
+        self.assertEqual(dsp1.Dsp1(revision=dsp1.CORRECTED_MASK).revision, dsp1.CORRECTED_MASK)
+
+    def test_and_defaults_to_the_first_one(self):
+        self.assertEqual(dsp1.Dsp1().revision, dsp1.FIRST_MASK)
 
 
 class DataRomTest(unittest.TestCase):

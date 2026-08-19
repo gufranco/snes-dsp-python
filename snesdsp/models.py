@@ -9,11 +9,12 @@ fixed point three dimensional maths, the DSP-2, which converts tiles, the DSP-3,
 which decompresses and searches a hex grid, and the DSP-4, which draws a road.
 
 The DSP-1 was masked three times. The DSP-1, the DSP-1A and the DSP-1B are three
-microcodes, not three spellings of one, and the last of them corrected the first.
-The reference this package is measured against implements one of the three and does
-not say which, so exactly one is claimed here and the other two are refused by name.
-Answering to all three would assert that a single set of answers is right for all
-three parts, which is the opposite of what the separate mask revisions mean.
+microcodes rather than three spellings of one, and the last corrected the first.
+Two of the three are modelled here as separate parts, because two of the three
+were measured: both images were run on the processor they are masked into and
+asked the same questions, and they answer command 0x2F differently every time.
+The middle mask has no image here, so it is refused by name rather than assumed
+to match either of its neighbours.
 
 A model with no corpus behind it does not belong in this table, because then its
 fidelity would be a claim rather than a measurement.
@@ -52,7 +53,7 @@ def _build_dsp2(model, **options):
 def _build_dsp1(model, **options):
     from .dsp1 import Dsp1
 
-    chip = Dsp1(**options)
+    chip = Dsp1(revision=model.name, **options)
     chip.model = model.name
     return chip
 
@@ -85,6 +86,18 @@ _CATALOGUE = (
         parameter_bytes=512,
         core=_build_dsp1,
         aliases=("dsp-1", "upd77c25dsp1", "nintendodsp1"),
+    ),
+    Model(
+        name="dsp1b",
+        summary=(
+            "The last mask of the DSP-1, and the one nearly every cartridge in the "
+            "family carries; the first mask shipped in Pilotwings alone. Thirty one "
+            "commands, the same as the mask before it apart from where it corrected "
+            "it, and it names itself differently when asked."
+        ),
+        parameter_bytes=512,
+        core=_build_dsp1,
+        aliases=("dsp-1b", "upd77c25dsp1b", "nintendodsp1b"),
     ),
     Model(
         name="dsp2",
@@ -123,16 +136,12 @@ _CATALOGUE = (
 
 MODELS = {model.name: model for model in _CATALOGUE}
 
-_LATER_REVISION = (
-    "the DSP-1A and the DSP-1B are later mask revisions of the DSP-1 rather than "
-    "other names for it, and the DSP-1B corrected the microcode of the earlier "
-    "parts; the reference this package is measured against implements one revision "
-    "without saying which, so only dsp1 is claimed"
-)
-
 NOT_MODELLED = {
-    "dsp1a": _LATER_REVISION,
-    "dsp1b": _LATER_REVISION,
+    "dsp1a": (
+        "the DSP-1A is the middle mask of the three, and no image of it has been "
+        "measured here; the first and the last both have one, so they are modelled "
+        "and this one is not rather than being assumed to match either"
+    ),
 }
 """Names that belong to a real part the package deliberately does not answer to."""
 

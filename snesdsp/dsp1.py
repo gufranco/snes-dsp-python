@@ -62,7 +62,27 @@ DIVIDED_BY_ZERO_EXPONENT = 0x2F
 
 NEWTON_ROUNDS = 2
 
-MEMORY_SIZE = 0x100
+FIRST_MASK = "dsp1"
+
+CORRECTED_MASK = "dsp1b"
+
+MASKS = (FIRST_MASK, CORRECTED_MASK)
+
+VERSION_WORD = {
+    FIRST_MASK: 0x0100,
+    CORRECTED_MASK: 0x0101,
+}
+"""What each mask answers when asked command 0x2F, which names itself.
+
+Measured rather than assumed. Both images were run on the processor they are
+masked into and asked the same question ten times over: the first mask answers
+0x0100 every time and the later one answers 0x0101 every time. It is a version
+word, and it is the one difference between the two that is fully pinned down
+here. There is at least one more, in the vector length at command 0x28, and it
+is deliberately not modelled until it can be read as reliably as this one.
+"""
+
+MEMORY_SIZE = VERSION_WORD[FIRST_MASK]
 
 RASTER_COMMANDS = (0x0A, 0x1A)
 
@@ -145,6 +165,10 @@ decorative: the raster command answers to four bytes and the model has to record
 which of them it was, because that decides whether the next read produces another
 matrix or nothing at all.
 """
+
+
+class UnknownMask(Exception):
+    pass
 
 
 class DataRomMissing(Exception):
@@ -310,7 +334,10 @@ def normalise_wide(product):
 class Dsp1:
     """One DSP-1, holding a camera, three attitude matrices, and a command."""
 
-    def __init__(self, fill=None, seed=UNSET_SEED, data_rom=None):
+    def __init__(self, fill=None, seed=UNSET_SEED, data_rom=None, revision=FIRST_MASK):
+        if revision not in VERSION_WORD:
+            raise UnknownMask(f"{revision} is not a mask of this chip; it has {', '.join(MASKS)}")
+        self.revision = revision
         self.parameters = parameter_ram(fill=fill, seed=seed)
         self.output = bytearray(OUTPUT_BYTES)
         self.output[:PARAMETER_BYTES] = parameter_ram(fill=fill, seed=seed)
@@ -635,7 +662,7 @@ class Dsp1:
         self._put([0])
 
     def _memory_size(self):
-        self._put([MEMORY_SIZE])
+        self._put([VERSION_WORD[self.revision]])
 
     def _dump_data_rom(self):
         """The mask ROM, which needs a mask ROM to give.

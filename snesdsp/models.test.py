@@ -10,7 +10,7 @@ from snesdsp import models
 
 class CatalogueTest(unittest.TestCase):
     def test_the_package_names_every_model_it_covers(self):
-        self.assertEqual(set(models.MODELS), {"dsp1", "dsp2", "dsp3", "dsp4"})
+        self.assertEqual(set(models.MODELS), {"dsp1", "dsp1b", "dsp2", "dsp3", "dsp4"})
 
     def test_a_model_says_what_it_is_and_what_it_holds(self):
         found = models.describe("dsp2")
@@ -26,16 +26,29 @@ class CatalogueTest(unittest.TestCase):
         for written in ("DSP1", "dsp-1", "DSP_1", "nintendo-dsp1"):
             self.assertEqual(models.describe(written).name, "dsp1")
 
-    def test_the_projectors_later_revisions_are_refused_rather_than_aliased(self):
-        for written in ("DSP1A", "dsp1b", "dsp-1b"):
-            with self.assertRaises(models.UnknownModelError):
-                models.describe(written)
+    def test_the_later_mask_is_a_model_of_its_own(self):
+        for written in ("DSP1B", "dsp-1b", "DSP_1B"):
+            self.assertEqual(models.describe(written).name, "dsp1b")
 
-    def test_and_the_refusal_says_the_revisions_are_not_the_same_part(self):
+    def test_the_middle_mask_is_refused_because_none_was_measured(self):
         with self.assertRaises(models.UnknownModelError) as raised:
-            models.describe("dsp1b")
+            models.describe("dsp1a")
 
-        self.assertIn("revision", str(raised.exception))
+        self.assertIn("measured", str(raised.exception))
+
+    def test_the_two_masks_are_not_the_same_model(self):
+        self.assertIsNot(models.describe("dsp1"), models.describe("dsp1b"))
+
+    def test_and_they_do_not_answer_the_same_way(self):
+        first = snesdsp.Dsp(model="dsp1", fill=0)
+        later = snesdsp.Dsp(model="dsp1b", fill=0)
+
+        for chip in (first, later):
+            chip.write(0x2F)
+            chip.write(0x00)
+            chip.write(0x00)
+
+        self.assertNotEqual((first.read(), first.read()), (later.read(), later.read()))
 
     def test_every_revision_that_is_refused_says_why(self):
         for name, why in models.NOT_MODELLED.items():
@@ -84,6 +97,12 @@ class BuildTest(unittest.TestCase):
 
     def test_the_projector_is_built_from_its_model_name_too(self):
         self.assertEqual(snesdsp.Dsp(model="dsp1", fill=0).model, "dsp1")
+
+    def test_and_so_is_its_later_mask(self):
+        self.assertEqual(snesdsp.Dsp(model="dsp1b", fill=0).model, "dsp1b")
+
+    def test_a_built_chip_carries_the_mask_it_was_asked_for(self):
+        self.assertEqual(snesdsp.Dsp(model="dsp1b", fill=0).revision, "dsp1b")
 
     def test_the_searcher_is_built_from_its_model_name_too(self):
         self.assertEqual(snesdsp.Dsp(model="dsp3").model, "dsp3")

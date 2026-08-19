@@ -25,7 +25,7 @@
   <a href="https://github.com/gufranco/snes-dsp-python/issues">Issues</a>
 </p>
 
-**4** microcodes · **4** modelled · **65** commands · **7** renderers that suspend and resume · **1** exhaustively proved bit permutation · shapes from **1,804,133** real cartridge commands · **851,132** bytes agreeing with snes9x · **470** tests · **100%** statement and branch coverage
+**4** microcodes · **5** models, counting both masks of the DSP-1 · **65** commands · **7** renderers that suspend and resume · **1** exhaustively proved bit permutation · shapes from **1,804,133** real cartridge commands · **851,132** bytes agreeing with snes9x · **500** tests · **100%** statement and branch coverage
 
 ```python
 from snesdsp import Dsp
@@ -252,11 +252,12 @@ chip = Dsp(model="dsp2")
 
 | Model | State | Parameter RAM | Notes |
 |:------|:------|:-------------:|:------|
-| `dsp1` | modelled | 512 bytes | Thirty one commands: a camera, three attitude matrices, and the projections that ask questions of them. Aliases: `dsp-1`, `upd77c25dsp1`, `nintendodsp1` |
+| `dsp1` | modelled | 512 bytes | The first mask, in Pilotwings alone. Thirty one commands: a camera, three attitude matrices, and the projections that ask questions of them. Aliases: `dsp-1`, `upd77c25dsp1`, `nintendodsp1` |
+| `dsp1b` | modelled | 512 bytes | The last mask, in nearly every other cartridge of the family. Aliases: `dsp-1b`, `upd77c25dsp1b`, `nintendodsp1b` |
 | `dsp2` | modelled | 512 bytes | Six commands. Aliases: `dsp-2`, `upd77c25dsp2`, `nintendodsp2` |
 | `dsp3` | modelled | none | Thirteen commands: a decompressor, a bit plane converter, a hex grid search. Aliases: `dsp-3`, `upd77c25dsp3`, `nintendodsp3` |
 | `dsp4` | modelled | 512 bytes | Fifteen commands, seven of them renderers. Aliases: `dsp-4`, `upd77c25dsp4`, `nintendodsp4` |
-| `dsp1a`, `dsp1b` | refused by name | | Later mask revisions of the DSP-1, not other names for it |
+| `dsp1a` | refused by name | | The middle mask. No image of it has been measured here |
 
 The reference driver in [`conformance/ref/`](conformance/ref/) already carries all
 four and takes the chip as an argument, so adding one is a matter of writing the
@@ -264,25 +265,49 @@ model and the corpus rather than of building the evidence first.
 
 ### The DSP-1 was masked three times
 
-The DSP-1, the DSP-1A and the DSP-1B are three microcodes, and the last of them
-corrected the first. Emulators and flash cartridges alike carry them as separate
-firmware images for that reason. The reference this package is measured against
-implements one of the three and does not say which, so exactly one is claimed and
-the other two are refused by name:
+The DSP-1, the DSP-1A and the DSP-1B are three microcodes rather than three
+spellings of one, and the last corrected the first. Nearly half the program
+differs between the first and the last: 993 of 2,048 instruction words and 537 of
+1,024 table words.
+
+Two of the three are modelled here as separate parts, because two of the three
+were measured. Both images were run on the processor they are masked into, in the
+`processor` submodule, and asked the same questions. They answer command `0x2F`
+differently on every input tried:
 
 ```python
 from snesdsp import Dsp
 
-Dsp(model="dsp1b")
-# UnknownModelError: dsp1b is not modelled here: the DSP-1A and the DSP-1B are
-# later mask revisions of the DSP-1 rather than other names for it, and the
-# DSP-1B corrected the microcode of the earlier parts; the reference this
-# package is measured against implements one revision without saying which, so
-# only dsp1 is claimed
+
+def names_itself(model):
+    chip = Dsp(model=model, fill=0)
+    for byte in (0x2F, 0x00, 0x00):
+        chip.write(byte)
+    return chip.read() | chip.read() << 8
+
+
+hex(names_itself("dsp1"))  # '0x100'
+hex(names_itself("dsp1b"))  # '0x101'
 ```
 
-Answering to all three would assert that one set of answers is right for all three
-parts, which is the opposite of what a separate mask revision means.
+It is a version word: the part names its own mask. That is the one difference
+between the two that is pinned down here, and it is measured rather than assumed.
+
+There is at least one more. The vector length at command `0x28` answers differently
+on the two images for about half the inputs tried, and it is deliberately **not**
+modelled yet: the console-side framing for that command is not yet read reliably
+enough here to say what the difference is, and writing down a delta that has not
+been isolated would be recording a guess rather than a measurement.
+
+The middle mask is refused by name, because no image of it has been measured:
+
+```python
+Dsp(model="dsp1a")
+# UnknownModelError: dsp1a is not modelled here: the DSP-1A is the middle mask of
+# the three, and no image of it has been measured here; the first and the last
+# both have one, so they are modelled and this one is not rather than being
+# assumed to match either
+```
 
 The DSP-4 is the odd one in the family. It draws rather than answers: a command
 hands it a viewpoint and a stretch of track and it walks that track outwards from
