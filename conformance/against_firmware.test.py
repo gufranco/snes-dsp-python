@@ -45,15 +45,12 @@ class StreamTest(unittest.TestCase):
             self.assertEqual(reached, set(microcode.commands), microcode.part)
 
 
-class AlignmentTest(unittest.TestCase):
-    def test_an_answer_that_arrives_first_is_recognised(self):
-        self.assertTrue(against_firmware.agreeing((b"\x01\x02", b"\x03\x04"), b"\x01\x02"))
+class PacingTest(unittest.TestCase):
+    def test_the_part_is_given_room_to_keep_up_between_accesses(self):
+        self.assertGreaterEqual(against_firmware.GAP, 8)
 
-    def test_and_one_that_arrives_after_the_echo_is_too(self):
-        self.assertTrue(against_firmware.agreeing((b"\x01\x02", b"\x03\x04"), b"\x03\x04"))
-
-    def test_an_answer_that_is_neither_is_a_disagreement(self):
-        self.assertFalse(against_firmware.agreeing((b"\x01\x02", b"\x03\x04"), b"\x05\x06"))
+    def test_and_is_booted_before_the_first_command(self):
+        self.assertGreater(against_firmware.BOOT_STEPS, 0)
 
 
 class ReportTest(unittest.TestCase):

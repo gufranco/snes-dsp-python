@@ -88,6 +88,27 @@ class ArithmeticTest(unittest.TestCase):
         self.assertEqual(dsp1.halved_if_unnegatable(-0x4000, 3), (-0x4000, 3))
 
 
+class OddMultiplyTest(unittest.TestCase):
+    def test_the_second_multiply_forces_its_answer_odd(self):
+        for first, second in ((0x0100, 0x8000), (0x1234, 0x4000), (0x7FFF, 0x7FFF)):
+            chip = asked(0x20, word(first) + word(second))
+
+            self.assertEqual(read_word(chip) & 1, 1, (first, second))
+
+    def test_and_leaves_an_answer_that_is_already_odd_alone(self):
+        plain = asked(0x00, word(0x3508) + word(0x00A0))
+        odd = asked(0x20, word(0x3508) + word(0x00A0))
+
+        self.assertEqual(read_word(odd), read_word(plain) | 1)
+
+    def test_it_is_the_plain_multiply_with_one_bit_forced(self):
+        for first, second in ((0x756B, 0xE445), (0xE425, 0xBCB8), (0x3508, 0x00A0)):
+            plain = read_word(asked(0x00, word(first) + word(second)))
+            odd = read_word(asked(0x20, word(first) + word(second)))
+
+            self.assertEqual(odd, dsp1.signed16((plain | 1) & 0xFFFF), (first, second))
+
+
 class MultiplyTest(unittest.TestCase):
     def test_a_product_comes_back_scaled_down_by_a_word(self):
         chip = asked(0x00, word(0x4000) + word(0x4000))
@@ -99,11 +120,11 @@ class MultiplyTest(unittest.TestCase):
 
         self.assertEqual(read_word(chip), -0x2000)
 
-    def test_the_other_multiply_answers_one_more_than_the_first(self):
+    def test_the_other_multiply_forces_its_answer_odd_rather_than_adding_one(self):
         first = asked(0x00, word(0x1234) + word(0x4321))
         second = asked(0x20, word(0x1234) + word(0x4321))
 
-        self.assertEqual(read_word(second), read_word(first) + 1)
+        self.assertEqual(read_word(second), read_word(first) | 1)
 
 
 class TrigonometryTest(unittest.TestCase):

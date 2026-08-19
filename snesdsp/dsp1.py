@@ -476,7 +476,7 @@ class Dsp1:
             0x1C: self._turn_in_space,
             0x1D: lambda: self._to_matrix(1),
             0x1F: self._dump_data_rom,
-            0x20: self._multiply_and_add_one,
+            0x20: self._multiply_forcing_odd,
             0x21: lambda: self._set_matrix(2),
             0x23: lambda: self._from_matrix(2),
             0x28: self._length,
@@ -489,8 +489,17 @@ class Dsp1:
     def _multiply(self):
         self._put([scaled(self.take_word(0), self.take_word(2))])
 
-    def _multiply_and_add_one(self):
-        self._put([signed16(scaled(self.take_word(0), self.take_word(2)) + 1)])
+    def _multiply_forcing_odd(self):
+        """The plain multiply with its lowest bit forced on, not incremented.
+
+        The two are the same whenever the product narrows to an even number and
+        differ every time it narrows to an odd one, which is why an increment
+        agrees with the part about half the time and looks close enough to keep.
+        Running the microcode itself settled it: over 150 inputs on both masks of
+        this chip, the answer always has its low bit set and is otherwise the
+        plain multiply, on every single one.
+        """
+        self._put([signed16(scaled(self.take_word(0), self.take_word(2)) | 1)])
 
     def _inverse(self):
         coefficient, exponent = inverse(self.take_word(0), self.take_word(2))

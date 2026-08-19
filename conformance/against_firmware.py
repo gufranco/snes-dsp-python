@@ -3,17 +3,31 @@
 This is the strongest evidence in this repository, and the only kind that does not
 rest on somebody's reading of what the chips do. The models are behavioural: each
 command is written down as a function of its arguments, and they were settled
-against another emulator's implementation of those same commands. Two people can
-read a part the same way and be wrong together.
+against another implementation of those same commands. Two people can read a part
+the same way and be wrong together.
 
 Running the microcode removes that. The `processor` submodule is a model of the
 NEC uPD7725 settled instruction by instruction on its own, and the program it runs
-is the one the cartridge actually carries. Feed both sides the same bytes and
-either the answers match or one of them is wrong about the part.
+is the one the cartridge actually carries.
+
+The console side had to be read out of the cartridges to get this far, and it is
+not what a reader would guess. Two things matter and both came from the games'
+own driver routines:
+
+**The console does not wait between writes.** Pilotwings writes the command and
+then all three arguments back to back, with no status poll between them, and
+Dungeon Master writes five bytes and reads four without polling at all. The part
+keeps up because it runs several instructions per console access. A driver that
+waits for the part's attention bit before every byte, which is the obvious thing
+to write, makes the part assemble its arguments into different words entirely.
+
+**How wide a transfer is comes from the console, not the part.** Pilotwings sets
+its accumulator to eight bits for the command and sixteen for each argument, so
+one instruction moves one byte or two. Dungeon Master keeps eight bits throughout.
+That is why the two parts need different drivers for the same silicon.
 
 No program is carried here. Images are supplied by whoever owns them, identified
-by digest before use, and every check reports as skipped when none is present
-rather than as passed.
+by digest before use, and every check reports as skipped when none is present.
 
 Usage:
     python3 conformance/against_firmware.py [--sequences N]
@@ -34,7 +48,18 @@ ROOT = Path(__file__).resolve().parent.parent
 
 PROCESSOR = ROOT / "processor"
 
-SETTLE_LIMIT = 200000
+SETTLE_LIMIT = 400000
+
+BOOT_STEPS = 20000
+
+GAP = 32
+"""Instructions the part runs between one console access and the next.
+
+Measured rather than chosen. Below eight the part cannot keep up and its answers
+change with the number; from eight upwards every value gives the same answer, so
+the model of the console is no longer racing it. Real hardware clocks the part at
+around twice the bus, which is comfortably inside that range.
+"""
 
 DEFAULT_SEQUENCES = 60
 
@@ -54,16 +79,15 @@ WHY_NOT_FIRMWARE = (
 )
 
 DUMPS_THE_MASK_ROM = 0x1F
-"""One command in two of the microcodes hands back its own table rather than an answer."""
+"""One command hands back the part's own table rather than an answer."""
 
 NOT_SWEPT_YET = ("dsp3",)
-"""The DSP-3 is driven differently and is not swept here yet.
+"""The DSP-3 is clocked rather than commanded, and needs a driver of its own.
 
-Where the others take a command and a fixed count of argument bytes, it is a state
-machine clocked a word at a time with its own status register, and how many words
-each command consumes depends on what the earlier ones left behind. Driving it
-from a table of argument counts would produce disagreements that are the driver's
-fault rather than the model's, which is worse than not running it."""
+Where the others take a command and a known count of arguments, it is a state
+machine advanced a word at a time with its own status register, and how many
+words each command consumes depends on what the earlier ones left behind.
+"""
 
 
 class Usage(Exception):
@@ -94,8 +118,7 @@ def images():
     found = _processor()
     if found is None:
         return {}
-    firmware = found[0]
-    return {identity.part: (identity, path) for identity, path in firmware.search()}
+    return {identity.part: (identity, path) for identity, path in found[0].search()}
 
 
 def why_not():
@@ -106,89 +129,134 @@ def why_not():
     return None
 
 
-def silicon(part):
-    """The part itself: its own processor, carrying its own program."""
-    firmware, models, ports = _processor()
-    identity, path = images()[part]
-    chip = models.describe(identity.processor).build(fill=0)
-    firmware.load(chip, path.read_bytes(), identity)
-    console = ports.Console(chip)
-    console.settle(SETTLE_LIMIT)
-    return console
+class Console:
+    """The console's side of the port, paced the way a cartridge paces it."""
 
+    def __init__(self, part):
+        firmware, models, ports = _processor()
+        identity, path = images()[part]
+        self.ports = ports
+        self.chip = models.describe(identity.processor).build(fill=0)
+        firmware.load(self.chip, path.read_bytes(), identity)
+        self.console = ports.Console(self.chip)
+        self.step(BOOT_STEPS)
 
-def from_silicon(part, stream, reads):
-    """What the microcode answered, at both alignments the handshake allows.
+    def step(self, count=GAP):
+        for _ in range(count):
+            self.chip.step()
 
-    A part raises its attention bit once more after the last argument on some
-    commands and not on others, and the data register still holds the byte the
-    console just wrote. So the first byte offered is sometimes the console's own
-    coming back, and both alignments are returned rather than one being assumed.
-    """
-    _, _, ports = _processor()
-    console = silicon(part)
-    console.send_bytes(stream, SETTLE_LIMIT)
-    console.settle(SETTLE_LIMIT)
-    first = console.read(ports.DATA)
-    rest = console.take_bytes(reads, SETTLE_LIMIT)
-    return bytes([first, *rest[:-1]]), bytes(rest)
+    def settle(self):
+        for _ in range(SETTLE_LIMIT):
+            if self.chip.registers.sr.rqm:
+                return True
+            self.chip.step()
+        return False
 
+    def put(self, value, width):
+        self.console.write(self.ports.DATA, value & 0xFF)
+        self.step()
+        if width == 2:
+            self.console.write(self.ports.DATA, value >> 8 & 0xFF)
+            self.step()
 
-def agreeing(answered, wanted):
-    """Whether either alignment of what the part offered is the answer wanted."""
-    return any(offered == wanted for offered in answered)
-
-
-def _counted(chip, stream):
-    for byte in stream:
-        chip.write(byte)
-    return bytes(chip.read() for _ in range(chip.out_count))
+    def get(self, width):
+        low = self.console.read(self.ports.DATA)
+        self.step()
+        if width == 1:
+            return low
+        high = self.console.read(self.ports.DATA)
+        self.step()
+        return low | high << 8
 
 
 class Microcode:
-    """One model here, the commands it answers, and how its answers are taken."""
+    """One model here, the commands it answers, and how its console drives it."""
 
-    def __init__(self, part, commands, arguments, collect, build=None):
+    def __init__(self, part, commands, arguments, argument_width, answer_width, polls, build=None):
         self.part = part
         self.commands = tuple(sorted(commands))
         self.arguments = arguments
-        self.collect = collect
+        self.argument_width = argument_width
+        self.answer_width = answer_width
+        self.polls = polls
         self.build = build or {}
 
     def streams(self, chance, count):
+        limit = 1 << (8 * self.argument_width)
         for _ in range(count):
             command = chance.choice(self.commands)
-            wanted = self.arguments[command]
-            yield [command, *(chance.randrange(256) for _ in range(wanted))]
+            wanted = self.arguments[command] // self.argument_width
+            yield command, [chance.randrange(limit) for _ in range(wanted)]
 
-    def model(self):
-        return snesdsp.Dsp(model=self.part, **self.build)
+    def from_model(self, command, arguments):
+        chip = snesdsp.Dsp(model=self.part, **self.build)
+        chip.write(command)
+        for value in arguments:
+            chip.write(value & 0xFF)
+            if self.argument_width == 2:
+                chip.write(value >> 8 & 0xFF)
+        answers = chip.out_count // self.answer_width
+        return [
+            chip.read() if self.answer_width == 1 else chip.read() | chip.read() << 8
+            for _ in range(answers)
+        ]
 
-
-def _words(table, skip=()):
-    return {command: words * 2 for command, words in table.items() if command not in skip}
+    def from_silicon(self, command, arguments, answers):
+        console = Console(self.part)
+        console.put(command, 1)
+        for value in arguments:
+            console.put(value, self.argument_width)
+        found = []
+        for _ in range(answers):
+            if self.polls:
+                console.settle()
+            found.append(console.get(self.answer_width))
+        return found
 
 
 MICROCODES = (
     Microcode(
         part="dsp1",
         commands=set(projector.WORDS_WANTED) - {DUMPS_THE_MASK_ROM},
-        arguments=_words(projector.WORDS_WANTED, skip={DUMPS_THE_MASK_ROM}),
-        collect=_counted,
+        arguments={
+            command: words * 2
+            for command, words in projector.WORDS_WANTED.items()
+            if command != DUMPS_THE_MASK_ROM
+        },
+        argument_width=2,
+        answer_width=2,
+        polls=True,
+        build={"fill": 0},
+    ),
+    Microcode(
+        part="dsp1b",
+        commands=set(projector.WORDS_WANTED) - {DUMPS_THE_MASK_ROM},
+        arguments={
+            command: words * 2
+            for command, words in projector.WORDS_WANTED.items()
+            if command != DUMPS_THE_MASK_ROM
+        },
+        argument_width=2,
+        answer_width=2,
+        polls=True,
         build={"fill": 0},
     ),
     Microcode(
         part="dsp2",
         commands=set(tiles.HEADER_INPUT),
         arguments=dict(tiles.HEADER_INPUT),
-        collect=_counted,
+        argument_width=1,
+        answer_width=1,
+        polls=False,
         build={"fill": 0},
     ),
     Microcode(
         part="dsp4",
         commands=set(road.INPUT_COUNTS),
         arguments=dict(road.INPUT_COUNTS),
-        collect=_counted,
+        argument_width=1,
+        answer_width=1,
+        polls=False,
         build={"fill": 0},
     ),
 )
@@ -198,16 +266,16 @@ def compare(microcode, sequences):
     """Every stream through both, and the ones where they parted."""
     found = {"asked": 0, "agreed": 0, "differed": []}
 
-    for stream in microcode.streams(rolls(), sequences):
-        wanted = microcode.collect(microcode.model(), stream)
+    for command, arguments in microcode.streams(rolls(), sequences):
+        wanted = microcode.from_model(command, arguments)
         if not wanted:
             continue
         found["asked"] += 1
-        answered = from_silicon(microcode.part, stream, len(wanted))
-        if agreeing(answered, wanted):
+        got = microcode.from_silicon(command, arguments, len(wanted))
+        if got == wanted:
             found["agreed"] += 1
         else:
-            found["differed"].append((stream[0], wanted.hex(), answered[1].hex()))
+            found["differed"].append((command, arguments, wanted, got))
 
     return found
 
@@ -222,6 +290,7 @@ def lines_for(sequences):
         f"  {part}: not swept here, because it is clocked rather than commanded"
         for part in NOT_SWEPT_YET
     ]
+
     for microcode in MICROCODES:
         if microcode.part not in present:
             lines.append(f"  {microcode.part}: skipped, no image for it is here")
@@ -232,8 +301,8 @@ def lines_for(sequences):
             f" match the microcode itself"
         )
         lines.extend(
-            f"    command {command:#04x}: model {wanted}, part {offered}"
-            for command, wanted, offered in found["differed"][:REPORT_LIMIT]
+            f"    command {command:#04x}: model {[hex(v) for v in wanted]}, part {[hex(v) for v in got]}"
+            for command, _, wanted, got in found["differed"][:REPORT_LIMIT]
         )
     return tuple(lines)
 
