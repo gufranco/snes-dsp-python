@@ -1,6 +1,6 @@
 """A model of the DSP-2, the coprocessor in one SNES cartridge.
 
-    from dsp2 import Dsp
+    from snesdsp import Dsp
 
     chip = Dsp(model="dsp2")
     chip.write(0x09)

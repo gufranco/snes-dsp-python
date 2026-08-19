@@ -1,4 +1,4 @@
-#ifndef DSP2_REF_MEMMAP_H
-#define DSP2_REF_MEMMAP_H
+#ifndef DSPREF_MEMMAP_H
+#define DSPREF_MEMMAP_H
 #include "port.h"
 #endif

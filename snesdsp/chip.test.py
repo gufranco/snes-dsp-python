@@ -4,8 +4,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from dsp2 import chip as unit
-from dsp2.memory import PARAMETER_BYTES
+from snesdsp import chip as unit
+from snesdsp.memory import PARAMETER_BYTES
 
 
 def clean_chip():

@@ -29,7 +29,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from dsp2 import Chip
+from snesdsp import Chip
 
 WRITE = "w"
 READ = "r"

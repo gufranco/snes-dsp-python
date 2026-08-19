@@ -4,8 +4,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import dsp2
-from dsp2 import models
+import snesdsp
+from snesdsp import models
 
 
 class CatalogueTest(unittest.TestCase):
@@ -41,17 +41,17 @@ class CatalogueTest(unittest.TestCase):
 
 class BuildTest(unittest.TestCase):
     def test_a_chip_is_built_from_its_model_name(self):
-        self.assertEqual(dsp2.Dsp(model="dsp2", fill=0).model, "dsp2")
+        self.assertEqual(snesdsp.Dsp(model="dsp2", fill=0).model, "dsp2")
 
     def test_the_default_model_is_the_one_the_cartridge_carries(self):
-        self.assertEqual(dsp2.Dsp(fill=0).model, "dsp2")
+        self.assertEqual(snesdsp.Dsp(fill=0).model, "dsp2")
 
     def test_options_reach_the_chip_that_gets_built(self):
-        self.assertEqual(dsp2.Dsp(model="dsp2", fill=0xAA).parameter_ram[0], 0xAA)
+        self.assertEqual(snesdsp.Dsp(model="dsp2", fill=0xAA).parameter_ram[0], 0xAA)
 
     def test_a_model_the_package_does_not_have_is_refused_at_construction(self):
         with self.assertRaises(models.UnknownModelError):
-            dsp2.Dsp(model="dsp4")
+            snesdsp.Dsp(model="dsp4")
 
 
 if __name__ == "__main__":

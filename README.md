@@ -7,7 +7,7 @@
 <br>
 <br>
 
-[![CI](https://github.com/gufranco/snes-dsp2-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/snes-dsp2-python/actions/workflows/ci.yml)
+[![CI](https://github.com/gufranco/snes-dsp-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/snes-dsp-python/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-100%25%20statement%20%2B%20branch-brightgreen)](#tests)
 [![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
@@ -20,13 +20,13 @@
   <a href="#how-this-is-proved">How this is proved</a> &nbsp;|&nbsp;
   <a href="#the-corpus-and-why-it-can-ship">Why the corpus is legal</a> &nbsp;|&nbsp;
   <a href="#the-rescale-reads-past-its-own-data">The rescale</a> &nbsp;|&nbsp;
-  <a href="https://github.com/gufranco/snes-dsp2-python/issues">Issues</a>
+  <a href="https://github.com/gufranco/snes-dsp-python/issues">Issues</a>
 </p>
 
 **6** commands · **1** exhaustively proved bit permutation · shapes from **1,804,133** real cartridge commands · **257** corpus exchanges against the reference chip · **95,784** reads agreeing with snes9x · **100%** statement and branch coverage
 
 ```python
-from dsp2 import Dsp
+from snesdsp import Dsp
 
 chip = Dsp(model="dsp2")
 
@@ -100,8 +100,8 @@ No recording ships here, and none ever will. The bytes this chip returns are the
 ### Setup
 
 ```bash
-git clone https://github.com/gufranco/snes-dsp2-python.git
-cd snes-dsp2-python
+git clone https://github.com/gufranco/snes-dsp-python.git
+cd snes-dsp-python
 ```
 
 ### Verify
@@ -133,7 +133,7 @@ A command the chip does not recognise produces nothing and leaves it ready for t
 This is the behaviour that makes the parameter RAM part of the model rather than an implementation detail.
 
 ```python
-from dsp2 import Dsp
+from snesdsp import Dsp
 
 chip = Dsp(fill=0)
 chip.parameter_ram[60] = 0xAB
@@ -215,7 +215,7 @@ That profile stays on your machine, and so does any corpus built from it with re
 ## Models
 
 ```python
-from dsp2 import Dsp, describe
+from snesdsp import Dsp, describe
 
 describe("dsp-2").parameter_bytes
 # 512
@@ -254,10 +254,10 @@ for f in dsp2/*.test.py conformance/*.test.py; do python3 "$f"; done
 
 | Suite | File | Covers |
 |:------|:-----|:-------|
-| Commands | [`dsp2/commands.test.py`](dsp2/commands.test.py) | The exhaustive bit permutation, the merge rule, the product, the mirror, the rescale walk |
-| Protocol | [`dsp2/chip.test.py`](dsp2/chip.test.py) | Command framing, lengths, payload assembly, result readout, unknown commands |
-| Parameter RAM | [`dsp2/memory.test.py`](dsp2/memory.test.py) | Scrambled fills, explicit zeroes, seeding, size |
-| Models | [`dsp2/models.test.py`](dsp2/models.test.py) | The catalogue, alias matching, construction |
+| Commands | [`snesdsp/commands.test.py`](snesdsp/commands.test.py) | The exhaustive bit permutation, the merge rule, the product, the mirror, the rescale walk |
+| Protocol | [`snesdsp/chip.test.py`](snesdsp/chip.test.py) | Command framing, lengths, payload assembly, result readout, unknown commands |
+| Parameter RAM | [`snesdsp/memory.test.py`](snesdsp/memory.test.py) | Scrambled fills, explicit zeroes, seeding, size |
+| Models | [`snesdsp/models.test.py`](snesdsp/models.test.py) | The catalogue, alias matching, construction |
 | Corpus harness | [`conformance/corpus.test.py`](conformance/corpus.test.py) | Replay, comparison, reporting, the command line |
 
 Coverage is enforced at 100% of statements and branches by [`pyproject.toml`](pyproject.toml), so a new branch without a test fails the build rather than quietly lowering the number.
@@ -283,7 +283,7 @@ Coverage is enforced at 100% of statements and branches by [`pyproject.toml`](py
 
 ## Versioning
 
-This project follows [Semantic Versioning](https://semver.org/), and every release is tagged from `main` by semantic-release. See [releases](https://github.com/gufranco/snes-dsp2-python/releases).
+This project follows [Semantic Versioning](https://semver.org/), and every release is tagged from `main` by semantic-release. See [releases](https://github.com/gufranco/snes-dsp-python/releases).
 
 > [!IMPORTANT]
 > While the version is below `1.0.0`, the public interface may change on a minor release. Pin an exact version if that matters to you.

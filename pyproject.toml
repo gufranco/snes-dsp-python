@@ -3,14 +3,14 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dsp2"
+name = "snesdsp"
 description = "A model of the SNES DSP-2 coprocessor, with its commands proved rather than sampled."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.12"
 dynamic = ["version"]
-keywords = ["dsp2", "upd77c25", "snes", "emulator", "coprocessor", "conformance"]
+keywords = ["dsp1", "dsp2", "dsp3", "dsp4", "upd77c25", "snes", "emulator", "coprocessor"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
@@ -21,18 +21,18 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/gufranco/snes-dsp2-python"
-Source = "https://github.com/gufranco/snes-dsp2-python"
-Issues = "https://github.com/gufranco/snes-dsp2-python/issues"
+Homepage = "https://github.com/gufranco/snes-dsp-python"
+Source = "https://github.com/gufranco/snes-dsp-python"
+Issues = "https://github.com/gufranco/snes-dsp-python/issues"
 
 [tool.setuptools]
-packages = ["dsp2"]
+packages = ["snesdsp"]
 
 [tool.setuptools.dynamic]
-version = { attr = "dsp2.version.VERSION" }
+version = { attr = "snesdsp.version.VERSION" }
 
 [tool.setuptools.exclude-package-data]
-dsp2 = ["*.test.py"]
+snesdsp = ["*.test.py"]
 
 [tool.ruff]
 target-version = "py312"
@@ -67,7 +67,7 @@ ignore = [
 "conformance/*.py" = ["T201"]
 
 [tool.coverage.run]
-source = ["dsp2", "conformance"]
+source = ["snesdsp", "conformance"]
 branch = true
 
 [tool.coverage.report]

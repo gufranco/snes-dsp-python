@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from dsp2.memory import PARAMETER_BYTES, UNSET_SEED, parameter_ram, scramble
+from snesdsp.memory import PARAMETER_BYTES, UNSET_SEED, parameter_ram, scramble
 
 
 class ScrambleTest(unittest.TestCase):
