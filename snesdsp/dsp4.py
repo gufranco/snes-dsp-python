@@ -248,6 +248,8 @@ class Dsp4:
         self.view_xofs2 = 0
         self.view_yofs2 = 0
         self.view_yofsenv = 0
+        self.view_dx = 0
+        self.view_dy = 0
         self.view_turnoff_x = 0
         self.view_turnoff_dx = 0
         self.viewport_bottom = 0
@@ -390,6 +392,7 @@ class Dsp4:
             0x000A: self._angles,
             0x000B: self._set_sprite,
             0x0001: self._project_track,
+            0x0007: self._project_turnoff,
             0x0011: self._map_across,
         }
 
@@ -602,6 +605,86 @@ class Dsp4:
             self.poly_ptr = signed16(self.poly_ptr - 4)
             scroll_x = signed32(scroll_x + step_x)
             scroll_y = signed32(scroll_y + step_y)
+
+    def _project_turnoff(self):
+        """The road that leaves the road, drawn the same way and steered differently.
+
+        Where the main projection works out its own path from a world position
+        and a curvature, this one is told where the branch is on screen and how
+        fast it moves, and simply walks it. So it carries a step rather than a
+        velocity, and the step is scaled by the distance once when it arrives
+        rather than every stretch.
+        """
+        self.world_y = self.take_dword()
+        self.poly_bottom = self.take_word()
+        self.poly_top = self.take_word()
+        self.poly_cx_right = self.take_word()
+        self.viewport_bottom = self.take_word()
+        self.world_x = self.take_dword()
+        self.poly_cx_left = self.take_word()
+        self.poly_ptr = self.take_word()
+        self.world_yofs = self.take_word()
+        self.distance = self.take_word()
+        self._take_branch_shape()
+
+        self.view_x1 = signed16(self.world_x >> 16)
+        self.view_y1 = signed16(self.world_y >> 16)
+        self.view_xofs1 = self.view_x1
+        self.view_yofs1 = self.world_yofs
+        self.poly_raster = self.poly_bottom
+
+        while True:
+            self._turnoff_one_stretch()
+
+            yield 2
+            self.distance = self.take_word()
+            if self.distance == END_OF_TRACK:
+                return
+
+            yield 10
+            self._take_branch_shape()
+
+    def _take_branch_shape(self):
+        """Where the branch sits on screen and how fast it moves across it."""
+        self.view_y2 = self.take_word()
+        self.view_dy = signed16((self.take_word() * self.distance) >> 15)
+        self.view_x2 = self.take_word()
+        self.view_dx = signed16((self.take_word() * self.distance) >> 15)
+        self.view_yofsenv = self.take_word()
+
+    def _turnoff_one_stretch(self):
+        """One stretch of the branch, and the lines it fills."""
+        self.view_x2 = signed16(self.view_x2 + self.view_dx)
+        self.view_y2 = signed16(self.view_y2 + self.view_dy)
+        self.view_xofs2 = self.view_x2
+        self.view_yofs2 = signed16(
+            ((self.world_yofs * self.distance) >> 15) + self.poly_bottom - self.view_y2
+        )
+
+        self.clear_output()
+        self.put_word(self.view_x2)
+        self.put_word(self.view_y2)
+
+        self.segments = signed16(self.view_y1 - self.view_y2)
+        if self.view_y2 >= self.poly_raster:
+            self.segments = 0
+        else:
+            self.poly_raster = self.view_y2
+
+        if self.view_y2 < self.poly_top:
+            self.segments = 0
+            if self.view_y1 >= self.poly_top:
+                self.segments = signed16(self.view_y1 - self.poly_top)
+
+        self.put_word(self.segments)
+
+        if self.segments:
+            self._rasterise()
+
+        self.view_x1 = self.view_x2
+        self.view_y1 = self.view_y2
+        self.view_xofs1 = self.view_xofs2
+        self.view_yofs1 = self.view_yofs2
 
     def _map_across(self):
         fourth = self.take_word()

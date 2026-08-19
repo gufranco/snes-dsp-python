@@ -238,19 +238,20 @@ chip = Dsp(model="dsp2")
 | `dsp2` | modelled | 512 bytes | Six commands. Aliases: `dsp-2`, `upd77c25dsp2`, `nintendodsp2` |
 | `dsp1` | reference driver only | 512 bytes | Fixed-point 3D maths, used by the most cartridges |
 | `dsp3` | reference driver only | n/a | Compression and a coordinate walk |
-| `dsp4` | protocol, seven commands, and the single-player track projection | 512 bytes | The remaining seven renderers are not modelled yet and raise rather than answering |
+| `dsp4` | protocol, seven commands, and both single-player projections | 512 bytes | The remaining six renderers are not modelled yet and raise rather than answering |
 
 The reference driver in [`conformance/ref/`](conformance/ref/) already carries all
 four and takes the chip as an argument, so adding one is a matter of writing the
 model and the corpus rather than of building the evidence first.
 
 The DSP-4 is part way through that. Its port protocol, the seven commands that
-finish in one go, and the single-player track projection are modelled. The
-projection is the interesting one: it draws as much road as its input describes,
-then stops and asks for the next stretch, resuming where it left off. Eighty
-roads and 369,280 bytes of output agree with the reference.
+finish in one go, and both single-player projections are modelled: the track
+itself, and the road that leaves it. Those two are the interesting ones. Each
+draws as much road as its input describes, then stops and asks for the next
+stretch, resuming where it left off. Eighty roads and 369,280 bytes of output
+agree with the reference.
 
-Its other seven renderers are not here yet. Asking for one raises, because a
+Its other six renderers are not here yet. Asking for one raises, because a
 command that quietly produced nothing would be indistinguishable from a road with
 no segments in it, which is a real answer this chip can give.
 

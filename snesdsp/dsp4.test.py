@@ -230,15 +230,15 @@ class UnfinishedTest(unittest.TestCase):
 
     def test_and_the_refusal_names_the_command(self):
         chip = dsp4.Dsp4()
-        chip.write(0x07)
+        chip.write(0x09)
         chip.write(0x00)
-        for _ in range(33):
+        for _ in range(13):
             chip.write(0)
 
         with self.assertRaises(dsp4.Unimplemented) as caught:
             chip.write(0)
 
-        self.assertIn("0x0007", str(caught.exception))
+        self.assertIn("0x0009", str(caught.exception))
 
 
 class TrackTest(unittest.TestCase):
@@ -342,6 +342,132 @@ class TrackTest(unittest.TestCase):
         chip.write(0x10)
 
         self.assertEqual(chip.in_count, 6)
+
+
+class TurnoffTest(unittest.TestCase):
+    """The road that leaves the road, which is told where it is rather than working it out."""
+
+    def branch(self):
+        chip = dsp4.Dsp4()
+        chip.write(0x07)
+        chip.write(0x00)
+        for value in (
+            word(0)
+            + word(0x0002)
+            + word(200)
+            + word(10)
+            + word(0)
+            + word(100)
+            + word(0)
+            + word(0x0001)
+            + word(0)
+            + word(0x0100)
+            + word(0)
+            + word(0x2000)
+            + word(120)
+            + word(2)
+            + word(40)
+            + word(16)
+            + word(0)
+        ):
+            chip.write(value)
+        return chip
+
+    def test_it_asks_for_the_next_distance_once_it_has_drawn_a_stretch(self):
+        chip = self.branch()
+
+        self.assertEqual(chip.in_count, 2)
+
+    def test_it_produces_a_header_before_any_scanline(self):
+        chip = self.branch()
+
+        self.assertGreaterEqual(chip.out_count, 6)
+
+    def test_the_next_stretch_wants_ten_bytes_rather_than_six(self):
+        chip = self.branch()
+        for _ in range(chip.out_count):
+            chip.read()
+
+        chip.write(0x00)
+        chip.write(0x10)
+
+        self.assertEqual(chip.in_count, 10)
+
+    def test_the_end_marker_finishes_the_command(self):
+        chip = self.branch()
+        for _ in range(chip.out_count):
+            chip.read()
+
+        chip.write(0x00)
+        chip.write(0x80)
+
+        self.assertTrue(chip.waiting)
+
+    def test_a_branch_above_the_window_draws_nothing_below_it(self):
+        chip = dsp4.Dsp4()
+        chip.write(0x07)
+        chip.write(0x00)
+        for value in (
+            word(0)
+            + word(0x0002)
+            + word(200)
+            + word(100)
+            + word(0)
+            + word(100)
+            + word(0)
+            + word(0x0001)
+            + word(0)
+            + word(0x0100)
+            + word(0)
+            + word(0x2000)
+            + word(0)
+            + word(0)
+            + word(40)
+            + word(0)
+            + word(0)
+        ):
+            chip.write(value)
+
+        self.assertEqual(chip.segments, 0)
+
+    def test_and_flushes_what_is_left_when_the_viewer_is_still_below_it(self):
+        chip = dsp4.Dsp4()
+        chip.write(0x07)
+        chip.write(0x00)
+        for value in (
+            word(0)
+            + word(0x0096)
+            + word(200)
+            + word(100)
+            + word(0)
+            + word(100)
+            + word(0)
+            + word(0x0001)
+            + word(0)
+            + word(0x0100)
+            + word(0)
+            + word(0x2000)
+            + word(0)
+            + word(0)
+            + word(40)
+            + word(0)
+            + word(0)
+        ):
+            chip.write(value)
+
+        self.assertGreater(chip.segments, 0)
+
+    def test_the_branch_moves_across_the_screen_by_its_own_step(self):
+        chip = self.branch()
+        first = chip.view_x2
+        for _ in range(chip.out_count):
+            chip.read()
+        chip.write(0x00)
+        chip.write(0x10)
+        for value in word(120) + word(2) + word(40) + word(16) + word(0):
+            chip.write(value)
+
+        self.assertNotEqual(chip.view_x2, first)
 
 
 class ReadingTest(unittest.TestCase):
