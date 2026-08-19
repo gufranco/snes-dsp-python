@@ -353,6 +353,9 @@ Coverage is enforced at 100% of statements and branches by [`pyproject.toml`](py
 | `python3 -m coverage report` | Coverage, which fails below 100% |
 | `python3 conformance/corpus.py <file>` | Replay a DSP-2 recording |
 | `python3 conformance/dsp4corpus.py` | Replay the 140 recorded roads |
+| `pnpm install` | Install the JSON formatter |
+| `pnpm run format` | Format every JSON file |
+| `pnpm run format:check` | Check that every JSON file is formatted, which CI also does |
 
 ## Project conventions
 
@@ -361,6 +364,7 @@ Coverage is enforced at 100% of statements and branches by [`pyproject.toml`](py
 | Commit format | [Conventional Commits](https://www.conventionalcommits.org/) |
 | Releases | [semantic-release](https://semantic-release.gitbook.io/), driven by [`.releaserc.json`](.releaserc.json) |
 | Lint and format | [Ruff](https://docs.astral.sh/ruff/), configured in [`pyproject.toml`](pyproject.toml) |
+| JSON formatting | [Prettier](https://prettier.io/), configured in [`.prettierrc.json`](.prettierrc.json). Re-recording a corpus writes it plainly; `pnpm run format` settles it |
 | Test layout | `<module>.test.py` beside the module it covers |
 
 ## Versioning
