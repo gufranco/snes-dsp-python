@@ -25,7 +25,7 @@
   <a href="https://github.com/gufranco/snes-dsp-python/issues">Issues</a>
 </p>
 
-**4** microcodes carried by the reference driver · **3** modelled · **34** commands · **7** renderers that suspend and resume · **1** exhaustively proved bit permutation · shapes from **1,804,133** real cartridge commands · **839,132** bytes agreeing with snes9x · **362** tests · **100%** statement and branch coverage
+**4** microcodes · **4** modelled · **65** commands · **7** renderers that suspend and resume · **1** exhaustively proved bit permutation · shapes from **1,804,133** real cartridge commands · **851,132** bytes agreeing with snes9x · **470** tests · **100%** statement and branch coverage
 
 ```python
 from snesdsp import Dsp
@@ -252,10 +252,10 @@ chip = Dsp(model="dsp2")
 
 | Model | State | Parameter RAM | Notes |
 |:------|:------|:-------------:|:------|
+| `dsp1` | modelled | 512 bytes | Thirty one commands: a camera, three attitude matrices, and the projections that ask questions of them. Aliases: `dsp-1`, `dsp1a`, `dsp1b`, `upd77c25dsp1`, `nintendodsp1` |
 | `dsp2` | modelled | 512 bytes | Six commands. Aliases: `dsp-2`, `upd77c25dsp2`, `nintendodsp2` |
 | `dsp3` | modelled | none | Thirteen commands: a decompressor, a bit plane converter, a hex grid search. Aliases: `dsp-3`, `upd77c25dsp3`, `nintendodsp3` |
 | `dsp4` | modelled | 512 bytes | Fifteen commands, seven of them renderers. Aliases: `dsp-4`, `upd77c25dsp4`, `nintendodsp4` |
-| `dsp1` | reference driver only | 512 bytes | Fixed-point 3D maths, used by the most cartridges |
 
 The reference driver in [`conformance/ref/`](conformance/ref/) already carries all
 four and takes the chip as an argument, so adding one is a matter of writing the
@@ -315,16 +315,63 @@ step early hands back the second word instead of the first zero. And the ring
 walk hands the caller a cell, takes two single-byte answers about it, and hands
 over the next, which is a protocol nothing in the command names.
 
-Only the modelled three are in the catalogue, because only those have a corpus
-behind them. A model with nothing behind it would make its fidelity a claim rather
-than a measurement, and listing one would be worse than the gap.
+All four are in the catalogue now, because all four have a corpus behind them. A
+model with nothing behind it would make its fidelity a claim rather than a
+measurement, and listing one would have been worse than the gap.
 
-### The mask ROM neither chip ships
+### The DSP-1
+
+The microcode that shipped in the most cartridges, and the only one in the family
+whose commands are recognisably arithmetic. A camera is placed, three attitude
+matrices are built, and everything else asks questions of them: where a point in
+the world lands on the screen, where a screen position lands in the world, how
+long a vector is, where an aircraft ends up after a moment of flying the way it
+is pointed.
+
+None of it is floating point. Every value is a word with a separate exponent, and
+the chip carries its own normalise, its own reciprocal and its own saturating
+narrow to move between them. Four defects in this model came from getting those
+wrong rather than from getting the geometry wrong, and each was found by the
+reference rather than by reading:
+
+- The reciprocal narrows its Newton step to a word one operation too early, which
+  is invisible until the value being inverted is large enough for the product to
+  matter.
+- The wide normalise takes the complement of an already complemented value on its
+  second pass, so an exponent past fifteen comes back shifted the wrong way.
+- The three squared sums wrap at thirty two bits, and a vector long enough to wrap
+  them makes the length command read its own square root curve backwards, landing
+  in the reciprocal seeds instead. That is not a bug to be guarded against; it is
+  what the chip does, and the model reproduces it.
+- The size a projected thing comes back at continues the exponent the reciprocal
+  produced. Starting it from nothing halves every answer, and nothing else about
+  the projection changes.
+
+### The mask ROM no chip here ships
 
 The DSP-1 and DSP-3 each carry a thousand-entry table masked into the silicon.
 That is chip content rather than a description of behaviour, so it is not here.
 
-For the DSP-3 that costs almost nothing. Only one part of its table is reachable
+For the DSP-1 that turned out to cost nothing at all. Everything its arithmetic
+reads out of that table is stated as the formula that produces it, and every one
+of them agrees exactly with the table across its whole range:
+
+| What the chip reads | What it is |
+|:--------------------|:-----------|
+| A sine over 256 steps | The truncation of a word times the sine, clamped where one does not fit |
+| The line it interpolates along between two steps | Not pi. Three hundred and fifty five over one hundred and thirteen |
+| A ladder of powers of two, read from four different offsets | One run that rises to a saturated word and falls away again |
+| One hundred and twenty eight reciprocal seeds | One over where the value sits, rounded |
+| A square root curve | A scale a hair above a saturated word, times the root of the step |
+
+Two things are carried as measurements rather than as formulas, and both are
+numbers rather than expression: five coefficients of the curve that bends the
+horizon once the view is clipped, and one word of the ladder that holds one where
+the run says sixteen. That last is what a slip in transcribing a table looks
+like, it is reachable from three different directions, and it is reproduced
+rather than quietly corrected.
+
+For the DSP-3 the cost is almost as small. Only one part of its table is reachable
 by anything other than the command that dumps it: six pairs naming the neighbours
 of a cell on a hex grid, which are the grid's own geometry. Those are modelled.
 The dump command answers from a table you supply and refuses clearly when you
@@ -354,6 +401,8 @@ snesdsp/
   __init__.py     the package, and the model chosen at construction
   chip.py         the DSP-2 port protocol, and nothing else
   commands.py     what each DSP-2 command computes, as functions of their input
+  dsp1.py         the DSP-1: its port, its fixed point arithmetic, and its projections
+  dsp1tables.py   what its arithmetic reads out of the mask ROM, as the formulas
   dsp3.py         the DSP-3: its port, its decompressor, and its grid search
   dsp4.py         the DSP-4: its port, its commands, and its seven renderers
   memory.py       parameter RAM that holds what it held
@@ -362,6 +411,7 @@ snesdsp/
 conformance/
   corpus.py       replays a DSP-2 recording you captured yourself
   capture.py      turns a recording into shapes, and never into payload
+  dsp1corpus.py   whole sessions generated from seeds, answered by the reference
   dsp3corpus.py   whole sessions generated from seeds, answered by the reference
   dsp4corpus.py   roads generated from seeds, answered by the reference
   ref/            the driver around the four reference implementations
@@ -381,9 +431,12 @@ for f in snesdsp/*.test.py conformance/*.test.py; do python3 "$f"; done
 | Protocol | [`snesdsp/chip.test.py`](snesdsp/chip.test.py) | Command framing, lengths, payload assembly, result readout, unknown commands |
 | Parameter RAM | [`snesdsp/memory.test.py`](snesdsp/memory.test.py) | Scrambled fills, explicit zeroes, seeding, size |
 | Models | [`snesdsp/models.test.py`](snesdsp/models.test.py) | The catalogue, alias matching, construction |
+| DSP-1 | [`snesdsp/dsp1.test.py`](snesdsp/dsp1.test.py) | The port, the thirty one commands, the reciprocal, the normalise, the saturating narrow |
+| DSP-1 tables | [`snesdsp/dsp1tables.test.py`](snesdsp/dsp1tables.test.py) | Every formula against the range the chip reads, including the word that breaks the run |
 | DSP-3 | [`snesdsp/dsp3.test.py`](snesdsp/dsp3.test.py) | The port and its half-word toggle, the thirteen commands, the decompressor, the ring walk, the cost spread |
 | DSP-4 | [`snesdsp/dsp4.test.py`](snesdsp/dsp4.test.py) | The port, the eight single-shot commands, all seven renderers, the sprite packer, the reciprocal table |
 | Corpus harness | [`conformance/corpus.test.py`](conformance/corpus.test.py) | Replay, comparison, reporting, the command line |
+| DSP-1 corpus | [`conformance/dsp1corpus.test.py`](conformance/dsp1corpus.test.py) | Session generation, recording, replay against 80 recorded sessions |
 | DSP-3 corpus | [`conformance/dsp3corpus.test.py`](conformance/dsp3corpus.test.py) | Session generation, the table-overrun exclusion, recording, replay against 60 recorded sessions |
 | DSP-4 corpus | [`conformance/dsp4corpus.test.py`](conformance/dsp4corpus.test.py) | Case generation, the buffer-overrun exclusion, recording, replay against 140 recorded roads |
 
@@ -398,7 +451,8 @@ Coverage is enforced at 100% of statements and branches by [`pyproject.toml`](py
 | `python3 -m coverage run -a <file>` | Run one test file under coverage |
 | `python3 -m coverage report` | Coverage, which fails below 100% |
 | `python3 conformance/corpus.py <file>` | Replay a DSP-2 recording |
-| `python3 conformance/dsp3corpus.py` | Replay the 60 recorded sessions |
+| `python3 conformance/dsp1corpus.py` | Replay the 80 recorded DSP-1 sessions |
+| `python3 conformance/dsp3corpus.py` | Replay the 60 recorded DSP-3 sessions |
 | `python3 conformance/dsp4corpus.py` | Replay the 140 recorded roads |
 | `pnpm install` | Install the JSON formatter |
 | `pnpm run format` | Format every JSON file |

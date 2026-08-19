@@ -1,0 +1,326 @@
+{
+  "comment": "Sessions generated from seeds and answered by the chip's own reference. The command that hands back the chip's mask ROM is not among them.",
+  "reference": "snes9x dsp1.cpp, through conformance/ref",
+  "cases": [
+    {
+      "seed": 0,
+      "expected": "AAAy36ogOORX+8T4Bkg7JpwceSWaVLAdmghBGboc3gBH7/vtlxTKN0H+S/ZNAKkiciYwBgYFd/baAtjt2wytAHv/fgGv/Pf12Pcr/dMDORjJ/gv8yPsk62YJpAJZsysyAnkAAAABRgCC/BUDTwBGAIL8FQNPAEYAgvwVA08ARgCD/BUDTwBGAIP8FQNPAEUAg/wUA08A"
+    },
+    {
+      "seed": 1,
+      "expected": "H/Ye+7/QTwjl+pUZwLinPbj5MfoE9pIodyxfFuJR4Bc+5kfPZfB5KQr3SgpDAAnROgjz/RPsXPXzASj/DAB1BLLy1g519rPnjOb9ABH+4ADK/ofw6fil/z4AK/GI48hKSdsAAAAB0//HAnn/Fv/T/8YCef8W/9P/xgJ5/xb/0//FAnn/Fv/T/8UCef8W/9P/xQJ5/xb/"
+    },
+    {
+      "seed": 2,
+      "expected": "9wSJ/qT+YrmLDI8EKlznFZABzvxE7yAdSwYtHYk/4gM8Qq/PTiaxPE0WAPhCAIX+OLy4+lj+hfgUCZYIsRASBQgKPvyNCjEGFeme8vL9PBJc8CgNKQYuBZT6OfTEKp7RbjMAAAABdAie8TsDmiVvCKfxOQOCJWoIsPE3A2olZAi68TUDUiVfCMPxMwM5JV8Iw/EzAzkl"
+    },
+    {
+      "seed": 3,
+      "expected": "cPsJA5ZRqjmgCJD68LYJ+7UiAQaaPi0uJQLjJQhCYi8LB2v+oub97gDxgDn0/jdQ/zg69+H7NAoc8Jr2OQWb+6D4LQXm/i8Hbvo2/qD0ruviAL//GgX8/av9nP8n6xA0Hf0AAAABZgtMdeTlNzNrC0x11+U3M3ELTHXL5TczdgtMdb/lNzN7C0x1s+U3M4ELTHWm5Tcz"
+    },
+    {
+      "seed": 4,
+      "expected": "fwDzAgtMCVPS/l//GKKx8LgHXR4USU0bFOnJ8LcXSB/l3vQAZgK6DvcFvvrV/2lDFT4pANn/Tf5HAzH95gZ0DRIRDv7g/goA8ADp/7T8rwGoBWXn9Pf2/7EDLvnLXKufYCYAAAABmwqBKMn4lTubCoEoyfiVO5sKgSjJ+JU7mwqBKMn4lTubCoEoyfiVO58KjijH+Kg7"
+    },
+    {
+      "seed": 5,
+      "expected": "AABD2UjV5QVO/fr+wHInF54Zj/OKw1Eibz7rBbcYIRz5FsIPpwKLHjn6cPxeAAnUawWc70D9bfDDANcDUAKrB40M8fa48/Hu3gOy/ukDcPwE/QHzbAlG8K3+qPtHXcn2R/QAAAABiQC+AxT9sACJAL4DFP2wAIkAvgMV/bAAiQC+AxX9sACJAL4DFf2wAIkAvQMV/bAA"
+    },
+    {
+      "seed": 6,
+      "expected": "AABjBkb8Ih6M/4XxfF0sKIUaMx/m7wEg0viJIoA/yx4u/0L/kOGaFrP+DQRqAEv+Ph6LCtQAnuyk6G70wwXBELAESfasATbvfQDjCicU4xad/jUX0xGP+HUYSQ4FBoA3yBoAAAABFQC/H/HhFgAVAL8f8eEWABUAvx/x4RYAFQDPH+LhFgAVAM8f4uEWABUAzx/i4RYA"
+    },
+    {
+      "seed": 7,
+      "expected": "AABJ9+Xk3Ai6AeDxLLBqB6McX/eExSwVGQKfA4BQyjiCCbrzm/e/9RoMSyAC/5nklgim9s3xjARFAqX/2/2rB+4AdfjNAJDr7ffA/J8AnQIwAyQKygLME5YBHgUv2HIOYNkAAAAB8weqDCj0gQjxB6cMK/R/CPEHpwwr9H8I8QenDCv0fwjvB6MML/R8CO8Howwv9HwI"
+    },
+    {
+      "seed": 8,
+      "expected": "EAZfBD4qnxcY/gf+fmWVxrXm+Odc0eIdTQmD8gE4ORwPOCnSoAx15yL2bvWe/3oo5RZaBhX68QL//5/2SgBS/qEMJwX+BoH+H/uV/08ANgZd7q3/1vmlBzT1Oveq2DdQkQoAAAABWwDyBrv+9gFbAPMGuv72AVsA8wa6/vYBWwDzBrr+9gFbAPUGuv72AVsA9Qa6/vYB"
+    },
+    {
+      "seed": 9,
+      "expected": "AAAimyAMCwKAACUO9rvNL7vjpea6uj4C6Bvl+R5M3tDvMwfKEAe7vs0ItOWlAEsMNAFrEHX2w/ZXBxkIOOwjFt4BS/Dj8qP/EQMYCccItu3L+Fb55P9x+S3wchBbpo4fLggAAAABBwC5AE3/BwAHALkATf8HAAcAuQBN/wcABwC5AE3/BwAHALkATf8HAAcAuQBN/wcA"
+    },
+    {
+      "seed": 10,
+      "expected": "AAAh/qzcb/wC+ooL/nbd/Grt1PrQHfIOXSDdLZIjRw1INLwDjwMT4SoBzAAEAN/crPwUEFr4jety//MAWwFqBRD+GPr8/KPpefl4/ysAJwJbAu7+Y/mQBLH+ZALLcUspJ7oAAAABuSPhDOP1fy25I+EM4/V/LZ8j1wzq9V0thSPODPH1Pi2FI84M8fU+LWsjxAz59Rwt"
+    },
+    {
+      "seed": 11,
+      "expected": "AAAIX2ce5SAhCzkSXLVRD9kCxcfK4P4sueJiQps6NP8+C8wbOy6mAhcG8PAuAGQeECBxCV8UrBbL/AQPgPzm/DH93Ayw8Wr5avJl+gPxg/dw/4bzMf33HLoISwTJeZsqSkUAAAABFwNAAcb+JwMXA0ABxv4nAxcDQAHG/icDFwNAAcb+JwMXA0ABxv4nAxcDQAHG/icD"
+    },
+    {
+      "seed": 12,
+      "expected": "AACA/rgKcgSFBOMGop0/O1sGcv2yuaEvzB0JDbBQas2+1YgBkyi8IVv/Yf8GACELCATr/NT8gPq7C2kGcRih/kb8rQYY/BT5Fve8ACTyw/6j/Kb/yfzw9vf3+wIx7SFQRiMAAAAB7gsJ8OQLAxDmCxXw3Av4D+YLFfDcC/gP3Qsh8NIL7A/UCyzwygvhD9QLLPDKC+EP"
+    },
+    {
+      "seed": 13,
+      "expected": "AAD/f10Hn/q6CEgBrFVMHCMBCxs0pVctTRApEvRHde/a8c8rne+BG/iJqPf6/FwIpvuSBqv9mvIk+wEUAfRQ9X/w9vlf7VwAzwdxDE4FQBLg928FMAVd/Rn9iwteIUMFAM4AAAAB8AF3AYn+8gHwAXcBif7yAfABdwGJ/vIB8AF3AYn+8gHwAXcBif7yAfABdwGJ/vIB"
+    },
+    {
+      "seed": 14,
+      "expected": "5/i7/WGUEs7Y/m0KJqeEIGriaM/ytZoP0RqTBns+DzduGW3Xw+ad6ND55vHU/7qXGNB0Crr6wwxxCY/7V/63IJQJ3/+P/YsDaRQ+9xcEjQN1ACDygxYfBiMLEfh29bZBQhoAAAABswjoUUbuNCizCOhRRu40KK8IwlFO7iIoqwieUVbuECirCJ5RVu4QKKcIe1Fd7v4n"
+    },
+    {
+      "seed": 15,
+      "expected": "hwKeAbSMmtum/SP/5kdh1Nz5RDQK5iU7Li27FPhCAsdN7Gj/80eP92jjYAFWAAqDX9tk8x/z2O96/yL//AMNAHYEYQinDa7mLBRNADAN6QK18//3uQbaA+YGiP4bJQ4QdicAAAABAf+GzVMJoPoB/4bNUwmg+gH/hs1TCaD6Af9gzVoJnPoB/2DNWgmc+gD/Pc1hCZj6"
+    },
+    {
+      "seed": 16,
+      "expected": "AACOCNAHiiTy/0wLIrgKyWYLLAOiPpAIwxcLMEtEHQVVHzctjQDEJMTWXNajAJsHXCQ4C9YLPPGZAW//WwBn+lDwjuKM+sn97gg7AFD+2/84E8D2Qw219Uv/vvduuNCyp/UAAAAB7gFI+I4FrwLuAUf4jwWvAu4BR/iPBa8C7wFF+JAFsALvAUP4kQWwAu8BQ/iRBbAC"
+    },
+    {
+      "seed": 17,
+      "expected": "AAAFDrwSghMDAwgCvGJmIEHyYQb66Tw1H/tJJ8RTHgSwJ9U27PO896j3G/8fAI4TohPTDG329gHO8+8Dce+7CcfwbvO2CMDlouTlFZfxcRWA8tgHTgkG68v+FgVxz2YNqbMAAAABbQa5/icBGAdtBrn+JwEYB20Guf4nARgHbga5/icBGgduBrn+JwEaB28Guf4nARsH"
+    },
+    {
+      "seed": 18,
+      "expected": "vwRs/nlh7xFSACj9qkGwCCkBqAOKqBUvWhGACtpZ4vhs7mvuPdk3OcH/+PsxAL5hBxIS95ALrAnKBFn5fALA+TEI9/ZgA7vtcwem/fQHGgRLDlT96ASYBB8F3gc9q+b/52YAAAABtwCpzN8KZAO3AMPM2QpiA7cA3MzUCmADtgD1zM8KXwO2AA7NygpdA7YAJ83FClsD"
+    },
+    {
+      "seed": 19,
+      "expected": "AACUkiXoteugBVsEdopgy3zd6eKa8XA1WxPkEUw0+O8t2utMfQ34wIDs0t97/4XpZeor8Lb4MApNBwj2KgRsEFYMkOl3DH/wtwM3BjMF4QQF+9D6YhihDpUAXwmEttb3K7cAAAABrAId/t4BsgKsAh3+3gGyAqwCHf7eAbICrAId/t4BsgKsAh3+3gGyAqwCHf7eAbIC"
+    },
+    {
+      "seed": 20,
+      "expected": "AAByjvTpTfoQAe8CnGWb0j7MGSLyZs8bfAxpD1UakNUm2OzXML3LDyIWogKcAIHpbvmJCP3/gg0mCeQFP/pIAYf1eAFDCQLwGAJZ9xkGIQVO9qsCtf3x+VcRYQpjlebR5mcAAAABdwEKAgX+gwF3AQoCBf6DAXcBCgIF/oMBdwEKAgX+gwF3AQoCBf6DAXcBCgIF/oMB"
+    },
+    {
+      "seed": 21,
+      "expected": "wQAM/RP7rpv/DsvqXmWkwFvpKhS8JFUsSTRXJ/9PktRS7ukIaUQHAsQPXD1QAdH8TKk+/iIGS/3Q/p0K9Pbs537wGQqb+kj4GvkT/IIAMwn673QEWPhn/XgHO/YC6207+D0AAAABgQsDDoH9m0CBCwMOgf2bQIELAw6B/ZtAfgv+DYH9hkB+C/4Ngf2GQH4L/g2B/YZA"
+    },
+    {
+      "seed": 22,
+      "expected": "0AG2/qGu75a9+u0ERqtx7BcB2gFqgrEOcwSzETwsQwY/17G79xHz5a3uV92T/5Cu1JZS+ZsGu/5p+CwOfwHO7bj2E/FKABj90Pg18djzE/WB9jf79wT7Ben03O6FOYeUSxIAAAABqg8HWnDvLVWhD9ZZeu/+VJoPp1mC79JUkQ92WYvvo1SJD0dZlO93VIAPFlmc70lU"
+    },
+    {
+      "seed": 23,
+      "expected": "AADG1mv1Adic6kP15KX6NmbyWfESh1AOvPaiLngfpe3my1rspftCC8QUAyWdAOr0etg5/wMCr/8VATIByAAe/mABQQCv/WX+gvx6ATUBtQAXBF4C3gKb/fsA5fuEoNEmJnUAAAABjwIi/bMCtwKPAiL9swK3Ao8CIv2zArcCjwIj/bMCtwKPAiP9swK3Ao8CI/2zArcC"
+    },
+    {
+      "seed": 24,
+      "expected": "AABJDbsV5f/7Bqz/VKlW7LDwwtUsYrwfEBV283ULA8ZwLu4Yg/mhwT8FewIsAKEVnv9Q+RMIj/k+/An4Af6d82ELyQMxEkYFNQ9G9P7+uf7L+agFjgZk6RbwQvNJMIRyO9MAAAABUgMZAif+yANTAxkCJ/7IA1MDGQIn/sgDUwMaAif+yQNTAxoCJ/7JA1QDGgIm/skD"
+    },
+    {
+      "seed": 25,
+      "expected": "AAATDhKybQM1DFoLREvs1aH2ovP6HfEqjCVqKF1SYzNHxtTYzeM2MZoH3vIcAKqwXgH4GEQGMBJQDNj0kAbj+Tb5VfviD0b5IAf088r1EwZSBJoBmQy/7j7xmga/n4AOrTMAAAABvQH08l0KMAK9AfLyXwowAr0B8vJfCjACvQHw8mAKMAK9AfDyYAowAr0B7/JhCjAC"
+    },
+    {
+      "seed": 26,
+      "expected": "AACaLe0Fuf6IBgD8YnPB4j0C6seCkL8hRkmTIWgzTgzxzcXrJSANuScJYhN/AHQE9v68D/fpmfHz9icYHgmRC9wL/erS8+AQJ/wqEY0FcQH3C/8W1PlrDuwAcRAJMmkxWQsAAAABCAH+Ajj9HQEIAf4COP0dAQgB/gI4/R0BCAH+Ajj9HQEIAf4COP0dAQgB/gI4/R0B"
+    },
+    {
+      "seed": 27,
+      "expected": "AAABgCMdXAOi8AvvclR85qjFcQQSSm4KvwcvI2M75jJW2hDuw+SZOBbPyC01AcogZAYu9scC6vcXDbkbl+7m+jb82AhjE+HtMRMR9yDnOApqDRr0mQqoCbX4OAN0dwFGpTQAAAABgQMMCPP3gQOBAwwI8/eBA4EDDAjz94EDgQMMCPP3gQOBAwwI8/eBA4EDDAjz94ED"
+    },
+    {
+      "seed": 28,
+      "expected": "eBAc+79C+ON58gT8WJO4+m36oDIM+C0lQg/IGG9OyTaJ1kcfwQPeGDbnTuTn/qlC6+NX+hr+V/7FBokJxxLi/Tz/fv/CA1j97AjtG/8EGAZYACoAnQHOAiXXiwA2YyDlWIoAAAABtwAR8iEDMgO3ABHyIQMyA7cAFPIgAzEDtwAX8iADMQO3ABryHwMwA7cAHPIeAy8D"
+    },
+    {
+      "seed": 29,
+      "expected": "AAAxJAXkZSMPCpr7IlFhFAP3OC5Klnsd1/SPH0BOY+29FfwNL8zTHNsVnwFJAJXiKyX68DcGPPyM/3n/6AEB9akGYu9O8SnxuAZfAJP+rwCl+7YGOuCX9bQAre3UgTRdlSIAAAABtgPy/usAQgS2A/L+6wBCBLYD8v7rAEIEtgPy/usAQwS2A/L+6wBDBLYD8v7rAEME"
+    },
+    {
+      "seed": 30,
+      "expected": "AAABgMQE4eLQ9nLu+qVp+FPc4+40gssoDgkaFe5Dsfc968bwOjfiEd70TPVDANYF0uPD/vsB+P/7ANn/GAFa/3D/CgHN/eD/2gC5Arr/T/5v/9IAAP+wAGH/Kf8KCBocnKYAAAABUAKYAGf/UAJQApgAZ/9QAlACmABn/1ACUAKYAGf/UAJQApgAZ/9QAlACmABn/1AC"
+    },
+    {
+      "seed": 31,
+      "expected": "+QACAfOQ9g6XCgXuaFczDWH6xhPyEhQRDv2UFUgrnsj335wkDQcoDBIFbgHw/72PVQwo/O0KBQWEB/H1kRQT/FP8ywIB/MP5QvWsFlj0ZQOrAgkG5fwLCSb4yvjpvmcXqc0AAAABdA5TeyTMYCKIDlN73stgIogOU3vey2Aimw5Te5jLYCKbDlN7mMtgIpsOU3uYy2Ai"
+    },
+    {
+      "seed": 32,
+      "expected": "ewKb+njzE4xU+hH/iFElK03vbeMEs5UljCnRGNVUOCD74Kf5yxNB0/IAEOzo/lzzroxB+0Lw7+N4D3v2LQNJ+6j8JvYp+xPsEAnmCSnzoPvF8lIA+A9X9CQAR/oDBLVB0DQAAAABzwQSAqH/ABvPBBICof8AG84EEgKh//sazQQSAqH/9hrMBBECof/xGssEEQKh/+wa"
+    },
+    {
+      "seed": 33,
+      "expected": "AADPMB7qWv8VAU0Ahq1E7vz91fYgPmYgZwDJGiE1oiUTFm7D5A4a2VgE1wMdAK3qaP7eEND3Pgz1CTv4ZP0XBCgMAv3lEloKU+lBBUoFRfs/A+vzcwRCFlD6x/tmiw5n28oAAAABJQEy96AIKwElATL3oAgrASUBMvegCCsBJQEy96AIKwElATL3oAgrASUBMfehCCsB"
+    },
+    {
+      "seed": 34,
+      "expected": "AABDwB3zfN7QD1IA6qsB3VP4Tg2SjdoLQRTxIBY5YCoDB6DRHQeREQCfAYD3+ljz8902B0P2WARm/Yr7sAGS/UD9CP0/AWYCPvSF/vsGSQOoA/z83vnm9Rn6iQKsJTI1CPUAAAABcwCfAp79fwBzAJ8Cnv1/AHMAnwKe/X8AcwCfAp79fwBzAJ8Cnv1/AHMAnwKe/X8A"
+    },
+    {
+      "seed": 35,
+      "expected": "AAABgJkHCOyq8XYLXq8HOif+HBPEl6wXFygDBDdVAjF7DwgUNwc+P84NsQREAPEGkOtA9zMLyQHf+KH/zOu+AP4A9f8S9tL16Qaq8XnvNggN/8gBuP+O8+8BYf/+IfPj8g4AAAAB1QFEAbz+2AHVAUQBvP7YAdUBRAG8/tgB1QFEAbz+2AHVAUQBvP7YAdUBRAG8/tgB"
+    },
+    {
+      "seed": 36,
+      "expected": "AABhMl/g7QLYBoH/onAXFcjSVyyUR08E9gTXLR82bcmP/MUQ8Op4PSoMiPZMAPDgUwMsAF4AygCD9jHuHxPlAT8Bou2j/0D/5QCt+mYITwXu/wj07f3P///tMP2+SPESR2EAAAABFgM1/60AmAMWAzX/rQCYAxYDNf+tAJgDFgM1/60AmAMWAzX/rQCYAxYDNf+tAJgD"
+    },
+    {
+      "seed": 37,
+      "expected": "AABC7HPRZc/XChEE1F/gL/o9lPySYHcXKx7pNSg3OgMv80n2DeY1QWQL0xY3AIjTfdH57Z8BgA1BD9EDyACw9BsJE/0Z+tIDwvtJ+4P30O6CBr7+AQPWAxv8b/F9QVAn8lkAAAAB2wJ2BHL8lwPbAnUEcvyWA9sCdQRy/JYD2wJ1BHP8lgPbAnQEc/yVA9sCdARz/JUD"
+    },
+    {
+      "seed": 38,
+      "expected": "AADm9JgD0w7w/cfrurY80FsB/cIs9KUquSpZGW8zZAOkOh/Q1fFn+I0CGP4TAIMK+hPi7ZL1C/wt/xEPdwe2A40JPvr4AWvrVvjm/jz/pRSh9Uv8YP+sC4UEQQNMbvCSYV4AAAABWQfNEV/v3gdZB80RX+/eB1kHzRFf794HVwfIEWPv3AdXB8gRY+/cB1UHxRFm79oH"
+    },
+    {
+      "seed": 39,
+      "expected": "rAXEAaICQBDp9HAAxKg1yrwBzgAsJdY3ASSo9JNHLgZvDhdG/9ZXDrTnNAdBAJ4CQhDA/sfwewaxAKj94QfT/3QCbv3+EKrwgv1+/K8CCv3t/4UCCwGaBW34Cf3dSQ3U1+0AAAABOQCi/ksADAE5AKH+SwANATkAoP5LAA4BOQCg/ksADgE5AKD+SwAOAToAn/5MAA8B"
+    },
+    {
+      "seed": 40,
+      "expected": "AAAQT3rm7wef/fj/mmrxGgzfLhd07Kka8wJHFWFOnALT6DUGs9y27MoSTn/qAQboyQZ8+8cDuxXFAcPi//eI+bIHMPReEwz/qxbZFlTrT/h1BcADwBJuEdMCoAPi2fz7Cp0AAAABZwFsAJr/ggFnAWwAmv+CAWcBbACa/4IBZwFsAJr/ggFnAWwAmv+CAWcBbACa/4IB"
+    },
+    {
+      "seed": 41,
+      "expected": "AAABgK0Lhfyu/7MMRLZE0UP+b/cMaEUw3h8ZHDo8fj+z5nnD9PNn5ADWAYAu80oM/ftL77X+ewpZ8MzvWRdBB072C9nNB5IEQg9rCJzklgxjA9X7nR4Z7orslQnJH1nTiPwAAAAB9wDj/hsB+AD3AOP+GwH4APcA4/4bAfgA9wDj/hsB+AD3AOP+GwH4APcA4/4bAfgA"
+    },
+    {
+      "seed": 42,
+      "expected": "AABuGF3xjfX7/H38dKfT09QDBAbM2QcJdBTd9JVGGexOF8TUFgwoBE8FaPtcAELw5vTb9fnzV/bK/xv/HQCc/NEDLgQk5p0A0wByAHUAKQB/BdH3Rv+wBj3/HwaTERHhkvAAAAABTgdSAcL+xQdOB1IBwv7FB04HUgHC/sUHTwdSAcH+xgdPB1IBwf7GB08HUgHB/sYH"
+    },
+    {
+      "seed": 43,
+      "expected": "BwDx++umobGgB7/0Dr773Jr9tu5iC8Eu4SKtBSpShyklIHggKAWr1ID6rAGs/2qn+7F2Emr12u/s+7wEdBzWAGQCygC4ADbyavfC+zUYtgOkAET85gDx8Uzuof8Stx8908QAAAAB5gKfF837VhDlApkXz/tREOUCmRfP+1EQ5QKZF8/7URDlApkXz/tREOUCmRfP+1EQ"
+    },
+    {
+      "seed": 44,
+      "expected": "AAD/fyTxBfd8AW4GFqfJJxgCnRCMv9ciwP+MFnMzLUFOH6cbBgv6MWDm+C6LANjxvfer/QH/yftS96LoAgrf7QUCCfQm/WYAk/1f7UcLphCf8wIfbP7kAvIIZwi41soF0hUAAAABpgCHA3v8pwCmAIcDe/ynAKYAhwN7/KcApgCHA3v8pwCmAIcDe/ynAKYAhwN7/KcA"
+    },
+    {
+      "seed": 45,
+      "expected": "AABBDAAMpC3qAQTwLmV0GzQ0Y+wyFKgFewfLKPc7Ivfm31w4tvXqNCsKmgKp/+gMvSz2Af783/7Z+pz2Ngf2Aq39dgqDAQAD5AAcCGP9ZfpFGEHzgRhQ/UIBfOr6DzLrenMAAAABmwLX/aABdgOcAtb9oAF3A5wC1v2gAXcDnALW/aABdwOcAtb9oAF4A5wC1v2gAXgD"
+    },
+    {
+      "seed": 46,
+      "expected": "UP4qBX4hfk5TEbL6fkjQyBTQKBiaon4boxIoHSdFLB1VCOsZbNc47zXpUexfAMggm02t6cnu9PRpARntqvpi/CABHAQq7WviAebO+YD1ZQVs/EX8D/1GDQDuLgQD/zHjH30AAAAByAivBs7+SDHKCLAGzv5SMcwIsgbO/lwxzgizBs7+ZjHQCLQGzf5xMdEItgbN/nkx"
+    },
+    {
+      "seed": 47,
+      "expected": "AAABgIHoTBb3BSEAWknOzsUClMg2GLIROhHUDJYn0hXUNHwBZQmNA2D+/38Q+fXn9xbc+Y/42v5E5WD5kPfJAAQAaAACBUIJCu5u9vLrqxS9//AAzACm/GQCxf87bV0dKDAAAAABXwJr/pQBXwJfAmv+lAFfAl8Ca/6UAV8CXwJr/pQBXwJfAmv+lAFfAl8Ca/6UAV8C"
+    },
+    {
+      "seed": 48,
+      "expected": "AAB+YwwGtvcWFGnv8LtMwB4Qf+WaXxsYFhCpFuc5yiKnEkDP+OQ0IZzzmPxEALMDSfo1+TQbvwB0DWAB9SNsA+T/wvht/RQHLSJQBfsLKhYm/S362gTkBroC8gYuQ7j/7VEAAAABXgPV/iUBbANeA9X+JQFsA14D1f4lAWwDXgPV/iUBbANeA9X+JQFsA18D1f4lAWwD"
+    },
+    {
+      "seed": 49,
+      "expected": "DAmhAquAgzouCz8E3Gz92YrYdg1SWWkSlyWB9yhIzzjT3UgMiNInPCkIMwDR/+WCSjuq/R7/MPwcFVsMxfHkAXkAdv/jA8D7JwWkCEXiIhJSAPL+mABVAzT8IP+eaUC4fWYAAAABognQeSTiTCeiCdB5JOJMJ6cJ0HkU4kwnqwnQeQXiTCexCdB59eFMJ7YJ0Hnm4Uwn"
+    },
+    {
+      "seed": 50,
+      "expected": "AADq3WYNrAys+EHx/Klw6l/HeeUkpVAERQpnHrI16ggXTVkZwOnY0ikAxwYTAHUNCQyLAGn9BwDg/3cUDATk/2z/tvR6/FYAOP4D91/ugBs2CtD92go6/ZrtOfaKYXoTPhkAAAABcQE+93oIfQFxAT73egh9AXEBPvd6CH0BcQFA93kIfQFxAUD3eQh9AXEBQPd5CH0B"
+    },
+    {
+      "seed": 51,
+      "expected": "bATx+lL5xYGl5mb8glAD4jfybftkGXkuZT3ECJJAUQ8IRNYYnk2IHAQNtgy7/4v/oWHg28IQcQBA+nT59vVOBd7z2wynG4/hVvyS9Ij23PlP7DwKbvgL/gwPn/fbtsmFpXAAAAABpwkK/loAlDWnCQr+WgCUNacJCv5aAJQ1pwkK/loAlDWnCQr+WgCUNacJCv5aAJQ1"
+    },
+    {
+      "seed": 52,
+      "expected": "AAD2D4W/FjgD6S8BGKhrFBL7b//IAjU98CVpFwIy5duwGfEharHt/owKHQBUAFbAIzcj/OkXO/VS+M704QbrEQL61wqoAAbwLgPmC5YDcepL+2H0af4q+drw5xOcveanK/AAAAABlQQd9+sG4wWWBBz37AbkBZcEG/fsBuQFlwQb9+wG5AWXBBr37QblBZcEGfftBuYF"
+    },
+    {
+      "seed": 53,
+      "expected": "AAAL6vsMqgXv+lgBdLgb5k8QrSNIF1QXuxXcArpNNeyc7JAVRLNVIJwAN/83AOQM7AVlBC3sWQEjAa0Gs/1vA5cC0vus9MUF1OmFCk4Faf8P+w8BVPq4EyX+pwMkWmgg/iAAAAABGQPE/JUC3wMZA8T8lQLfAxkDxfyVAt4DGAPF/JUC3gMYA8X8lQLeAxgDxfyVAt0D"
+    },
+    {
+      "seed": 54,
+      "expected": "jRmh+CJvTv+mA7r+mJco/WsIUi8yGjA8PiZRHGY6QPlQ2iUhLk6g/HwfmfYJAfBtOv/WEjf3AQI8CprtVP6K8T0X1PxU7dD5Pv5H7wTypfo/D1T2pum5+LLvtOsxomFmPN0AAAABNACE9KEC5gA0AIb0oQLmADQAhvShAuYANACH9KAC5gA0AIn0oALmADQAivSfAuYA"
+    },
+    {
+      "seed": 55,
+      "expected": "vRnpBgdgeytWAh79AK8T37sE8dZ2YxUS4Q+IHtglce2vNFktou28GkAXVEQN/4heeSrf/GL+HwIzCGIAlPltBZUAbwII/XQCvv47FTj/nP4w+XDz0Q/lAGf92f5G5TkmyDgAAAABUgPsGO35oQ1SA+wY7fmhDVID8Bjs+aMNUwPzGOv5pQ1TA/cY6vmnDVQD+xjp+akN"
+    },
+    {
+      "seed": 56,
+      "expected": "AAD/fw3f8R3b8HX5MLVGEH4LS/gKaPoVbyJhAGtd5kTpDwQftzjj3cjqAYCSAnrdYB/F/nb+KQDpF/7vbwbeCNT/rPVZ/d8D4f308Cr6GPEs5Ur6mv+W/xzu8e3thYvk+6YAAAAB3QK8+kEF3gLdArz6QQXeAt0CvPpBBd4C3QK8+kEF3gLdArz6QQXeAt0CvPpBBd4C"
+    },
+    {
+      "seed": 57,
+      "expected": "z/3w/XoUseEVBqD5qlrAErIabwwq5fgAnAVmK1lCnx9PRTPg4utGEEn4u/fH/5EUkOHP8Mrzjg979ywL0fMK/VIAv//s6qgHYAYy+xILjfar/qAA2/4rEg4IAwO2Px0v7dUAAAABIQDq+ukAugAhAOr66QC6ACEA6vrpALoAIQDs+ukAugAhAOz66QC6ACEA7PrpALoA"
+    },
+    {
+      "seed": 58,
+      "expected": "AAClKCUF7h/Z4uP7YqU4zIwVGxXEwkckWRpr9T85u//H1II6edrVCOQBpAmhAK8EESDCBWr+vAEW/Cfm9APu+nrnhAQ3A6P9LgblG2AD3uVGFc/pP+8jAkLjC/VvvPGaHYgAAAABqAIQASj/WgOoAhABKP9aA6gCEAEo/1oDqAIQASj/WgOoAhABKP9aA6gCEAEo/1oD"
+    },
+    {
+      "seed": 59,
+      "expected": "9/sMBbbqKxvV8t4BKp17NPAO19csiawOVhSMIJQZke8r4rvx4h9V7YD14xh8ALLqMRtVFKb20htWCPERAfMs/O716RTn84TnSPzi3/gS7fYC9qQV+wCX5QD9Gv+gjTDqBRQAAAABBAD3/wEAGgAEAPf/AQAaAAQA9/8BABoABAD3/wEAGgAEAPf/AQAaAAQA9/8BABoA"
+    },
+    {
+      "seed": 60,
+      "expected": "AAD13j0V9vEWBRn9rLBJJMT3o+eqynkcShE0B55IH/xsy9PvAwcvxBA6gsfPAYcUo/Ao6QEQI/qmA8AbH/9EAWj+4QBg+nnu0BEO6oXyWfT+AnoA3f1wBI7rMgHpekrWpgcAAAABIgBW/koBLAAiAFb+SgEsACIAVv5KASwAIgBW/koBLAAiAFb+SgEsACIAVv5KASwA"
+    },
+    {
+      "seed": 61,
+      "expected": "AABWzqf6ke8iBvv1MFcaG8jkORx0Gi0GEhpaG3c8kAMUqyXs6EUq4mz9LxE+AFD8Mu6+CeL23AwYBdDwmvt8B8YDn/laFtYCgfn2CV0MT/5cAFf4FAvQ+/AHMwCB5n8x8bsAAAABVwfm/QwChwdXB+b9DAKHB1cH5v0MAocHVwfm/QwChgdXB+b9DAKGB1cH5v0MAoYH"
+    },
+    {
+      "seed": 62,
+      "expected": "AAABgJEA/eXX5b77DJXaK14X8izw4Q8o8QVtEl0Z8jjn5yvQl9/XJ4YR/O9WAJUA7eYpBhQG5xawAsj+rgTl8nT5Stph4V8QYe3TAg0FLf6hAEfwQvT1FBT9x/yM+R/2lNkAAAABfADM/SkCfgB8AMz9KQJ+AHwAzP0pAn4AfADM/SkCfgB8AMz9KQJ+AHwAzP0pAn4A"
+    },
+    {
+      "seed": 63,
+      "expected": "AAAtEFD1KAlT/aUJ6qV60tAZ3wsIWoIo1TCICSxPsPFVN3AOKMO+D+f9wQIiALr2nQrEAfQLl/tlBCD5gQF1A6UDBvllCiADevknAkP7t/os9oABTv2d8m0EkABzf0r15UwAAAABKgF78soLVgEqAXvyygtWASoBevLLC1YBKgF68ssLVgEqAXjyzAtWASoBePLMC1YB"
+    },
+    {
+      "seed": 64,
+      "expected": "AAD/f5X1TBRSF5YFrrFt/J4CnfKSjWo8TwYSEV9RzcjB+wbRM+yX/sIfPAFpAIz1BBN2Aaz/mAFhBBb34vllBifnqAD8Ao/+YPum9N4A5/ZfFL7xiRAz/177FB12QvRFZboAAAABUQAHAwD9UgBRAAcDAP1SAFEABwMA/VIAUQAHAwD9UgBRAAcDAP1SAFEABwMA/VIA"
+    },
+    {
+      "seed": 65,
+      "expected": "AACK9YwfBPuF/1YFUIDsHMQRSBgolWQHTiVjI55A9z3Y7eYs0CL1J1YNzhqPABIjxvbq+H0CRAVp/kHuEuRjABYHB/89+hfy4AkYC/cA7xTY+3v73Qe47ynkuQOcNcGl2QMAAAABKQMy9ZII/AMoAzP1kAj7AygDNPWPCPsDKAM09Y8I+wMnAzb1jQj6AycDNvWNCPoD"
+    },
+    {
+      "seed": 66,
+      "expected": "TeiU+eJ32+9xDyj4dkLpOTQLVf96yb8bwh0SD4s9aQ+mJEvDeS371V/eLx6xAF513/D//Mf0NvBw9swAQvIm/yjzqusF9MfqRhqmDkP7Ef3GD7z71vzxDGrwe+uiCeKl0fIAAAABCgOR3I4IlgwJA5bcjAiUDAkDm9yMCJIMCAOg3IsIkAwIA6DciwiQDAgDp9yJCI4M"
+    },
+    {
+      "seed": 67,
+      "expected": "XfjK/dNW6uLU/7LtZGzmFjzuWRk87tIxGyKoPlpAbQL76SMvWkZh8XIIj+/G/+xagOB2E/YK7+ipA9D3RQOd/4UFXPvZCRMe2epH+4UIYgYR/XUCB/4LE1v6WQPO2RA+Oc4AAAAByATi0xIK8RTGBPXTDgroFMMECdQJCt4UwwQJ1AkK3hTBBB3UBQrVFL8EMdQACssU"
+    },
+    {
+      "seed": 68,
+      "expected": "AABU9cA7kd/9AUsH6lsvz7fpwulMf/gjmhAKF+ZH2+9tHHUWQPeUSbL+fBAsAFw7ad9bCBH+LQKA/Ov4ZwLn/xkE0f0r90j5wveFAWwBc/tiAVv84AEc/fUAjwD3ox5UOIgAAAABcQM79ooHdQRxAzv2igd1BHADO/aJB3UEcAM99ogHdARwAz32iAd0BG8DP/aHB3ME"
+    },
+    {
+      "seed": 69,
+      "expected": "AAB684Ps0OAKA9gCorWj8KECevXqH0kguwJABuAaZu+2PVc8Tw3aIK7+hgARAC7099lYE6XhBxSS+m8B2fvmAYz/Hf1eJTr+xw+O/7QGzA6vBMb71v6872/9xASuVHHomdIAAAABEBDP9NsKjRALENP02AqIEAsQ0/TYCogQCxDT9NgKiBALENP02AqIEAYQ1vTUCoMQ"
+    },
+    {
+      "seed": 70,
+      "expected": "JwZSApxlIGcS5ZwBvLqBOfcEKjMafcY5hf6OMRsymfdKzTbXORjnQ235KwPW/+thVGTx9Cbvw/pRAXUPCvb1/m75cwcFBQ79WuoGDaoH8/t1CZH/s/QT+kMAGwNF4aWef/YAAAAB9QiuN7v0Ryz6CMw3tfReLPoIzDe19F4s/wjmN6/0cyz/COY3r/RzLAMJAjiq9Ios"
+    },
+    {
+      "seed": 71,
+      "expected": "AAABgOXgXAFX9W3wkr3xGbwUKCtmd3I64Al9IgYu6B1kywcfuji+KuxJYDHqAIvhGwJ4AVf/WgAxEMEEp/NX+Kv4tQv7/Xf8hwIi+KEIxPTiA4IBjQSc+5D7n/8yx8NAsQQAAAABjQGDAHz/jQGNAYMAfP+NAY0BgwB8/40BjQGDAHz/jQGNAYMAfP+NAY0BgwB8/40B"
+    },
+    {
+      "seed": 72,
+      "expected": "Ewnk++9DR79O/Pf32F/7/gMDoRikrbAPvAKGDEo6QN8e1XP68DNxDagBMBBY//RDQb85DQYMGf0t/Yv+BvrbGhb1hRJL7hgD/RC1/+8AU/1C9awBAfkK7s8Eu/wBN93xEVkAAAAB7gaT3N8GuiPtBprc3gayI+wGotzdBqoj6gaq3NsGoiPpBrHc2gabI+cGudzYBpMj"
+    },
+    {
+      "seed": 73,
+      "expected": "AAB0GVHoLTXnFXX5iq0n/P0LDNn0i6UdLCElFdtBtfcn0+79bh0KtB0PU+ptANPmvzXN7k37YgC0/Mf/sgNnBc7rQf1VAcXrnAJjALD/agKL9DwRcgfNCZn8Df2Qzz4OO4cAAAABZAPE/gwB/ANkA8T+DAH8A2QDxP4MAf0DZAPE/gwB/QNkA8T+DAH9A2QDxP4MAf0D"
+    },
+    {
+      "seed": 74,
+      "expected": "AABkZwzv/QlcAeD2HF7aAykAVgHWKQ0zSBS1QdZRq/tP5LYAAuEkKA7unCJK/6vudwqr/rcB/vPKBNjvfwL3/MECHf6sB/AA6vk/+t34p/1z/7X81/gfBwIDmAhru+a+HXsAAAABNgN4AYj+OgM2A3gBiP46AzYDeQGI/joDNgN5AYj+OgM2A3kBiP46AzYDeQGI/joD"
+    },
+    {
+      "seed": 75,
+      "expected": "AAB9reoZzRlm+j4D3LSr8iXrC/80Qok0HDYsCoU3mgmfQDcXtiyBzsg/AYCL/Rsa3hnF+//8EP+zAGz85fbT/lsD+fxEBs8BZ//xAM4Acfi2BY0GFvu6/Dr49Pt2TY6V888AAAABNQC+/jMBNwA1AL7+MwE3ADUAvv4zATcANQC+/jMBNwA1AL7+MwE3ADUAvv4zATcA"
+    },
+    {
+      "seed": 76,
+      "expected": "AAAA7ggSrg7398fr+HZ9AxIaEi5c+KE3/gJN+npXMiirE4nuzTQ9R5zx+/ZQAGkT7gsZ9OnrAO5c963pT/G8/fQAmgJyEO7v4fyW4tYM0uyg/sgAOPwkBOUHIAF+eP3YbdoAAAABgQERBZ/7vgGBAREFn/u+AYEBEAWg+74BgQEQBaD7vgGBARAFoPu+AYEBEAWg+74B"
+    },
+    {
+      "seed": 77,
+      "expected": "AAABgMUHi/f7AhELqGDLx74B//kyp54gNBcWBZ9O3yyQ2JYz1RDkEkyPqO7a/P0Hzfcs/1ju0+4eEAv7pxar/SgD/PitBOIGKe/IDHjiuP3Z/6wA8QdL6a4ZLAOcAUz6FmEAAAABpAC8AEX/pgCkALwARf+mAKQAvABF/6YApAC8AEX/pgCkALwARf+mAKQAvABF/6YA"
+    },
+    {
+      "seed": 78,
+      "expected": "zgKQ+xDxxp7PB9r6xJW/48feWNp6hN8N+xhL/15aghrUJqI+x+GkDpRG9ENbAbjwtaIo/HgISPOCAjDiKSFBGl4NQwii9z8BTfLF7/r/nSTrD37qLu9gBusYxPLizCT1SCwAAAABWQzT/JEA3URWDNT8kQDPRFQM1PyRAMFEUQzV/JEAtURPDNX8kQCnRE0M1vyRAJlE"
+    },
+    {
+      "seed": 79,
+      "expected": "pwQ3/uYUtpRH9i0BcLMO69zV6/N6jjQ0wf/vArw6W8802DAHwAGAGfzCwFDAAAYVmJNrA6wAAwIaAUn9RgQk9usM4vkTAfEApABM/HcBLwJn9FoBbfWuAeP7wAXMPHD8CzYAAAAB9BSuAnX/02fpFK0Cdf+fZ98UqwJ2/2tn0xSqAnb/L2fJFKgCdv/7Zr4UpwJ2/8dm"
+    }
+  ]
+}

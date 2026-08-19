@@ -3,10 +3,10 @@
 The DSP-2 is one member of a family of NEC uPD77C25 derivatives that Nintendo
 shipped under the DSP name. They share silicon and differ in the microcode masked
 into it, which is why the DSP-1, DSP-2, DSP-3 and DSP-4 answer completely
-different commands while being the same part underneath. Three are modelled here,
-each a separate command set held to its own corpus: the DSP-2, which answers
-questions, the DSP-3, which decompresses and searches a hex grid, and the DSP-4,
-which draws a road.
+different commands while being the same part underneath. All four are modelled
+here, each a separate command set held to its own corpus: the DSP-1, which does
+fixed point three dimensional maths, the DSP-2, which converts tiles, the DSP-3,
+which decompresses and searches a hex grid, and the DSP-4, which draws a road.
 
 A model with no corpus behind it does not belong in this table, because then its
 fidelity would be a claim rather than a measurement.
@@ -42,6 +42,14 @@ def _build_dsp2(model, **options):
     return chip
 
 
+def _build_dsp1(model, **options):
+    from .dsp1 import Dsp1
+
+    chip = Dsp1(**options)
+    chip.model = model.name
+    return chip
+
+
 def _build_dsp3(model, **options):
     from .dsp3 import Dsp3
 
@@ -59,6 +67,18 @@ def _build_dsp4(model, **options):
 
 
 _CATALOGUE = (
+    Model(
+        name="dsp1",
+        summary=(
+            "The NEC uPD77C25 carrying Nintendo DSP-1 microcode, shipped in more "
+            "cartridges than the rest of the family together. Thirty one commands "
+            "over a single byte wide port: a camera, three attitude matrices, and "
+            "the projections and rotations that ask questions of them."
+        ),
+        parameter_bytes=512,
+        core=_build_dsp1,
+        aliases=("dsp-1", "dsp1a", "dsp1b", "upd77c25dsp1", "nintendodsp1"),
+    ),
     Model(
         name="dsp2",
         summary=(
