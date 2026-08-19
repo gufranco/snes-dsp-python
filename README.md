@@ -187,6 +187,30 @@ The walk is bounded by the **output** length, not by the data it was given. With
 
 The differential is the one that ties this to real hardware, and it found a real bug. The chip latches per command whether a length has already been given, and decides whether data follows by looking at the length byte itself. A length of zero therefore does not cancel a command; it arms one, and the next byte on the port is read as a new command. A tidier model that resets on a zero length passes every ordinary test and answers differently here.
 
+### Against the microcode itself
+
+Everything above holds a model to a recording or to a rule. This holds it to the
+part. [`conformance/against_firmware.py`](conformance/against_firmware.py) puts
+the same command and the same arguments through the model and through the part's
+own program, and prints where they part company. It needs an image, so it reports
+every case as skipped on a machine without one rather than as passed.
+
+Where it stands today, and this is the honest state rather than a target:
+
+| Part | Answers compared | Agreed | What is open |
+|:-----|-----------------:|-------:|:-------------|
+| DSP-1 | 56 | 55 | Command `0x34`, off by 2 and by 12 in two of its three words |
+| DSP-1B | 56 | 55 | The same command, the same amounts |
+| DSP-2 | 22 | 13 | Command `0x09`, wrong in the third and fourth bytes of nine cases |
+| DSP-3 | not swept | | It is clocked rather than commanded, so a sweep that picks commands has nothing to pick |
+| DSP-4 | not swept | | It draws rather than answers, and a sweep that reads a fixed number of words back does not describe it |
+
+None of these is a defect in the part. The microcode is the definition, so every
+row is a place where the model is wrong or where the sweep cannot yet ask the
+question. Both remaining sweeps need the exchange the cartridge actually has with
+the part, which is what [`snes-driver-python`](https://github.com/gufranco/snes-driver-python)
+reads out of a real cartridge.
+
 ### The corpus, and why it can ship
 
 The DSP-2 has no published per-instruction suite, so the evidence is a recording of a real cartridge driving a real chip. A recording holds two separable things, and only one of them can leave your machine.
@@ -321,17 +345,25 @@ measured against their own image: over 200 random vectors the signed reading
 matches the first mask on every one, and the unsigned reading matches the last on
 every one.
 
-Every command of both masks now matches its own microcode: **365 of 365 each**.
+Across the 365 answers that corpus covers, both masks match their own microcode
+on every one. A later sweep that picks its inputs at random rather than from the
+corpus found one command where they do not: `0x34` returns three words, and the
+model's first and third differ from the part's by 2 and by 12. The middle word
+agrees. That is a rounding difference inside a maths routine, and since the
+microcode is the definition, it is the model that is wrong. It is open.
 
-The middle mask is refused by name, because no image of it has been measured:
+The middle mask runs the first mask's program, because that is what the part
+does: the DSP-1A is a die shrink of the DSP-1 and carries the same program and
+data ROM, so there is no DSP-1A image to find and none in circulation has one.
+It is a distinct part with its own die and is answered here as one.
 
 ```python
-Dsp(model="dsp1a")
-# UnknownModelError: dsp1a is not modelled here: the DSP-1A is the middle mask of
-# the three, and no image of it has been measured here; the first and the last
-# both have one, so they are modelled and this one is not rather than being
-# assumed to match either
+Dsp(model="dsp1a").backend
+# 'silicon', running the DSP-1's image, because the DSP-1A carries that program
 ```
+
+Only the DSP-1B changed the program, correcting the fault above. That is the
+difference the two images actually disagree on.
 
 The DSP-4 is the odd one in the family. It draws rather than answers: a command
 hands it a viewpoint and a stretch of track and it walks that track outwards from
