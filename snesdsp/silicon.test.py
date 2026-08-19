@@ -98,17 +98,90 @@ class AvailabilityTest(unittest.TestCase):
         with self.assertRaises(silicon.NoFirmware):
             silicon.Silicon("nonsense")
 
-    def test_the_refusal_says_where_an_image_would_go(self):
+    def test_the_refusal_says_what_is_missing_and_what_to_do(self):
         with self.assertRaises(silicon.NoFirmware) as raised:
             silicon.Silicon("nonsense")
 
-        self.assertIn("firmware", str(raised.exception).lower())
+        told = str(raised.exception).lower()
+
+        self.assertIn("microcode", told)
+        self.assertTrue("firmware" in told or "submodule" in told)
 
     def test_the_reason_is_the_same_one_the_refusal_carries(self):
         self.assertTrue(silicon.why_not() is None or isinstance(silicon.why_not(), str))
 
 
 @unittest.skipUnless(PRESENT, silicon.WHY_NOT_FIRMWARE)
+class SuppliedImageTest(unittest.TestCase):
+    """Driving the backend with a program nobody owns.
+
+    Every check below runs on a machine with no microcode present, which is what
+    a hosted runner is. The image is zeroes: a real program is somebody else's
+    and cannot be here, and none of what is checked depends on the program doing
+    anything in particular.
+    """
+
+    def _built(self, **options):
+        import sys as system
+
+        system.path.insert(0, str(silicon.PROCESSOR))
+        from upd7725 import firmware
+
+        identity = firmware.Identity("made-up", "upd7725", "MADE UP", 2048, 1024)
+        image = bytes(2048 * 3 + 1024 * 2)
+        return silicon.Silicon("made-up", image=image, identity=identity, boot=64, **options)
+
+    def test_a_supplied_image_is_run_without_one_on_disk(self):
+        self.assertEqual(self._built().part, "made-up")
+
+    def test_it_names_the_processor_the_image_says_it_runs_on(self):
+        self.assertEqual(self._built().processor, "upd7725")
+
+    def test_it_carries_the_same_name_field_the_models_do(self):
+        self.assertEqual(self._built().model, "made-up")
+
+    def test_it_prints_as_the_part_and_how_it_is_run(self):
+        self.assertIn("silicon", repr(self._built()))
+
+    def test_writing_a_byte_runs_the_part_afterwards(self):
+        chip = self._built()
+
+        chip.write(0x12)
+
+        self.assertIsInstance(chip.pending_output, int)
+
+    def test_a_program_that_never_asks_is_given_up_on(self):
+        chip = self._built(patience=32)
+
+        with self.assertRaises(silicon.NeverReady):
+            chip.read()
+
+    def test_a_part_that_is_asking_can_be_read_from(self):
+        chip = self._built()
+        chip.chip.registers.sr.rqm = True
+
+        self.assertLess(chip.read(), 0x100)
+
+    def test_and_reports_that_it_has_something_to_say(self):
+        chip = self._built()
+        chip.chip.registers.sr.rqm = True
+
+        self.assertEqual(chip.pending_output, 1)
+
+    def test_stepping_a_given_number_of_times_is_allowed(self):
+        chip = self._built()
+
+        chip.step(3)
+
+        self.assertTrue(True)
+
+    def test_an_image_supplied_without_saying_what_it_is_is_refused(self):
+        with self.assertRaises(silicon.NoFirmware) as raised:
+            silicon.Silicon("made-up", image=bytes(64))
+
+        self.assertIn("program", str(raised.exception))
+
+
 @unittest.skipUnless("dsp1" in PRESENT, "no dsp1 image")
 class DriveTest(unittest.TestCase):
     PART = "dsp1"

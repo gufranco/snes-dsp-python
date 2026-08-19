@@ -122,6 +122,11 @@ def why_not():
 class Silicon:
     """A part driven by running the program inside it.
 
+    An image can be supplied rather than found on disk. That is what a caller with
+    the bytes already in hand wants, and it is also what lets this class be driven
+    in a test by a program nobody owns, on a machine where no real microcode is
+    present.
+
     The interface is the one the models offer, so a caller swaps backends without
     knowing which it holds. What differs is `pending_output`, which the hardware
     cannot answer with a count: the status register carries one bit saying the
@@ -129,21 +134,38 @@ class Silicon:
     console is ever told.
     """
 
-    def __init__(self, part, fill=0, patience=SETTLE_LIMIT, boot=BOOT_STEPS, gap=GAP):
+    def __init__(
+        self,
+        part,
+        fill=0,
+        patience=SETTLE_LIMIT,
+        boot=BOOT_STEPS,
+        gap=GAP,
+        image=None,
+        identity=None,
+    ):
         found = _processor()
         if found is None:
             raise NoFirmware(WHY_NOT_PROCESSOR)
 
         firmware, models, ports = found
-        images = available()
-        wanted = SHARES_IMAGE.get(part, part)
-        if wanted not in images:
+
+        if image is None:
+            images = available()
+            wanted = SHARES_IMAGE.get(part, part)
+            if wanted not in images:
+                raise NoFirmware(
+                    f"there is no firmware image for {part}, so its microcode cannot be"
+                    f" run. {WHY_NOT_FIRMWARE}"
+                )
+            identity, path = images[wanted]
+            image = path.read_bytes()
+        elif identity is None:
             raise NoFirmware(
-                f"there is no firmware image for {part}, so its microcode cannot be"
-                f" run. {WHY_NOT_FIRMWARE}"
+                "an image was supplied without saying what it is, and the processor"
+                " has to be told how much of it is program and how much is table"
             )
 
-        identity, path = images[wanted]
         self.part = part
         self.model = part
         self.processor = identity.processor
@@ -153,7 +175,7 @@ class Silicon:
 
         self._ports = ports
         self.chip = models.describe(identity.processor).build(fill=fill)
-        firmware.load(self.chip, path.read_bytes(), identity)
+        firmware.load(self.chip, image, identity)
         self.console = ports.Console(self.chip)
         self.step(boot)
 
