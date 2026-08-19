@@ -223,22 +223,125 @@ class UnfinishedTest(unittest.TestCase):
 
     def test_a_renderer_says_it_is_not_here_rather_than_going_quiet(self):
         chip = dsp4.Dsp4()
-        chip.write(0x01)
-        chip.write(0x00)
-        for value in range(43):
-            chip.write(value)
+        chip.write(0x0E)
 
         with self.assertRaises(dsp4.Unimplemented):
-            chip.write(0)
+            chip.write(0x00)
 
     def test_and_the_refusal_names_the_command(self):
         chip = dsp4.Dsp4()
-        chip.write(0x0E)
+        chip.write(0x07)
+        chip.write(0x00)
+        for _ in range(33):
+            chip.write(0)
 
         with self.assertRaises(dsp4.Unimplemented) as caught:
-            chip.write(0x00)
+            chip.write(0)
 
-        self.assertIn("0x000e", str(caught.exception))
+        self.assertIn("0x0007", str(caught.exception))
+
+
+class TrackTest(unittest.TestCase):
+    """The one renderer that is here, and the places it stops for more input."""
+
+    def road(self):
+        chip = dsp4.Dsp4()
+        chip.write(0x01)
+        chip.write(0x00)
+        for value in (
+            word(0)
+            + word(0x0002)
+            + word(200)
+            + word(10)
+            + word(0)
+            + word(100)
+            + word(0)
+            + word(0x0001)
+            + word(0)
+            + word(0x0100)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0x2000)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+        ):
+            chip.write(value)
+        return chip
+
+    def test_the_projection_asks_for_the_next_distance_when_it_has_drawn_one_stretch(self):
+        chip = self.road()
+
+        self.assertEqual(chip.in_count, 2)
+
+    def test_and_is_not_waiting_for_a_new_command(self):
+        chip = self.road()
+
+        self.assertFalse(chip.waiting)
+
+    def test_it_produces_a_header_before_any_scanline(self):
+        chip = self.road()
+
+        self.assertGreaterEqual(chip.out_count, 10)
+
+    def test_the_end_marker_finishes_the_command(self):
+        chip = self.road()
+        for _ in range(chip.out_count):
+            chip.read()
+
+        chip.write(0x00)
+        chip.write(0x80)
+
+        self.assertTrue(chip.waiting)
+
+    def test_a_fork_in_the_road_asks_for_its_own_six_bytes(self):
+        chip = self.road()
+        for _ in range(chip.out_count):
+            chip.read()
+
+        chip.write(0x01)
+        chip.write(0x80)
+
+        self.assertEqual(chip.in_count, 6)
+
+    def test_and_then_for_the_next_distance_again(self):
+        chip = self.road()
+        for _ in range(chip.out_count):
+            chip.read()
+        chip.write(0x01)
+        chip.write(0x80)
+        for value in word(0x1000) + word(4) + word(1):
+            chip.write(value)
+
+        self.assertEqual(chip.in_count, 2)
+
+    def test_a_fork_moves_the_viewer_sideways(self):
+        chip = self.road()
+        for _ in range(chip.out_count):
+            chip.read()
+        before = chip.view_x1
+        chip.write(0x01)
+        chip.write(0x80)
+        for value in word(0x4000) + word(0x0100) + word(1):
+            chip.write(value)
+
+        self.assertNotEqual(chip.view_x1, before)
+
+    def test_an_ordinary_stretch_asks_for_its_curvature(self):
+        chip = self.road()
+        for _ in range(chip.out_count):
+            chip.read()
+
+        chip.write(0x00)
+        chip.write(0x10)
+
+        self.assertEqual(chip.in_count, 6)
 
 
 class ReadingTest(unittest.TestCase):

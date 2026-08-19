@@ -28,11 +28,10 @@ The arithmetic is fixed point in three formats, and which one a field is in is
 not recoverable from the field. It is written down here in the names.
 
 What is here and what is not. The port protocol is complete, and so are the seven
-commands that finish in one go: the multiply, the horizontal mapping, the angle
-lookup, the three that manage the sprite table, and the one that places a sprite.
-Each is compared against the chip's own reference.
+commands that finish in one go and the single-player track projection, which is
+the first of the renderers. Each is compared against the chip's own reference.
 
-The eight track renderers are not here yet, and asking for one raises rather than
+The remaining renderers are not here yet, and asking for one raises rather than
 returning nothing. A command that quietly produced no output would be
 indistinguishable from a road with no segments in it, which is a real answer this
 chip can give, so silence is the one response this module must not make.
@@ -91,6 +90,77 @@ ANGLES = (
 
 SPRITE_LIMIT = 128
 
+INVERSE = (
+    0x0000,
+    0x8000,
+    0x4000,
+    0x2AAA,
+    0x2000,
+    0x1999,
+    0x1555,
+    0x1249,
+    0x1000,
+    0x0E38,
+    0x0CCC,
+    0x0BA2,
+    0x0AAA,
+    0x09D8,
+    0x0924,
+    0x0888,
+    0x0800,
+    0x0787,
+    0x071C,
+    0x06BC,
+    0x0666,
+    0x0618,
+    0x05D1,
+    0x0590,
+    0x0555,
+    0x051E,
+    0x04EC,
+    0x04BD,
+    0x0492,
+    0x0469,
+    0x0444,
+    0x0421,
+    0x0400,
+    0x03E0,
+    0x03C3,
+    0x03A8,
+    0x038E,
+    0x0375,
+    0x035E,
+    0x0348,
+    0x0333,
+    0x031F,
+    0x030C,
+    0x02FA,
+    0x02E8,
+    0x02D8,
+    0x02C8,
+    0x02B9,
+    0x02AA,
+    0x029C,
+    0x028F,
+    0x0282,
+    0x0276,
+    0x026A,
+    0x025E,
+    0x0253,
+    0x0249,
+    0x023E,
+    0x0234,
+    0x022B,
+    0x0222,
+    0x0219,
+    0x0210,
+    0x0208,
+)
+
+END_OF_TRACK = -0x8000
+
+TURNOFF = 0x8001
+
 VISIBLE_BELOW = 0x00EB
 
 
@@ -106,6 +176,26 @@ def signed16(value):
 def signed32(value):
     value &= 0xFFFFFFFF
     return value - 0x100000000 if value & 0x80000000 else value
+
+
+def inverse(value):
+    """One over a small number, from the table the chip carries.
+
+    The table is sixty four entries and the argument is clamped into it rather
+    than checked, so a run of segments longer than the table quietly reuses the
+    last entry instead of dividing by the number it was given.
+    """
+    return INVERSE[min(max(value, 0), 63)]
+
+
+def sign_extend_low(value):
+    """A one point seven point eight value widened to one point fifteen point sixteen."""
+    return signed32(signed16(value) << 8)
+
+
+def sign_extend_whole(value):
+    """A whole number widened into the same fixed point format."""
+    return signed32(signed16(value) << 16)
 
 
 def multiply(multiplicand, multiplier):
@@ -136,7 +226,49 @@ class Dsp4:
         self.oam_row_max = 0
         self.oam_row = bytearray(OAM_ROWS)
         self.sprite_count = 0
+        self._clear_projection()
         return self
+
+    def _clear_projection(self):
+        """Everything the road renderers carry between one batch and the next."""
+        self.world_x = 0
+        self.world_y = 0
+        self.world_dx = 0
+        self.world_dy = 0
+        self.world_ddx = 0
+        self.world_ddy = 0
+        self.world_xenv = 0
+        self.world_yofs = 0
+        self.view_x1 = 0
+        self.view_y1 = 0
+        self.view_x2 = 0
+        self.view_y2 = 0
+        self.view_xofs1 = 0
+        self.view_yofs1 = 0
+        self.view_xofs2 = 0
+        self.view_yofs2 = 0
+        self.view_yofsenv = 0
+        self.view_turnoff_x = 0
+        self.view_turnoff_dx = 0
+        self.viewport_bottom = 0
+        self.distance = 0
+        self.segments = 0
+        self.poly_bottom = 0
+        self.poly_top = 0
+        self.poly_cx_left = 0
+        self.poly_cx_right = 0
+        self.poly_ptr = 0
+        self.poly_raster = 0
+
+    def take_dword(self):
+        at = self.in_index
+        self.in_index += 4
+        return signed32(
+            self.parameters[at]
+            | (self.parameters[at + 1] << 8)
+            | (self.parameters[at + 2] << 16)
+            | (self.parameters[at + 3] << 24)
+        )
 
     def take_word(self):
         at = self.in_index
@@ -218,13 +350,36 @@ class Dsp4:
         self.in_count = found
 
     def _execute(self):
+        if self.running is not None:
+            self._advance()
+            return
         handler = self._handlers().get(self.command)
         if handler is None:
             raise Unimplemented(
                 f"command {self.command:#06x} is one of this chip's track renderers, "
                 "which this model does not carry yet"
             )
-        handler()
+        found = handler()
+        if found is None:
+            return
+        self.running = found
+        self._advance()
+
+    def _advance(self):
+        """Run a suspended command until it asks for more input or finishes.
+
+        A renderer that yields is asking for that many bytes and will carry on
+        from where it stopped. One that returns is done, and the chip goes back to
+        waiting for a command.
+        """
+        try:
+            self.in_count = next(self.running)
+        except StopIteration:
+            self.running = None
+            self.waiting = True
+            return
+        self.in_index = 0
+        self.waiting = False
 
     def _handlers(self):
         return {
@@ -234,6 +389,7 @@ class Dsp4:
             0x0006: self._transfer_sprites,
             0x000A: self._angles,
             0x000B: self._set_sprite,
+            0x0001: self._project_track,
             0x0011: self._map_across,
         }
 
@@ -314,6 +470,138 @@ class Dsp4:
         if self.oam_bits == 16:
             self.oam_bits = 0
             self.oam_index += 1
+
+    def _project_track(self):
+        """The single-player road, drawn outwards from the viewer.
+
+        This is the command that cannot finish in one go. It projects the track
+        as far as the input it has describes, hands back the scanline segments it
+        produced, and then asks for the next stretch. The caller keeps feeding it
+        until it says the track has ended.
+
+        Three places it suspends, and they are not interchangeable. After each
+        stretch it wants two bytes, which are either the next distance or a
+        marker. If that marker says the road forks it wants six more describing
+        the fork, and then two again. Otherwise it wants six describing the next
+        stretch's curvature. Resuming at the wrong one reads the fork's numbers
+        as curvature and bends the road.
+        """
+        self.world_y = self.take_dword()
+        self.poly_bottom = self.take_word()
+        self.poly_top = self.take_word()
+        self.poly_cx_right = self.take_word()
+        self.viewport_bottom = self.take_word()
+        self.world_x = self.take_dword()
+        self.poly_cx_left = self.take_word()
+        self.poly_ptr = self.take_word()
+        self.world_yofs = self.take_word()
+        self.world_dy = self.take_dword()
+        self.world_dx = self.take_dword()
+        self.distance = self.take_word()
+        self.take_word()
+        self.world_xenv = self.take_dword()
+        self.world_ddy = self.take_word()
+        self.world_ddx = self.take_word()
+        self.view_yofsenv = self.take_word()
+
+        self.view_x1 = signed16(signed32(self.world_x + self.world_xenv) >> 16)
+        self.view_y1 = signed16(self.world_y >> 16)
+        self.view_xofs1 = signed16(self.world_x >> 16)
+        self.view_yofs1 = self.world_yofs
+        self.view_turnoff_x = 0
+        self.view_turnoff_dx = 0
+        self.poly_raster = self.poly_bottom
+
+        while True:
+            self._project_one_stretch()
+
+            yield 2
+            self.distance = self.take_word()
+            if self.distance == END_OF_TRACK:
+                return
+
+            if (self.distance & 0xFFFF) == TURNOFF:
+                yield 6
+                self.distance = self.take_word()
+                self.view_turnoff_x = self.take_word()
+                self.view_turnoff_dx = self.take_word()
+                shift = signed16((self.view_turnoff_x * self.distance) >> 15)
+                self.view_x1 = signed16(self.view_x1 + shift)
+                self.view_xofs1 = signed16(self.view_xofs1 + shift)
+                self.view_turnoff_x = signed16(self.view_turnoff_x + self.view_turnoff_dx)
+                yield 2
+
+            yield 6
+            self.world_ddy = self.take_word()
+            self.world_ddx = self.take_word()
+            self.view_yofsenv = self.take_word()
+            self.world_xenv = 0
+
+    def _project_one_stretch(self):
+        """One stretch of road: where it lands on screen, and the lines it fills."""
+        far_x = signed32(self.world_x + self.world_xenv) >> 16
+        self.view_x2 = signed16(
+            ((far_x * self.distance) >> 15) + ((self.view_turnoff_x * self.distance) >> 15)
+        )
+        self.view_y2 = signed16(((self.world_y >> 16) * self.distance) >> 15)
+        self.view_xofs2 = self.view_x2
+        self.view_yofs2 = signed16(
+            ((self.world_yofs * self.distance) >> 15) + self.poly_bottom - self.view_y2
+        )
+
+        self.clear_output()
+        self.put_word(far_x)
+        self.put_word(self.view_x2)
+        self.put_word(self.world_y >> 16)
+        self.put_word(self.view_y2)
+
+        self.segments = signed16(self.poly_raster - self.view_y2)
+        if self.view_y2 >= self.poly_raster:
+            self.segments = 0
+        else:
+            self.poly_raster = self.view_y2
+
+        if self.view_y2 < self.poly_top:
+            self.segments = 0
+            if self.view_y1 >= self.poly_top:
+                self.segments = signed16(self.view_y1 - self.poly_top)
+
+        self.put_word(self.segments)
+
+        if self.segments:
+            self._rasterise()
+
+        self.view_x1 = self.view_x2
+        self.view_y1 = self.view_y2
+        self.view_xofs1 = self.view_xofs2
+        self.view_yofs1 = self.view_yofs2
+
+        self.world_dx = signed32(self.world_dx + sign_extend_low(self.world_ddx))
+        self.world_dy = signed32(self.world_dy + sign_extend_low(self.world_ddy))
+        self.world_x = signed32(self.world_x + self.world_dx + self.world_xenv)
+        self.world_y = signed32(self.world_y + self.world_dy)
+        self.view_turnoff_x = signed16(self.view_turnoff_x + self.view_turnoff_dx)
+
+    def _rasterise(self):
+        """Walk between two projected points, one scanline at a time."""
+        step_x = signed32((self.view_xofs2 - self.view_xofs1) * inverse(self.segments) << 1)
+        step_y = signed32((self.view_yofs2 - self.view_yofs1) * inverse(self.segments) << 1)
+        scroll_x = sign_extend_whole(self.poly_cx_left + self.view_xofs1)
+        scroll_y = sign_extend_whole(
+            -self.viewport_bottom
+            + self.view_yofs1
+            + self.view_yofsenv
+            + self.poly_cx_right
+            - self.world_yofs
+        )
+
+        for _ in range(self.segments):
+            self.put_word(self.poly_ptr)
+            self.put_word(signed32(scroll_y + 0x8000) >> 16)
+            self.put_word(signed32(scroll_x + 0x8000) >> 16)
+            self.poly_ptr = signed16(self.poly_ptr - 4)
+            scroll_x = signed32(scroll_x + step_x)
+            scroll_y = signed32(scroll_y + step_y)
 
     def _map_across(self):
         fourth = self.take_word()

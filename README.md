@@ -238,18 +238,29 @@ chip = Dsp(model="dsp2")
 | `dsp2` | modelled | 512 bytes | Six commands. Aliases: `dsp-2`, `upd77c25dsp2`, `nintendodsp2` |
 | `dsp1` | reference driver only | 512 bytes | Fixed-point 3D maths, used by the most cartridges |
 | `dsp3` | reference driver only | n/a | Compression and a coordinate walk |
-| `dsp4` | port protocol and seven commands | 512 bytes | The track renderer. The eight renderers themselves are not modelled yet and raise rather than answering |
+| `dsp4` | protocol, seven commands, and the single-player track projection | 512 bytes | The remaining seven renderers are not modelled yet and raise rather than answering |
 
 The reference driver in [`conformance/ref/`](conformance/ref/) already carries all
 four and takes the chip as an argument, so adding one is a matter of writing the
 model and the corpus rather than of building the evidence first.
 
-The DSP-4 is part way through that. Its port protocol and the seven commands that
-finish in one go are modelled and agree with the reference across three hundred
-randomised command sequences. Its eight track renderers consume input in batches
-and resume where they stopped, and they are not here yet. Asking for one raises,
-because a command that quietly produced nothing would be indistinguishable from a
-road with no segments in it, which is a real answer this chip can give.
+The DSP-4 is part way through that. Its port protocol, the seven commands that
+finish in one go, and the single-player track projection are modelled. The
+projection is the interesting one: it draws as much road as its input describes,
+then stops and asks for the next stretch, resuming where it left off. Eighty
+roads and 369,280 bytes of output agree with the reference.
+
+Its other seven renderers are not here yet. Asking for one raises, because a
+command that quietly produced nothing would be indistinguishable from a road with
+no segments in it, which is a real answer this chip can give.
+
+One thing the comparison had to decide. The chip's output buffer is 512 bytes,
+and a stretch that would produce more than that cannot be expressed through the
+interface: there is nowhere for the bytes to go. The reference does not notice. It
+writes past the end of its own buffer and over the variables that follow, one of
+which is the loop counter, so the loop stops at a length decided by the layout of
+a C struct. That is a property of that program rather than of the chip, so those
+cases are not in the corpus, and the corpus says so.
 
 Only `dsp2` is in the catalogue, because only `dsp2` has a corpus behind it. A
 model with nothing behind it would make its fidelity a claim rather than a
