@@ -23,8 +23,23 @@ class CatalogueTest(unittest.TestCase):
             self.assertEqual(models.describe(written).name, "dsp2")
 
     def test_the_projector_answers_to_its_own_names(self):
-        for written in ("DSP1", "dsp-1", "DSP_1", "nintendo-dsp1", "DSP1A", "dsp1b"):
+        for written in ("DSP1", "dsp-1", "DSP_1", "nintendo-dsp1"):
             self.assertEqual(models.describe(written).name, "dsp1")
+
+    def test_the_projectors_later_revisions_are_refused_rather_than_aliased(self):
+        for written in ("DSP1A", "dsp1b", "dsp-1b"):
+            with self.assertRaises(models.UnknownModelError):
+                models.describe(written)
+
+    def test_and_the_refusal_says_the_revisions_are_not_the_same_part(self):
+        with self.assertRaises(models.UnknownModelError) as raised:
+            models.describe("dsp1b")
+
+        self.assertIn("revision", str(raised.exception))
+
+    def test_every_revision_that_is_refused_says_why(self):
+        for name, why in models.NOT_MODELLED.items():
+            self.assertTrue(why, name)
 
     def test_the_searcher_answers_to_its_own_names(self):
         for written in ("DSP3", "dsp-3", "DSP_3", "nintendo-dsp3"):

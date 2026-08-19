@@ -252,14 +252,37 @@ chip = Dsp(model="dsp2")
 
 | Model | State | Parameter RAM | Notes |
 |:------|:------|:-------------:|:------|
-| `dsp1` | modelled | 512 bytes | Thirty one commands: a camera, three attitude matrices, and the projections that ask questions of them. Aliases: `dsp-1`, `dsp1a`, `dsp1b`, `upd77c25dsp1`, `nintendodsp1` |
+| `dsp1` | modelled | 512 bytes | Thirty one commands: a camera, three attitude matrices, and the projections that ask questions of them. Aliases: `dsp-1`, `upd77c25dsp1`, `nintendodsp1` |
 | `dsp2` | modelled | 512 bytes | Six commands. Aliases: `dsp-2`, `upd77c25dsp2`, `nintendodsp2` |
 | `dsp3` | modelled | none | Thirteen commands: a decompressor, a bit plane converter, a hex grid search. Aliases: `dsp-3`, `upd77c25dsp3`, `nintendodsp3` |
 | `dsp4` | modelled | 512 bytes | Fifteen commands, seven of them renderers. Aliases: `dsp-4`, `upd77c25dsp4`, `nintendodsp4` |
+| `dsp1a`, `dsp1b` | refused by name | | Later mask revisions of the DSP-1, not other names for it |
 
 The reference driver in [`conformance/ref/`](conformance/ref/) already carries all
 four and takes the chip as an argument, so adding one is a matter of writing the
 model and the corpus rather than of building the evidence first.
+
+### The DSP-1 was masked three times
+
+The DSP-1, the DSP-1A and the DSP-1B are three microcodes, and the last of them
+corrected the first. Emulators and flash cartridges alike carry them as separate
+firmware images for that reason. The reference this package is measured against
+implements one of the three and does not say which, so exactly one is claimed and
+the other two are refused by name:
+
+```python
+from snesdsp import Dsp
+
+Dsp(model="dsp1b")
+# UnknownModelError: dsp1b is not modelled here: the DSP-1A and the DSP-1B are
+# later mask revisions of the DSP-1 rather than other names for it, and the
+# DSP-1B corrected the microcode of the earlier parts; the reference this
+# package is measured against implements one revision without saying which, so
+# only dsp1 is claimed
+```
+
+Answering to all three would assert that one set of answers is right for all three
+parts, which is the opposite of what a separate mask revision means.
 
 The DSP-4 is the odd one in the family. It draws rather than answers: a command
 hands it a viewpoint and a stretch of track and it walks that track outwards from

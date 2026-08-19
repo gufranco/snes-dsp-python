@@ -8,6 +8,13 @@ here, each a separate command set held to its own corpus: the DSP-1, which does
 fixed point three dimensional maths, the DSP-2, which converts tiles, the DSP-3,
 which decompresses and searches a hex grid, and the DSP-4, which draws a road.
 
+The DSP-1 was masked three times. The DSP-1, the DSP-1A and the DSP-1B are three
+microcodes, not three spellings of one, and the last of them corrected the first.
+The reference this package is measured against implements one of the three and does
+not say which, so exactly one is claimed here and the other two are refused by name.
+Answering to all three would assert that a single set of answers is right for all
+three parts, which is the opposite of what the separate mask revisions mean.
+
 A model with no corpus behind it does not belong in this table, because then its
 fidelity would be a claim rather than a measurement.
 """
@@ -77,7 +84,7 @@ _CATALOGUE = (
         ),
         parameter_bytes=512,
         core=_build_dsp1,
-        aliases=("dsp-1", "dsp1a", "dsp1b", "upd77c25dsp1", "nintendodsp1"),
+        aliases=("dsp-1", "upd77c25dsp1", "nintendodsp1"),
     ),
     Model(
         name="dsp2",
@@ -116,6 +123,19 @@ _CATALOGUE = (
 
 MODELS = {model.name: model for model in _CATALOGUE}
 
+_LATER_REVISION = (
+    "the DSP-1A and the DSP-1B are later mask revisions of the DSP-1 rather than "
+    "other names for it, and the DSP-1B corrected the microcode of the earlier "
+    "parts; the reference this package is measured against implements one revision "
+    "without saying which, so only dsp1 is claimed"
+)
+
+NOT_MODELLED = {
+    "dsp1a": _LATER_REVISION,
+    "dsp1b": _LATER_REVISION,
+}
+"""Names that belong to a real part the package deliberately does not answer to."""
+
 _BY_ALIAS = {}
 for _model in _CATALOGUE:
     _BY_ALIAS[_model.name] = _model
@@ -129,9 +149,12 @@ def _normalise(name):
 
 def describe(name):
     """The model of that name, however it happens to be written."""
-    found = _BY_ALIAS.get(_normalise(name))
-    if found is None:
-        raise UnknownModelError(
-            f"{name} is not a model this package covers; it has {', '.join(sorted(MODELS))}"
-        )
-    return found
+    wanted = _normalise(name)
+    found = _BY_ALIAS.get(wanted)
+    if found is not None:
+        return found
+    if wanted in NOT_MODELLED:
+        raise UnknownModelError(f"{name} is not modelled here: {NOT_MODELLED[wanted]}")
+    raise UnknownModelError(
+        f"{name} is not a model this package covers; it has {', '.join(sorted(MODELS))}"
+    )
