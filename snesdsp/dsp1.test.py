@@ -88,6 +88,20 @@ class ArithmeticTest(unittest.TestCase):
         self.assertEqual(dsp1.halved_if_unnegatable(-0x4000, 3), (-0x4000, 3))
 
 
+class CommandSpaceTest(unittest.TestCase):
+    def test_every_byte_the_chip_decodes_has_an_entry(self):
+        covered = set(dsp1.WORDS_WANTED) | set(dsp1.ALIASES)
+
+        self.assertEqual(covered, set(range(0x40)))
+
+    def test_no_byte_is_both_a_command_and_an_alias(self):
+        self.assertEqual(set(dsp1.WORDS_WANTED) & set(dsp1.ALIASES), set())
+
+    def test_every_alias_names_a_command_the_chip_has(self):
+        for alias, canonical in dsp1.ALIASES.items():
+            self.assertIn(canonical, dsp1.WORDS_WANTED, hex(alias))
+
+
 class NearAliasTest(unittest.TestCase):
     def test_the_bytes_that_are_not_quite_aliases_are_named(self):
         self.assertIn(0x34, dsp1.NEARLY_ALIASED)
