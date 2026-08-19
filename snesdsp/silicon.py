@@ -205,24 +205,53 @@ class Silicon:
         """
         return 1 if self.asking else 0
 
-    def settle(self):
-        """Run until the part asks for attention, or say that it never did."""
+    def waited(self):
+        """Run until the part asks for attention, reporting whether it ever did."""
         for _ in range(self.patience):
             if self.asking:
-                return
+                return True
             self.chip.step()
-        raise NeverReady(
-            f"{self.part} did not ask for attention within {self.patience} instructions"
-        )
+        return False
+
+    def settle(self):
+        """Wait for the part to ask, and refuse to continue if it never does.
+
+        For a caller who wants to know. Reading does not go through this, because
+        a console cannot refuse to continue.
+        """
+        if not self.waited():
+            raise NeverReady(
+                f"{self.part} did not ask for attention within {self.patience} instructions"
+            )
 
     def write(self, value):
         """Give the part one byte, then leave it room to act on it."""
         self.console.write(self._ports.DATA, value & 0xFF)
         self.step()
 
+    def read_status(self):
+        """The status register, which is what the console watches rather than a count.
+
+        Taken without waiting and without disturbing anything, because that is
+        what the console does: the register is readable at any moment and reading
+        it is how a part that is clocked a word at a time is driven at all.
+        """
+        return self.console.read(self._ports.STATUS)
+
     def read(self):
-        """Wait until the part has a byte, take it, and leave it room again."""
-        self.settle()
+        """Give the part a chance to answer, take the port, and leave it room again.
+
+        A chance rather than a guarantee, because that is the console's position.
+        It cannot hang waiting: it reads the port and takes whatever is latched
+        there, and a part that never raises its attention bit is read anyway.
+
+        The difference matters between parts. One that answers a command by
+        raising that bit is read after it does. One that is clocked a word at a
+        time keeps it raised except in the instant after a read, and a read that
+        insisted on seeing it raised would wait forever for a part that is
+        already answering.
+        """
+        self.waited()
         value = self.console.read(self._ports.DATA)
         self.step()
         return value

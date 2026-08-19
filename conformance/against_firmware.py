@@ -38,6 +38,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import shapes
 
 import snesdsp
 from snesdsp import chip as tiles
@@ -90,12 +93,15 @@ other rather than skipped.
 DUMPED_WORDS = 1024
 """How much of the table that command hands back."""
 
-NOT_SWEPT_YET = ("dsp3",)
-"""The DSP-3 is clocked rather than commanded, and needs a driver of its own.
+NOT_SWEPT_YET = ()
+"""Parts with no sweep here yet."""
 
-Where the others take a command and a known count of arguments, it is a state
-machine advanced a word at a time with its own status register, and how many
-words each command consumes depends on what the earlier ones left behind.
+DSP3_COMMANDS = (0x02, 0x03, 0x06, 0x07, 0x0C, 0x0F, 0x10, 0x18, 0x1C, 0x1E, 0x38, 0x3E)
+"""Every command the DSP-3 has, except the one that hands back its mask ROM.
+
+That one is left out because answering it needs the mask ROM, which is content
+rather than behaviour and is not shipped here. The part has it and the model does
+not, so a comparison would be measuring the absence of a file.
 """
 
 
@@ -203,6 +209,45 @@ def table_of(part):
     return [held[at] << 8 | held[at + 1] for at in range(0, len(held), 2)]
 
 
+class Clocked:
+    """A part driven by its status register rather than by a count of answers.
+
+    The DSP-3 does not say how many words it will hand back. It is advanced a
+    word at a time and the console watches a register to know where it is, so a
+    sweep that writes a command and reads a fixed number of words is describing
+    something else.
+
+    What it is driven with here comes from the cartridge: the shapes a real game
+    uses, with a command the part actually has in the first byte. Everything
+    compared is compared at every step, the status register included, because on
+    this part the register is half of what the console is told.
+    """
+
+    def __init__(self, part, commands, build=None):
+        self.part = part
+        self.commands = tuple(sorted(commands))
+        self.build = build or {}
+
+    def streams(self, chance, count):
+        held = shapes.interesting(shapes.recorded(self.part))
+        for index in range(count):
+            steps, _ = held[index % len(held)]
+            command = self.commands[index % len(self.commands)]
+            yield command, shapes.commanded(shapes.payload_for(steps, chance), command), steps
+
+    def _through(self, chip, steps, payload):
+        said = shapes.drive(chip, steps, payload)
+        return [*said, [chip.read_status()]]
+
+    def from_model(self, command, payload, steps):
+        chip = snesdsp.Dsp(model=self.part, backend=snesdsp.MODELLED, **self.build)
+        return self._through(chip, steps, payload)
+
+    def from_silicon(self, command, payload, steps):
+        chip = snesdsp.Dsp(model=self.part, backend=snesdsp.SILICON, **self.build)
+        return self._through(chip, steps, payload)
+
+
 class Microcode:
     """One model here, the commands it answers, and how its console drives it."""
 
@@ -255,6 +300,7 @@ class Microcode:
 
 
 MICROCODES = (
+    Clocked(part="dsp3", commands=DSP3_COMMANDS),
     Microcode(
         part="dsp1",
         commands=set(projector.WORDS_WANTED) | set(projector.ALIASES),
@@ -294,16 +340,24 @@ MICROCODES = (
 )
 
 
+def _shown(answers):
+    """One side of a disagreement, as hex, whether it is words or runs of bytes."""
+    if answers and isinstance(answers[0], list):
+        return [[hex(byte) for byte in run] for run in answers]
+    return [hex(value) for value in answers]
+
+
 def compare(microcode, sequences):
     """Every stream through both, and the ones where they parted."""
     found = {"asked": 0, "agreed": 0, "differed": []}
 
-    for command, arguments in microcode.streams(rolls(), sequences):
-        wanted = microcode.from_model(command, arguments)
+    for stream in microcode.streams(rolls(), sequences):
+        command, arguments, *rest = stream
+        wanted = microcode.from_model(command, arguments, *rest)
         if not wanted:
             continue
         found["asked"] += 1
-        got = microcode.from_silicon(command, arguments, len(wanted))
+        got = microcode.from_silicon(command, arguments, *(rest or [len(wanted)]))
         if got == wanted:
             found["agreed"] += 1
         else:
@@ -333,7 +387,7 @@ def lines_for(sequences):
             f" match the microcode itself"
         )
         lines.extend(
-            f"    command {command:#04x}: model {[hex(v) for v in wanted]}, part {[hex(v) for v in got]}"
+            f"    command {command:#04x}: model {_shown(wanted)}, part {_shown(got)}"
             for command, _, wanted, got in found["differed"][:REPORT_LIMIT]
         )
     return tuple(lines)

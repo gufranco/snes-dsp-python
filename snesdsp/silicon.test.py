@@ -100,6 +100,42 @@ class AvailabilityTest(unittest.TestCase):
         self.assertTrue(silicon.why_not() is None or isinstance(silicon.why_not(), str))
 
 
+class StatusTest(unittest.TestCase):
+    """The register the console polls, which some parts are driven entirely by.
+
+    A part that answers a command and a count of words is driven by writing and
+    reading. A part that is clocked a word at a time is driven by watching this
+    instead, so a backend that cannot be polled cannot stand in for the model of
+    one.
+    """
+
+    def _built(self):
+        import sys as system
+
+        system.path.insert(0, str(silicon.PROCESSOR))
+        from upd7725 import firmware
+
+        identity = firmware.Identity("made-up", "upd7725", "MADE UP", 2048, 1024)
+        image = bytes(2048 * 3 + 1024 * 2)
+        return silicon.Silicon("made-up", image=image, identity=identity, boot=64)
+
+    def test_the_status_register_can_be_read_without_taking_a_byte(self):
+        chip = self._built()
+
+        self.assertIsInstance(chip.read_status(), int)
+
+    def test_it_is_one_byte_wide(self):
+        self.assertLessEqual(self._built().read_status(), 0xFF)
+
+    def test_reading_it_does_not_change_what_the_part_has_to_say(self):
+        chip = self._built()
+        before = chip.pending_output
+
+        chip.read_status()
+
+        self.assertEqual(chip.pending_output, before)
+
+
 class FoundOnDiskTest(unittest.TestCase):
     """The path that reads an image the search turned up.
 
@@ -179,11 +215,24 @@ class SuppliedImageTest(unittest.TestCase):
 
         self.assertIsInstance(chip.pending_output, int)
 
-    def test_a_program_that_never_asks_is_given_up_on(self):
+    def test_a_program_that_never_asks_is_given_up_on_when_waited_on(self):
         chip = self._built(patience=32)
 
         with self.assertRaises(silicon.NeverReady):
-            chip.read()
+            chip.settle()
+
+    def test_but_reading_from_it_takes_the_port_rather_than_hanging(self):
+        chip = self._built(patience=32)
+
+        self.assertLess(chip.read(), 0x100)
+
+    def test_reading_leaves_the_part_room_to_act_before_the_next_access(self):
+        chip = self._built(patience=32)
+        before = chip.chip.registers.pc
+
+        chip.read()
+
+        self.assertNotEqual(chip.chip.registers.pc, before)
 
     def test_a_part_that_is_asking_can_be_read_from(self):
         chip = self._built()
