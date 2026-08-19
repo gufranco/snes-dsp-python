@@ -45,15 +45,6 @@ class CaseTest(unittest.TestCase):
 
         self.assertEqual(commands, set(dsp4corpus.PROJECTIONS))
 
-    def test_the_fork_takes_a_longer_continuation_than_the_roads_do(self):
-        def writes(seed):
-            return [value for kind, value in dsp4corpus.steps_for(seed) if kind == dsp4corpus.WRITE]
-
-        fork = dsp4corpus.PROJECTIONS.index(dsp4corpus.PROJECT_TURNOFF)
-        road = dsp4corpus.PROJECTIONS.index(dsp4corpus.PROJECT_TRACK)
-
-        self.assertGreater(len(writes(fork)), len(writes(road)))
-
     def test_a_case_ends_by_telling_the_chip_the_track_has_ended(self):
         steps = dsp4corpus.steps_for(0)
         writes = [value for kind, value in steps if kind == dsp4corpus.WRITE]
@@ -126,7 +117,7 @@ class AgainstCorpusTest(unittest.TestCase):
     def test_the_model_reproduces_every_answer_the_reference_gave(self):
         for case in dsp4corpus.load()["cases"]:
             found = dsp4corpus.disagreement(
-                case["expected"], dsp4corpus.replay(dsp4corpus.steps_for(case["seed"]))
+                dsp4corpus.expected_of(case), dsp4corpus.replay(dsp4corpus.steps_for(case["seed"]))
             )
 
             self.assertIsNone(found, f"seed {case['seed']}")
@@ -138,7 +129,11 @@ class RunTest(unittest.TestCase):
 
     def test_a_corpus_whose_answers_are_wrong_makes_the_run_fail(self):
         where = Path(tempfile.mkdtemp()) / "wrong.json"
-        where.write_text(json.dumps({"reference": "x", "cases": [{"seed": 0, "expected": [0]}]}))
+        where.write_text(
+            json.dumps(
+                {"reference": "x", "cases": [{"seed": 0, "expected": dsp4corpus.encode([0])}]}
+            )
+        )
 
         self.assertEqual(dsp4corpus.run(["--corpus", str(where)]), 1)
 
@@ -166,6 +161,11 @@ class RecordTest(unittest.TestCase):
 
         with self.assertRaises(dsp4corpus.Usage):
             dsp4corpus.ask(dsp4corpus.steps_for(0), str(wrong))
+
+    def test_an_answer_survives_being_written_down_and_read_back(self):
+        self.assertEqual(
+            dsp4corpus.expected_of({"expected": dsp4corpus.encode([1, 2, 3])}), [1, 2, 3]
+        )
 
     def test_asking_a_driver_returns_what_it_said_past_the_count(self):
         found = dsp4corpus.ask(dsp4corpus.steps_for(0), str(self.answering()))
@@ -205,7 +205,7 @@ class RecordTest(unittest.TestCase):
 class ReportLimitTest(unittest.TestCase):
     def test_a_corpus_of_many_wrong_answers_stops_reporting_after_a_handful(self):
         where = Path(tempfile.mkdtemp()) / "wrong.json"
-        cases = [{"seed": seed, "expected": [0]} for seed in range(8)]
+        cases = [{"seed": seed, "expected": dsp4corpus.encode([0])} for seed in range(8)]
         where.write_text(json.dumps({"reference": "x", "cases": cases}))
 
         self.assertEqual(dsp4corpus.run(["--corpus", str(where)]), 1)

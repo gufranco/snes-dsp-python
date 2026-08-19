@@ -232,30 +232,21 @@ class CrowdingTest(unittest.TestCase):
         self.assertEqual(chip.oam_attr[0] & 1, 1)
 
 
-class UnfinishedTest(unittest.TestCase):
-    """The renderers are not modelled, and saying nothing would be a real answer."""
+class CatalogueTest(unittest.TestCase):
+    """A command with a size and no renderer would answer nothing, which is a real answer."""
 
-    def test_a_renderer_says_it_is_not_here_rather_than_going_quiet(self):
+    def test_every_command_the_chip_accepts_has_something_to_run(self):
+        handlers = dsp4.Dsp4()._handlers()
+
+        self.assertEqual(set(dsp4.INPUT_COUNTS), set(handlers))
+
+    def test_a_command_the_chip_does_not_know_is_refused_when_it_arrives(self):
         chip = dsp4.Dsp4()
-        chip.write(0x0F)
+
+        chip.write(0x12)
         chip.write(0x00)
-        for _ in range(45):
-            chip.write(0)
 
-        with self.assertRaises(dsp4.Unimplemented):
-            chip.write(0)
-
-    def test_and_the_refusal_names_the_command(self):
-        chip = dsp4.Dsp4()
-        chip.write(0x0F)
-        chip.write(0x00)
-        for _ in range(45):
-            chip.write(0)
-
-        with self.assertRaises(dsp4.Unimplemented) as caught:
-            chip.write(0)
-
-        self.assertIn("0x000f", str(caught.exception))
+        self.assertTrue(chip.waiting)
 
 
 class TrackTest(unittest.TestCase):
@@ -902,6 +893,164 @@ class SpriteProjectionTest(unittest.TestCase):
 
         self.assertEqual(chip.oam_row[self.SPRITE_ROW], 2)
         self.assertEqual(chip.oam_row[self.SPRITE_ROW + 1], 2)
+
+
+class LitProjectionTest(unittest.TestCase):
+    """The two projections that ask for the light on the road as they draw it."""
+
+    def lit_road(self, bottom=210, distance=0x7000):
+        return (
+            word(0)
+            + word(0)
+            + word(200)
+            + word(bottom)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0x1000)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(distance)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+        )
+
+    def lit_branch(self, bottom=210, height=200, step=-4):
+        return (
+            word(0)
+            + word(0)
+            + word(200)
+            + word(bottom)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0x1000)
+            + word(0)
+            + word(0x4000)
+            + word(height)
+            + word(step)
+            + word(0)
+            + word(0)
+            + word(0)
+        )
+
+    def colours(self, chip, distance=0x4000, colour=0x7FFF):
+        for _ in range(4):
+            for value in word(distance) + word(colour):
+                chip.write(value)
+            answered(chip, chip.out_count)
+        return chip
+
+    def test_a_lit_stretch_asks_for_four_bytes_of_light(self):
+        chip = started(0x000F, self.lit_road())
+
+        self.assertEqual(chip.in_count, 4)
+
+    def test_a_stretch_with_no_scanlines_asks_for_the_next_distance_instead(self):
+        chip = started(0x000F, self.lit_road(bottom=100))
+
+        self.assertEqual(chip.in_count, 2)
+
+    def test_a_colour_comes_back_dimmed_by_the_distance_it_was_given(self):
+        chip = started(0x000F, self.lit_road())
+        answered(chip, chip.out_count)
+
+        for value in word(0x4000) + word(0x7FFF):
+            chip.write(value)
+
+        self.assertEqual(answered(chip, 2), word(0x3DEF))
+
+    def test_four_colours_are_asked_for_before_any_scanline(self):
+        chip = started(0x000F, self.lit_road())
+        answered(chip, chip.out_count)
+        for _ in range(3):
+            for value in word(0x4000) + word(0x7FFF):
+                chip.write(value)
+            answered(chip, chip.out_count)
+
+        self.assertEqual(chip.in_count, 4)
+
+    def test_the_scanlines_follow_the_last_colour_rather_than_replacing_it(self):
+        chip = started(0x000F, self.lit_road())
+        answered(chip, chip.out_count)
+        self.colours(chip)
+
+        self.assertEqual(chip.in_count, 2)
+
+    def test_and_then_the_stretch_asks_for_its_curvature(self):
+        chip = started(0x000F, self.lit_road())
+        answered(chip, chip.out_count)
+        self.colours(chip)
+
+        for value in word(0x2000):
+            chip.write(value)
+
+        self.assertEqual(chip.in_count, 6)
+
+    def test_the_end_marker_finishes_the_lit_road(self):
+        chip = started(0x000F, self.lit_road())
+        answered(chip, chip.out_count)
+        self.colours(chip)
+
+        for value in word(-0x8000):
+            chip.write(value)
+
+        self.assertTrue(chip.waiting)
+
+    def test_the_lit_fork_asks_for_light_the_same_way(self):
+        chip = started(0x0010, self.lit_branch())
+
+        self.assertEqual(chip.in_count, 4)
+
+    def test_a_lit_fork_with_no_scanlines_asks_for_the_next_distance(self):
+        chip = started(0x0010, self.lit_branch(bottom=100, step=4))
+
+        self.assertEqual(chip.in_count, 2)
+
+    def test_the_lit_fork_wants_ten_bytes_for_its_next_shape(self):
+        chip = started(0x0010, self.lit_branch())
+        answered(chip, chip.out_count)
+        self.colours(chip)
+
+        for value in word(0x2000):
+            chip.write(value)
+
+        self.assertEqual(chip.in_count, 10)
+
+    def test_and_leaves_the_last_two_of_them_unread(self):
+        chip = started(0x0010, self.lit_branch())
+        answered(chip, chip.out_count)
+        self.colours(chip)
+        for value in word(0x2000):
+            chip.write(value)
+
+        for value in word(180) + word(-4) + word(0) + word(0) + word(0x1234):
+            chip.write(value)
+
+        self.assertEqual(chip.view_yofsenv, 0)
+
+    def test_the_end_marker_finishes_the_lit_fork(self):
+        chip = started(0x0010, self.lit_branch())
+        answered(chip, chip.out_count)
+        self.colours(chip)
+
+        for value in word(-0x8000):
+            chip.write(value)
+
+        self.assertTrue(chip.waiting)
 
 
 class ReciprocalTest(unittest.TestCase):

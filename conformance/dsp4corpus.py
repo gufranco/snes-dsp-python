@@ -28,6 +28,7 @@ Usage:
     python3 conformance/dsp4corpus.py --record --driver PATH
 """
 
+import base64
 import json
 import random
 import struct
@@ -49,7 +50,7 @@ READ = "r"
 
 BUFFER_BYTES = 512
 
-CASES = 100
+CASES = 140
 
 STRETCHES = 4
 
@@ -71,7 +72,23 @@ FORK_RIGHT = 0x3FFF
 
 PROJECT_SPRITES = 0x0009
 
-PROJECTIONS = (PROJECT_TRACK, PROJECT_TURNOFF, PROJECT_SHARED, RENDER_SOLID, PROJECT_SPRITES)
+PROJECT_LIT_TRACK = 0x000F
+
+PROJECT_LIT_TURNOFF = 0x0010
+
+PROJECTIONS = (
+    PROJECT_TRACK,
+    PROJECT_TURNOFF,
+    PROJECT_SHARED,
+    RENDER_SOLID,
+    PROJECT_SPRITES,
+    PROJECT_LIT_TRACK,
+    PROJECT_LIT_TURNOFF,
+)
+
+LIGHTING_COLOURS = 4
+
+COLOUR_BYTES = 8
 
 VEHICLE = -0x7000
 
@@ -88,6 +105,12 @@ SELECT_ONE_PLAYER = 0x0003
 SELECT_TWO_PLAYER = 0x000E
 
 BAD_HEADER = 0x1234
+
+TURNOFF = 0x8001
+
+NEAR_DISTANCE = (0x0400, 0x4000)
+
+FAR_DISTANCE = (0x6000, 0x7C00)
 
 END_OF_TRACK = (0x00, 0x80)
 
@@ -143,22 +166,71 @@ def _road(source):
     )
 
 
-def _shared(source):
-    """The multi-player road, whose horizontal shaping is one word rather than two."""
+def _shared(source, level):
+    """The multi-player road, whose horizontal shaping is one word rather than two.
+
+    Its viewer sits low on the screen and looks a long way down the road, because
+    it counts its scanlines from where the viewer was rather than from the last
+    line drawn, and a viewer near the horizon draws nothing at all.
+    """
     return (
-        _viewport(source)
+        _dword(level << 16)
+        + _word(level + 10)
+        + _word(source.randrange(0, 20))
+        + _word(source.randrange(-256, 256))
+        + _word(source.randrange(0, 224))
+        + _dword(source.randrange(-0x200000, 0x200000))
+        + _word(source.randrange(-256, 256))
+        + _word(source.randrange(0, 0x4000))
+        + _word(source.randrange(-128, 128))
         + _dword(source.randrange(-0x4000, 0x4000))
         + _dword(source.randrange(-0x8000, 0x8000))
-        + _word(source.randrange(0x0400, 0x4000))
+        + _word(source.randrange(*FAR_DISTANCE))
         + _word(0)
         + _word(source.randrange(-64, 64))
         + _curvature(source)
     )
 
 
-def _branch(source):
+def _branch(source, level):
     """The fork, which is told where it sits on screen rather than where it is in the world."""
-    return _viewport(source) + _word(source.randrange(0x0400, 0x4000)) + _branch_shape(source)
+    return (
+        _dword(level << 16)
+        + _word(level + 10)
+        + _word(source.randrange(0, 10))
+        + _word(source.randrange(-256, 256))
+        + _word(source.randrange(0, 224))
+        + _dword(source.randrange(-0x200000, 0x200000))
+        + _word(source.randrange(-256, 256))
+        + _word(source.randrange(0, 0x4000))
+        + _word(source.randrange(-128, 128))
+        + _word(source.randrange(0x0400, 0x4000))
+        + _branch_shape(source, level)
+    )
+
+
+def _lit_road(source):
+    """The lit single-player road, whose opening carries a leading zero."""
+    return _word(0) + _road(source)
+
+
+def _lit_branch(source, level):
+    """The lit fork, whose opening carries a leading zero."""
+    return _word(0) + _branch(source, level)
+
+
+def _lighting(source):
+    """A distance and a colour, which come back as the colour dimmed by it."""
+    return _word(source.randrange(0, 0x8000)) + _word(source.randrange(0, 0x8000))
+
+
+def _fork(source):
+    """A road leaving the road, which restarts the wait for a distance."""
+    return (
+        _word(source.randrange(0x0400, 0x4000))
+        + _word(source.randrange(-256, 256))
+        + _word(source.randrange(-32, 32))
+    )
 
 
 def _curvature(source):
@@ -170,11 +242,16 @@ def _curvature(source):
     )
 
 
-def _branch_shape(source):
-    """Where the fork sits on screen and how fast it crosses it."""
+def _branch_shape(source, level):
+    """Where the fork sits on screen and how fast it crosses it.
+
+    Its height is handed down rather than drawn at random, because a fork told to
+    jump about produces no scanlines and a case that draws nothing agrees with
+    anything.
+    """
     return (
-        _word(source.randrange(0, 224))
-        + _word(source.randrange(-32, 32))
+        _word(level)
+        + _word(-source.randrange(1, 8))
         + _word(source.randrange(-256, 256))
         + _word(source.randrange(-32, 32))
         + _word(source.randrange(-32, 32))
@@ -345,28 +422,62 @@ def steps_for(seed):
     return _command(command) + _road_steps(source, command)
 
 
+def _lighting_steps(source):
+    """The four colours a lit projection asks for before it draws a stretch.
+
+    Only a stretch with scanlines in it asks, so the reads between them are what
+    tell the two implementations apart when one of them asks and the other does
+    not.
+    """
+    steps = []
+    for index in range(LIGHTING_COLOURS):
+        last = index == LIGHTING_COLOURS - 1
+        steps += _writes(_lighting(source))
+        steps += [(READ, 0)] * (BUFFER_BYTES if last else COLOUR_BYTES)
+    return steps
+
+
 def _road_steps(source, command):
     """A road, drawn a stretch at a time until the caller says the track has ended."""
-    opening = {
-        PROJECT_TRACK: _road,
-        PROJECT_TURNOFF: _branch,
-        PROJECT_SHARED: _shared,
-        RENDER_SOLID: _solid,
-    }[command]
+    forks = command in (PROJECT_TRACK, PROJECT_LIT_TRACK)
+    branches = command in (PROJECT_TURNOFF, PROJECT_LIT_TURNOFF)
+    lit = command in (PROJECT_LIT_TRACK, PROJECT_LIT_TURNOFF)
     following = {
         PROJECT_TRACK: _curvature,
-        PROJECT_TURNOFF: _branch_shape,
         PROJECT_SHARED: _curvature,
         RENDER_SOLID: _solid_shape,
-    }[command]
+        PROJECT_LIT_TRACK: _curvature,
+    }.get(command)
+    level = source.randrange(200, 224)
+    reach = FAR_DISTANCE if command == PROJECT_SHARED else NEAR_DISTANCE
 
-    steps = [(WRITE, value) for value in opening(source)]
+    if branches:
+        opening = _lit_branch(source, level) if lit else _branch(source, level)
+    elif command == PROJECT_SHARED:
+        opening = _shared(source, level)
+    else:
+        opening = {
+            PROJECT_TRACK: _road,
+            RENDER_SOLID: _solid,
+            PROJECT_LIT_TRACK: _lit_road,
+        }[command](source)
+
+    steps = [(WRITE, value) for value in opening]
     steps += [(READ, 0)] * BUFFER_BYTES
+    if lit:
+        steps += _lighting_steps(source)
     for _ in range(STRETCHES):
-        steps += [(WRITE, value) for value in _word(source.randrange(0x0400, 0x4000))]
+        level = max(level - source.randrange(20, 36), 30)
+        if forks and source.randrange(0, 3) == 0:
+            steps += _writes(_word(TURNOFF)) + [(READ, 0)] * BUFFER_BYTES
+            steps += _writes(_fork(source)) + [(READ, 0)] * BUFFER_BYTES
+        steps += _writes(_word(source.randrange(*reach)))
         steps += [(READ, 0)] * BUFFER_BYTES
-        steps += [(WRITE, value) for value in following(source)]
+        shape = _branch_shape(source, level) if branches else following(source)
+        steps += _writes(shape)
         steps += [(READ, 0)] * BUFFER_BYTES
+        if lit:
+            steps += _lighting_steps(source)
     steps += [(WRITE, value) for value in END_OF_TRACK]
     steps += [(READ, 0)] * 8
     return steps
@@ -425,7 +536,7 @@ def record(driver, wanted):
         seed += 1
         if not fits(steps):
             continue
-        cases.append({"seed": seed - 1, "expected": ask(steps, driver)})
+        cases.append({"seed": seed - 1, "expected": encode(ask(steps, driver))})
     return {
         "comment": (
             "Cases generated from seeds and answered by the chip's own reference. "
@@ -434,6 +545,16 @@ def record(driver, wanted):
         "reference": "snes9x dsp4.cpp, through conformance/ref",
         "cases": cases,
     }
+
+
+def encode(answers):
+    """Answers as one string, because a byte per line is a file nobody can read."""
+    return base64.b64encode(bytes(answers)).decode("ascii")
+
+
+def expected_of(case):
+    """The bytes the reference gave for one case."""
+    return list(base64.b64decode(case["expected"]))
 
 
 def disagreement(expected, actual):
@@ -483,8 +604,9 @@ def run(argv):
     failed = 0
     checked = 0
     for case in corpus["cases"]:
-        found = disagreement(case["expected"], replay(steps_for(case["seed"])))
-        checked += len(case["expected"])
+        expected = expected_of(case)
+        found = disagreement(expected, replay(steps_for(case["seed"])))
+        checked += len(expected)
         if found is None:
             continue
         failed += 1

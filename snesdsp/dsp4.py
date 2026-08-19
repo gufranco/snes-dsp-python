@@ -14,15 +14,20 @@ a command half way through a track is not the same chip as one that has just
 started, and a model that restarts the command produces plausible output that
 drifts.
 
-Two details in the port protocol look like bugs and are the hardware.
+Three details look like bugs and are the hardware.
 
 Writing a byte to the output writes a whole word and then advances by one, so
 consecutive byte writes overlap and the second one overwrites the top half of the
 first. The sprite packer relies on it.
 
-And the output length is cleared when the last byte is read rather than when the
-next command arrives, so a program that reads one byte too many gets the idle
-value instead of wrapping round to the start.
+The output length is cleared when the last byte is read rather than when the next
+command arrives, so a program that reads one byte too many gets the idle value
+instead of wrapping round to the start.
+
+And one over one does not fit the reciprocal table, which holds it as a value the
+lookup hands back signed, so a run of a single scanline steps the wrong way.
+Every caller then negates that step again, so the two mistakes cancel where they
+meet and neither is visible on its own.
 
 The arithmetic is fixed point in three formats, and which one a field is in is
 not recoverable from the field. It is written down here in the names.
@@ -166,6 +171,8 @@ TURNOFF = 0x8001
 
 VISIBLE_BELOW = 0x00EB
 
+LIGHTING_COLOURS = 4
+
 VEHICLE = 0x9000
 
 NO_SPRITE = 0x0000
@@ -179,10 +186,6 @@ SPRITE_HEADERS = (0x20, 0x2E, 0x40, 0x60, 0xA0, 0xC0, 0xE0)
 FORK_LEFT = 0xC001
 
 FORK_RIGHT = 0x3FFF
-
-
-class Unimplemented(Exception):
-    pass
 
 
 def signed16(value):
@@ -407,13 +410,7 @@ class Dsp4:
         if self.running is not None:
             self._advance()
             return
-        handler = self._handlers().get(self.command)
-        if handler is None:
-            raise Unimplemented(
-                f"command {self.command:#06x} is one of this chip's track renderers, "
-                "which this model does not carry yet"
-            )
-        found = handler()
+        found = self._handlers()[self.command]()
         if found is None:
             return
         self.running = found
@@ -448,6 +445,8 @@ class Dsp4:
             0x0009: self._project_sprites,
             0x0007: self._project_turnoff,
             0x000D: self._project_shared_track,
+            0x000F: self._project_lit_track,
+            0x0010: self._project_lit_turnoff,
             0x000E: self._select_shared,
             0x0011: self._map_across,
         }
@@ -598,21 +597,9 @@ class Dsp4:
         while True:
             self._project_one_stretch(count_from_raster=True, follow_turnoff=True)
 
-            yield 2
-            self.distance = self.take_word()
-            if self.distance == END_OF_TRACK:
+            finished = yield from self._take_next_distance()
+            if finished:
                 return
-
-            if (self.distance & 0xFFFF) == TURNOFF:
-                yield 6
-                self.distance = self.take_word()
-                self.view_turnoff_x = self.take_word()
-                self.view_turnoff_dx = self.take_word()
-                shift = signed16((self.view_turnoff_x * self.distance) >> 15)
-                self.view_x1 = signed16(self.view_x1 + shift)
-                self.view_xofs1 = signed16(self.view_xofs1 + shift)
-                self.view_turnoff_x = signed16(self.view_turnoff_x + self.view_turnoff_dx)
-                yield 2
 
             yield 6
             self.world_ddy = self.take_word()
@@ -620,19 +607,53 @@ class Dsp4:
             self.view_yofsenv = self.take_word()
             self.world_xenv = 0
 
-    def _project_one_stretch(self, count_from_raster, follow_turnoff):
+    def _take_next_distance(self):
+        """The distance to the next stretch, and any forks that arrive before it.
+
+        A fork does not merely interrupt the wait for a distance. It restarts it,
+        so the two bytes that follow one are read as a distance in their own right
+        and may be another fork, or the marker that ends the track. Reading them
+        as the curvature that normally follows would bend the road by whatever the
+        caller meant as an ending.
+        """
+        while True:
+            yield 2
+            self.distance = self.take_word()
+            if self.distance == END_OF_TRACK:
+                return True
+            if (self.distance & 0xFFFF) != TURNOFF:
+                return False
+
+            yield 6
+            self.distance = self.take_word()
+            self.view_turnoff_x = self.take_word()
+            self.view_turnoff_dx = self.take_word()
+            shift = signed16((self.view_turnoff_x * self.distance) >> 15)
+            self.view_x1 = signed16(self.view_x1 + shift)
+            self.view_xofs1 = signed16(self.view_xofs1 + shift)
+            self.view_turnoff_x = signed16(self.view_turnoff_x + self.view_turnoff_dx)
+
+    def _project_one_stretch(self, count_from_raster, follow_turnoff, steer_by_turnoff=True):
         """One stretch of road: where it lands on screen, and the lines it fills.
 
-        The two projections that use this differ in two places and nowhere else.
+        The projections that use this differ in three places and nowhere else.
         The single-player one counts its scanlines down from the last line it
         drew; the multi-player one counts them from where the viewer was, which
-        gives a different answer once a stretch has been clipped. And only the
-        single-player one carries a fork, because only it can be given one.
+        gives a different answer once a stretch has been clipped. Only the
+        single-player one carries a fork, because only it can be given one. And
+        the lit one does not steer by that fork even though it can be given one,
+        so a fork bends its road later than it bends the unlit road.
         """
+        self._stretch_header(count_from_raster, steer_by_turnoff)
+        if self.segments:
+            self._rasterise()
+        self._advance_projection(follow_turnoff)
+
+    def _stretch_header(self, count_from_raster, steer_by_turnoff):
+        """Where the stretch lands, and how many scanlines of it are visible."""
         far_x = signed32(self.world_x + self.world_xenv) >> 16
-        self.view_x2 = signed16(
-            ((far_x * self.distance) >> 15) + ((self.view_turnoff_x * self.distance) >> 15)
-        )
+        steer = ((self.view_turnoff_x * self.distance) >> 15) if steer_by_turnoff else 0
+        self.view_x2 = signed16(((far_x * self.distance) >> 15) + steer)
         self.view_y2 = signed16(((self.world_y >> 16) * self.distance) >> 15)
         self.view_xofs2 = self.view_x2
         self.view_yofs2 = signed16(
@@ -646,6 +667,11 @@ class Dsp4:
         self.put_word(self.view_y2)
 
         start = self.poly_raster if count_from_raster else self.view_y1
+        self._count_segments(start)
+        self.put_word(self.segments)
+
+    def _count_segments(self, start):
+        """How many scanlines this stretch covers, after clipping at both ends."""
         self.segments = signed16(start - self.view_y2)
         if self.view_y2 >= self.poly_raster:
             self.segments = 0
@@ -657,11 +683,8 @@ class Dsp4:
             if self.view_y1 >= self.poly_top:
                 self.segments = signed16(self.view_y1 - self.poly_top)
 
-        self.put_word(self.segments)
-
-        if self.segments:
-            self._rasterise()
-
+    def _advance_projection(self, follow_turnoff):
+        """Move the viewer to the last line drawn, and bend the road onwards."""
         self.view_x1 = self.view_x2
         self.view_y1 = self.view_y2
         self.view_xofs1 = self.view_xofs2
@@ -673,6 +696,25 @@ class Dsp4:
         self.world_y = signed32(self.world_y + self.world_dy)
         if follow_turnoff:
             self.view_turnoff_x = signed16(self.view_turnoff_x + self.view_turnoff_dx)
+
+    def _take_lighting(self):
+        """Four colours, each dimmed by how far away the thing wearing it is.
+
+        They arrive one at a time between the stretch header and its scanlines,
+        and each answer replaces the header in the output rather than following
+        it. The scanlines are then appended after the fourth colour, so a caller
+        that reads the output as one block reads a colour where it expects the
+        first line.
+        """
+        for _ in range(LIGHTING_COLOURS):
+            yield 4
+            distance = self.take_word()
+            colour = self.take_word()
+            red = ((colour & 0x1F) * distance >> 15) & 0x1F
+            green = (((colour >> 5) & 0x1F) * distance >> 15) & 0x1F
+            blue = (((colour >> 10) & 0x1F) * distance >> 15) & 0x1F
+            self.clear_output()
+            self.put_word(red | (green << 5) | (blue << 10))
 
     def _rasterise(self):
         """Walk between two projected points, one scanline at a time."""
@@ -998,6 +1040,104 @@ class Dsp4:
             )
         self._place_sprite(draw, 0, OFFSCREEN_ROW, 0, 0, stop=True)
 
+    def _project_lit_track(self):
+        """The single-player road again, this time asking for the light on it.
+
+        Everything about the projection is the road command's, with two changes.
+        Between the stretch header and its scanlines it asks four times for a
+        distance and a colour and answers each dimmed by that distance. And it
+        does not steer by the fork it is holding, so a fork it has been given
+        moves the viewer without bending the stretch it arrives on.
+        """
+        self.take_word()
+        self.world_y = self.take_dword()
+        self.poly_bottom = self.take_word()
+        self.poly_top = self.take_word()
+        self.poly_cx_right = self.take_word()
+        self.viewport_bottom = self.take_word()
+        self.world_x = self.take_dword()
+        self.poly_cx_left = self.take_word()
+        self.poly_ptr = self.take_word()
+        self.world_yofs = self.take_word()
+        self.world_dy = self.take_dword()
+        self.world_dx = self.take_dword()
+        self.distance = self.take_word()
+        self.take_word()
+        self.world_xenv = self.take_dword()
+        self.world_ddy = self.take_word()
+        self.world_ddx = self.take_word()
+        self.view_yofsenv = self.take_word()
+
+        self.view_x1 = signed16(signed32(self.world_x + self.world_xenv) >> 16)
+        self.view_y1 = signed16(self.world_y >> 16)
+        self.view_xofs1 = signed16(self.world_x >> 16)
+        self.view_yofs1 = self.world_yofs
+        self.view_turnoff_x = 0
+        self.view_turnoff_dx = 0
+        self.poly_raster = self.poly_bottom
+
+        while True:
+            self._stretch_header(count_from_raster=True, steer_by_turnoff=False)
+            if self.segments:
+                yield from self._take_lighting()
+                self._rasterise()
+            self._advance_projection(follow_turnoff=True)
+
+            finished = yield from self._take_next_distance()
+            if finished:
+                return
+
+            yield 6
+            self.world_ddy = self.take_word()
+            self.world_ddx = self.take_word()
+            self.view_yofsenv = self.take_word()
+            self.world_xenv = 0
+
+    def _project_lit_turnoff(self):
+        """The fork again, asking for the light on it the same way.
+
+        Its continuation asks for ten bytes and reads eight of them. The vertical
+        offset that the unlit fork re-reads on every stretch is taken once at the
+        start here and never again, so the two bytes carrying it are accepted and
+        dropped.
+        """
+        self.take_word()
+        self.world_y = self.take_dword()
+        self.poly_bottom = self.take_word()
+        self.poly_top = self.take_word()
+        self.poly_cx_right = self.take_word()
+        self.viewport_bottom = self.take_word()
+        self.world_x = self.take_dword()
+        self.poly_cx_left = self.take_word()
+        self.poly_ptr = self.take_word()
+        self.world_yofs = self.take_word()
+        self.distance = self.take_word()
+        self._take_branch_shape()
+
+        self.view_x1 = signed16(self.world_x >> 16)
+        self.view_y1 = signed16(self.world_y >> 16)
+        self.view_xofs1 = self.view_x1
+        self.view_yofs1 = self.world_yofs
+        self.poly_raster = self.poly_bottom
+
+        while True:
+            self._turnoff_header()
+            if self.segments:
+                yield from self._take_lighting()
+                self._rasterise()
+            self._advance_turnoff()
+
+            yield 2
+            self.distance = self.take_word()
+            if self.distance == END_OF_TRACK:
+                return
+
+            yield 10
+            self.view_y2 = self.take_word()
+            self.view_dy = signed16((self.take_word() * self.distance) >> 15)
+            self.view_x2 = self.take_word()
+            self.view_dx = signed16((self.take_word() * self.distance) >> 15)
+
     def _project_shared_track(self):
         """The multi-player road, which is the single-player one without the forks.
 
@@ -1092,6 +1232,13 @@ class Dsp4:
 
     def _turnoff_one_stretch(self):
         """One stretch of the branch, and the lines it fills."""
+        self._turnoff_header()
+        if self.segments:
+            self._rasterise()
+        self._advance_turnoff()
+
+    def _turnoff_header(self):
+        """Where the branch has moved to, and how much of it is visible."""
         self.view_x2 = signed16(self.view_x2 + self.view_dx)
         self.view_y2 = signed16(self.view_y2 + self.view_dy)
         self.view_xofs2 = self.view_x2
@@ -1103,22 +1250,11 @@ class Dsp4:
         self.put_word(self.view_x2)
         self.put_word(self.view_y2)
 
-        self.segments = signed16(self.view_y1 - self.view_y2)
-        if self.view_y2 >= self.poly_raster:
-            self.segments = 0
-        else:
-            self.poly_raster = self.view_y2
-
-        if self.view_y2 < self.poly_top:
-            self.segments = 0
-            if self.view_y1 >= self.poly_top:
-                self.segments = signed16(self.view_y1 - self.poly_top)
-
+        self._count_segments(self.view_y1)
         self.put_word(self.segments)
 
-        if self.segments:
-            self._rasterise()
-
+    def _advance_turnoff(self):
+        """Move the viewer to the last line of the branch that was drawn."""
         self.view_x1 = self.view_x2
         self.view_y1 = self.view_y2
         self.view_xofs1 = self.view_xofs2
