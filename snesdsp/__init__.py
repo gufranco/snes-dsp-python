@@ -1,4 +1,4 @@
-"""A model of the DSP-2, the coprocessor in one SNES cartridge.
+"""Models of the DSP-2 and DSP-4, the coprocessors in two SNES cartridges.
 
     from snesdsp import Dsp
 
@@ -25,6 +25,7 @@ from .chip import (
     Chip,
 )
 from .commands import merge, mirror, multiply, scale, tile
+from .dsp4 import Dsp4
 from .memory import PARAMETER_BYTES, UNSET_SEED, parameter_ram, scramble
 from .models import MODELS, UnknownModelError, describe
 from .version import VERSION
@@ -53,6 +54,7 @@ __all__ = [
     "UNSET_SEED",
     "Chip",
     "Dsp",
+    "Dsp4",
     "UnknownModelError",
     "__version__",
     "describe",

@@ -32,22 +32,25 @@ meet and neither is visible on its own.
 The arithmetic is fixed point in three formats, and which one a field is in is
 not recoverable from the field. It is written down here in the names.
 
-What is here and what is not. The port protocol is complete, and so are the eight
-commands that finish in one go and five of the renderers: the single-player
-track, the fork that leaves it, the multi-player track, the pair of solid shapes,
-and the sprites placed along the road. Each is compared against the chip's own
-reference.
+Every command the chip answers is here: the eight that finish in one go and the
+seven renderers that do not. Each is compared against the chip's own reference,
+which is what settles the places where the two could differ.
 
-The two lit track projections are not here yet, and asking for one raises rather
-than returning nothing. A command that quietly
-produced no output would be indistinguishable from a road with no segments in it,
-which is a real answer this chip can give, so silence is the one response this
-module must not make.
+A command the chip does not know is refused when it arrives rather than when it
+runs, which is what the hardware does. A command that quietly produced no output
+would be indistinguishable from a road with no segments in it, which is a real
+answer this chip can give, so silence is the one response this module must not
+make.
+
+And nothing starts clean here either. The parameter RAM and the output buffer are
+the chip's own memory and it never clears them, so by default they hold the
+scrambled pattern the rest of this package uses rather than zeroes. A caller that
+wants zeroes asks for them.
 """
 
-PARAMETER_BYTES = 512
+from .memory import PARAMETER_BYTES, UNSET_SEED, parameter_ram
 
-OUTPUT_BYTES = 512
+OUTPUT_BYTES = PARAMETER_BYTES
 
 OUTPUT_MASK = OUTPUT_BYTES - 1
 
@@ -241,9 +244,9 @@ def multiply(multiplicand, multiplier):
 class Dsp4:
     """One DSP-4, holding a command, its inputs, and a road part way drawn."""
 
-    def __init__(self):
-        self.parameters = bytearray(PARAMETER_BYTES)
-        self.output = bytearray(OUTPUT_BYTES)
+    def __init__(self, fill=None, seed=UNSET_SEED):
+        self.parameters = parameter_ram(fill=fill, seed=seed)
+        self.output = parameter_ram(fill=fill, seed=seed)
         self.reset()
 
     def reset(self):

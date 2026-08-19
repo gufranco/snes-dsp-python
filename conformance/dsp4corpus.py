@@ -90,6 +90,9 @@ LIGHTING_COLOURS = 4
 
 COLOUR_BYTES = 8
 
+CLEARED = 0
+"""The reference starts its memory at zero, so the model is asked to as well."""
+
 VEHICLE = -0x7000
 
 SPRITE_HEADERS = (0x20, 0x2E, 0x40, 0x60, 0xA0, 0xC0, 0xE0)
@@ -485,7 +488,7 @@ def _road_steps(source, command):
 
 def fits(steps):
     """Whether every answer in a case stays inside the buffer the chip has."""
-    chip = dsp4.Dsp4()
+    chip = dsp4.Dsp4(fill=CLEARED)
     for kind, value in steps:
         if kind == WRITE:
             chip.write(value)
@@ -498,7 +501,7 @@ def fits(steps):
 
 def replay(steps):
     """The case through the model."""
-    chip = dsp4.Dsp4()
+    chip = dsp4.Dsp4(fill=CLEARED)
     answers = []
     for kind, value in steps:
         if kind == WRITE:

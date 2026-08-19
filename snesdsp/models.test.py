@@ -10,7 +10,7 @@ from snesdsp import models
 
 class CatalogueTest(unittest.TestCase):
     def test_the_package_names_every_model_it_covers(self):
-        self.assertIn("dsp2", models.MODELS)
+        self.assertEqual(set(models.MODELS), {"dsp2", "dsp4"})
 
     def test_a_model_says_what_it_is_and_what_it_holds(self):
         found = models.describe("dsp2")
@@ -22,9 +22,13 @@ class CatalogueTest(unittest.TestCase):
         for written in ("DSP2", "dsp-2", "DSP_2", "nintendo-dsp2"):
             self.assertEqual(models.describe(written).name, "dsp2")
 
+    def test_the_renderer_answers_to_its_own_names(self):
+        for written in ("DSP4", "dsp-4", "DSP_4", "nintendo-dsp4"):
+            self.assertEqual(models.describe(written).name, "dsp4")
+
     def test_a_model_the_package_does_not_have_is_refused_by_name(self):
         with self.assertRaises(models.UnknownModelError):
-            models.describe("dsp1")
+            models.describe("dsp3")
 
     def test_the_refusal_lists_what_is_available(self):
         with self.assertRaises(models.UnknownModelError) as raised:
@@ -49,9 +53,12 @@ class BuildTest(unittest.TestCase):
     def test_options_reach_the_chip_that_gets_built(self):
         self.assertEqual(snesdsp.Dsp(model="dsp2", fill=0xAA).parameter_ram[0], 0xAA)
 
+    def test_the_renderer_is_built_from_its_model_name_too(self):
+        self.assertEqual(snesdsp.Dsp(model="dsp4", fill=0).model, "dsp4")
+
     def test_a_model_the_package_does_not_have_is_refused_at_construction(self):
         with self.assertRaises(models.UnknownModelError):
-            snesdsp.Dsp(model="dsp4")
+            snesdsp.Dsp(model="dsp3")
 
 
 if __name__ == "__main__":
