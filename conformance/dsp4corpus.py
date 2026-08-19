@@ -1,8 +1,11 @@
 """Hold the DSP-4's track projection to the chip's own reference.
 
-Each case is a road, drawn by one of the three projections in turn: a viewpoint
-and a stretch of track, then several more stretches fed in as the projection asks
-for them, then the marker that says the track has ended. The numbers are generated from a seed but shaped like a road
+Each case is one command driven to completion, cycling through the renderers that
+suspend. Four of them are roads: a viewpoint and a stretch of track, then several
+more stretches fed in as the projection asks for them, then the marker that says
+the track has ended. The fifth is a screen of sprites, which opens with a
+selection because a chip that has not been told how many sprites a row may hold
+refuses every one of them, and a case that draws nothing agrees with anything. The numbers are generated from a seed but shaped like a road
 rather than like noise, because a projection given nonsense produces nonsense and
 the two would agree about it without either being right.
 
@@ -46,7 +49,7 @@ READ = "r"
 
 BUFFER_BYTES = 512
 
-CASES = 80
+CASES = 100
 
 STRETCHES = 4
 
@@ -66,7 +69,25 @@ FORK_LEFT = -0x3FFF
 
 FORK_RIGHT = 0x3FFF
 
-PROJECTIONS = (PROJECT_TRACK, PROJECT_TURNOFF, PROJECT_SHARED, RENDER_SOLID)
+PROJECT_SPRITES = 0x0009
+
+PROJECTIONS = (PROJECT_TRACK, PROJECT_TURNOFF, PROJECT_SHARED, RENDER_SOLID, PROJECT_SPRITES)
+
+VEHICLE = -0x7000
+
+SPRITE_HEADERS = (0x20, 0x2E, 0x40, 0x60, 0xA0, 0xC0, 0xE0)
+
+SPRITES = 4
+
+TILES = 3
+
+SPRITE_BYTES = 32
+
+SELECT_ONE_PLAYER = 0x0003
+
+SELECT_TWO_PLAYER = 0x000E
+
+BAD_HEADER = 0x1234
 
 END_OF_TRACK = (0x00, 0x80)
 
@@ -206,15 +227,126 @@ def _envelope(source):
     return _word(source.randrange(-64, 64))
 
 
+def _screen(source):
+    """The screen the sprites are placed on."""
+    return (
+        _word(source.randrange(100, 160))
+        + _word(source.randrange(80, 120))
+        + _word(0)
+        + _word(source.randrange(0, 32))
+        + _word(source.randrange(224, 256))
+        + _word(source.randrange(0, 32))
+        + _word(source.randrange(190, 224))
+    )
+
+
+def _vehicle(source):
+    """A car, its collision vector, and how far away it is."""
+    return (
+        _word(source.randrange(0, 0x8000))
+        + _word(source.randrange(-256, 256))
+        + _word(source.randrange(-256, 256))
+        + _word(source.randrange(-256, 256))
+        + _word(source.randrange(-256, 256))
+        + _word(source.randrange(0x0400, 0x4000))
+        + _word(source.randrange(-256, 256))
+    )
+
+
+def _terrain(source):
+    """Something standing beside the road."""
+    return (
+        _word(source.randrange(0, 256))
+        + _word(source.randrange(0, 256))
+        + _word(source.randrange(-256, 256))
+        + _word(source.randrange(-256, 256))
+    )
+
+
+def _tile(source):
+    """One tile of a sprite: a header that is also its attribute delta, then offsets."""
+    header = source.choice(SPRITE_HEADERS) << 8
+    offsets = _word(source.randrange(-64, 64)) + _word(source.randrange(-64, 64))
+    return _word(header | source.randrange(0, 256)), offsets
+
+
+def _command(command):
+    return [(WRITE, command & 0xFF), (WRITE, command >> 8)]
+
+
+def _writes(values):
+    return [(WRITE, value) for value in values]
+
+
+def _sprite_tiles(source):
+    """The tiles of one sprite, and whatever ends the run.
+
+    Three things end it: a header the chip does not recognise, a zero once the
+    tiles have already been switched to the smaller size, and the marker that
+    ends the whole command. The first two are here; the third ends the case.
+    """
+    steps = []
+    size = 1
+    for _ in range(TILES):
+        picked = source.randrange(0, 8)
+        if picked == 0:
+            return steps + _writes(_word(BAD_HEADER))
+        if picked == 1 and size:
+            size = 0
+            steps += _writes(_word(0))
+            continue
+        header, offsets = _tile(source)
+        steps += _writes(header) + _writes(offsets) + [(READ, 0)] * SPRITE_BYTES
+    if size:
+        steps += _writes(_word(0))
+    return steps + _writes(_word(0))
+
+
+def _one_sprite(source):
+    """One sprite: which kind it is, where it sits, and the tiles it is made of."""
+    vehicle = source.randrange(0, 4) == 0
+    steps = _writes(_word(source.randrange(0, 224)))
+    steps += _writes(_word(VEHICLE if vehicle else source.randrange(0x0400, 0x4000)))
+    if vehicle:
+        steps += _writes(_vehicle(source)) + [(READ, 0)] * SPRITE_BYTES
+        steps += _writes(_word(source.randrange(-32, 32)))
+    else:
+        steps += _writes(_terrain(source))
+    steps += _writes(_word(source.randrange(0, 0x4000)))
+    return steps + _sprite_tiles(source)
+
+
+def _sprite_steps(source):
+    """The whole exchange for a screen of sprites.
+
+    It opens with a selection, because a chip that has not been told how many
+    sprites a row may hold refuses every one of them, and a case that draws
+    nothing agrees with anything.
+    """
+    selection = SELECT_ONE_PLAYER if source.randrange(0, 2) else SELECT_TWO_PLAYER
+    steps = _command(selection) + _command(PROJECT_SPRITES) + _writes(_screen(source))
+    for _ in range(SPRITES):
+        steps += _one_sprite(source)
+    steps += _writes(_word(source.randrange(0, 224))) + _writes(END_OF_TRACK)
+    return steps + [(READ, 0)] * 8
+
+
 def command_for(seed):
     """Which of the three projections a seed exercises."""
     return PROJECTIONS[seed % len(PROJECTIONS)]
 
 
 def steps_for(seed):
-    """The whole exchange for one road, as writes and reads in order."""
+    """The whole exchange for one case, as writes and reads in order."""
     source = random.Random(seed)
     command = command_for(seed)
+    if command == PROJECT_SPRITES:
+        return _sprite_steps(source)
+    return _command(command) + _road_steps(source, command)
+
+
+def _road_steps(source, command):
+    """A road, drawn a stretch at a time until the caller says the track has ended."""
     opening = {
         PROJECT_TRACK: _road,
         PROJECT_TURNOFF: _branch,
@@ -228,8 +360,7 @@ def steps_for(seed):
         RENDER_SOLID: _solid_shape,
     }[command]
 
-    steps = [(WRITE, command & 0xFF), (WRITE, command >> 8)]
-    steps += [(WRITE, value) for value in opening(source)]
+    steps = [(WRITE, value) for value in opening(source)]
     steps += [(READ, 0)] * BUFFER_BYTES
     for _ in range(STRETCHES):
         steps += [(WRITE, value) for value in _word(source.randrange(0x0400, 0x4000))]
@@ -297,7 +428,7 @@ def record(driver, wanted):
         cases.append({"seed": seed - 1, "expected": ask(steps, driver)})
     return {
         "comment": (
-            "Roads generated from seeds and answered by the chip's own reference. "
+            "Cases generated from seeds and answered by the chip's own reference. "
             "Cases whose output would not fit the chip's 512 byte buffer are not here."
         ),
         "reference": "snes9x dsp4.cpp, through conformance/ref",
@@ -345,7 +476,7 @@ def run(argv):
             return 2
         found = record(chosen.driver, chosen.cases)
         Path(chosen.corpus or DEFAULT_CORPUS).write_text(json.dumps(found, indent=2) + "\n")
-        print(f"recorded {len(found['cases'])} roads")
+        print(f"recorded {len(found['cases'])} cases")
         return 0
 
     corpus = load(chosen.corpus)
@@ -361,7 +492,7 @@ def run(argv):
         if failed <= REPORT_LIMIT:
             print(f"FAIL seed {case['seed']} at byte {index}: reference {theirs}, model {ours}")
 
-    print(f"{len(corpus['cases'])} roads, {checked:,} bytes compared, {failed} disagreed")
+    print(f"{len(corpus['cases'])} cases, {checked:,} bytes compared, {failed} disagreed")
     return 1 if failed else 0
 
 

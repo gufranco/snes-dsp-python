@@ -28,12 +28,13 @@ The arithmetic is fixed point in three formats, and which one a field is in is
 not recoverable from the field. It is written down here in the names.
 
 What is here and what is not. The port protocol is complete, and so are the eight
-commands that finish in one go and four of the renderers: the single-player
-track, the fork that leaves it, the multi-player track, and the pair of solid
-shapes. Each is compared against the chip's own reference.
+commands that finish in one go and five of the renderers: the single-player
+track, the fork that leaves it, the multi-player track, the pair of solid shapes,
+and the sprites placed along the road. Each is compared against the chip's own
+reference.
 
-The sprite projection and the two lit track projections are not here yet, and
-asking for one raises rather than returning nothing. A command that quietly
+The two lit track projections are not here yet, and asking for one raises rather
+than returning nothing. A command that quietly
 produced no output would be indistinguishable from a road with no segments in it,
 which is a real answer this chip can give, so silence is the one response this
 module must not make.
@@ -165,6 +166,16 @@ TURNOFF = 0x8001
 
 VISIBLE_BELOW = 0x00EB
 
+VEHICLE = 0x9000
+
+NO_SPRITE = 0x0000
+
+CLIPPING_TILE = 0x00EE
+
+OFFSCREEN_ROW = 0x0100
+
+SPRITE_HEADERS = (0x20, 0x2E, 0x40, 0x60, 0xA0, 0xC0, 0xE0)
+
 FORK_LEFT = 0xC001
 
 FORK_RIGHT = 0x3FFF
@@ -291,6 +302,17 @@ class Dsp4:
         self.solid_raster = [[0, 0], [0, 0]]
         self.solid_start = [0, 0]
         self.solid_plane = [0, 0]
+        self.viewport_cx = 0
+        self.viewport_cy = 0
+        self.viewport_left = 0
+        self.viewport_right = 0
+        self.viewport_top = 0
+        self.raster = 0
+        self.sprite_x = 0
+        self.sprite_y = 0
+        self.sprite_size = 0
+        self.sprite_attr = 0
+        self.sprite_clipy = 0
 
     def take_dword(self):
         at = self.in_index
@@ -423,6 +445,7 @@ class Dsp4:
             0x000B: self._set_sprite,
             0x0001: self._project_track,
             0x0008: self._render_solid,
+            0x0009: self._project_sprites,
             0x0007: self._project_turnoff,
             0x000D: self._project_shared_track,
             0x000E: self._select_shared,
@@ -476,29 +499,45 @@ class Dsp4:
         sprite_y = self.take_word()
         attributes = self.take_word()
         self.clear_output()
-        self._place_sprite(sprite_x, sprite_y, attributes)
+        self._place_sprite(True, sprite_x, sprite_y, attributes, 0, stop=True)
 
-    def _place_sprite(self, sprite_x, sprite_y, attributes):
-        """One sprite, if the row it lands on still has room for it.
+    def _place_sprite(self, draw, sprite_x, sprite_y, attributes, size, stop):
+        """One sprite, if the rows it lands on still have room for it.
 
-        The chip also has a double-height form, which only the track renderers
-        ask for. It is not here because they are not here.
+        The flag is carried in as well as out. A tile that has already been
+        refused once stays refused for the rest of the sprite it belongs to, so
+        the caller cannot draw the second half of something whose first half did
+        not fit.
+
+        A double-height sprite occupies two rows and counts two against each of
+        them rather than one against the row it starts in.
         """
-        row = (sprite_y >> 3) & 0x1F
+        first = (sprite_y >> 3) & 0x1F
+        second = (first + 1) & 0x1F
 
-        draw = True
         if not (sprite_y < 0 or (sprite_y & 0x01FF) < VISIBLE_BELOW):
             draw = False
-        if self.oam_row[row] >= self.oam_row_max:
+        if size:
+            if self.oam_row[first] + 1 >= self.oam_row_max:
+                draw = False
+            if self.oam_row[second] + 1 >= self.oam_row_max:
+                draw = False
+        elif self.oam_row[first] >= self.oam_row_max:
             draw = False
         if self.sprite_count >= SPRITE_LIMIT:
             draw = False
 
         if not draw:
-            self.put_word(0)
-            return
+            if stop:
+                self.put_word(0)
+            return draw
 
-        self.oam_row[row] += 1
+        if size:
+            self.oam_row[first] += 2
+            self.oam_row[second] += 2
+        else:
+            self.oam_row[first] += 1
+
         self.put_word(1)
         self.put_byte(sprite_x & 0xFF)
         self.put_byte(sprite_y & 0xFF)
@@ -507,10 +546,13 @@ class Dsp4:
 
         offscreen = 1 if sprite_x < 0 or sprite_x > 255 else 0
         self.oam_attr[self.oam_index] |= offscreen << self.oam_bits
-        self.oam_bits += 2
+        self.oam_bits += 1
+        self.oam_attr[self.oam_index] |= (1 if size else 0) << self.oam_bits
+        self.oam_bits += 1
         if self.oam_bits == 16:
             self.oam_bits = 0
             self.oam_index += 1
+        return draw
 
     def _project_track(self):
         """The single-player road, drawn outwards from the viewer.
@@ -806,6 +848,155 @@ class Dsp4:
         far = signed16(self.solid_start[source] + far_env)
         step = signed32((far - near) * inverse(self.segments) << 1)
         return signed32(-step) if self.segments == 1 else step
+
+    def _project_sprites(self):
+        """Sprites placed along the road, packed into the format the screen wants.
+
+        This is the longest-running command on the chip. It holds a viewport, a
+        raster line it has drawn down to, and a sprite half unpacked, and it
+        suspends in six different places. Two of them are the same batch size, so
+        the resumption point cannot be recovered from what arrives next.
+
+        A sprite is one of two kinds. A vehicle carries a collision vector and a
+        lift, and its horizontal position is handed back so the caller can steer
+        by it. Anything else sits on the terrain and is placed from the raster
+        line rather than from the horizon.
+
+        Then the tiles. Each is a header, a pair of offsets and an attribute
+        delta, and there is no count: the run ends on a zero, on a marker, or on
+        the first header the chip does not recognise. A tile that would fall
+        below the line the road has already covered is drawn twice, once as a
+        transparent tile that clips it and once as itself.
+        """
+        self.viewport_cx = self.take_word()
+        self.viewport_cy = self.take_word()
+        self.take_word()
+        self.viewport_left = self.take_word()
+        self.viewport_right = self.take_word()
+        self.viewport_top = self.take_word()
+        self.viewport_bottom = self.take_word()
+
+        self.poly_bottom = signed16(self.viewport_bottom - self.viewport_cy)
+        self.poly_raster = OFFSCREEN_ROW
+
+        while True:
+            yield 4
+            self.raster = self.take_word()
+            if self.raster < self.poly_raster:
+                self.sprite_clipy = signed16(
+                    self.viewport_bottom - (self.poly_bottom - self.raster)
+                )
+                self.poly_raster = self.raster
+
+            self.distance = self.take_word()
+            if self.distance == END_OF_TRACK:
+                return
+            if self.distance == NO_SPRITE:
+                continue
+
+            if (self.distance & 0xFFFF) == VEHICLE:
+                yield 14
+                self._place_vehicle()
+                yield 4
+                self.sprite_y = signed16(self.sprite_y + self.take_word())
+            else:
+                yield 10
+                self._place_terrain()
+
+            self.sprite_size = 1
+            self.sprite_attr = self.take_word()
+
+            finished = yield from self._pack_tiles()
+            if finished:
+                return
+
+    def _place_vehicle(self):
+        """A car, whose position is pulled towards whatever it has just hit."""
+        energy = self.take_word() & 0xFFFF
+        impact_back = self.take_word()
+        car_back = self.take_word()
+        impact_left = self.take_word()
+        car_left = self.take_word()
+        self.distance = self.take_word()
+        car_right = self.take_word()
+
+        world_x = signed16(car_right - car_left - ((energy * (impact_left - car_left)) >> 16))
+        world_y = signed16(car_back - ((energy * (car_back - impact_back)) >> 16))
+
+        self.sprite_x = signed16(self.viewport_cx + signed16((world_x * self.distance) >> 15))
+        self.sprite_y = signed16(
+            self.viewport_bottom - (self.poly_bottom - signed16((world_y * self.distance) >> 15))
+        )
+
+        self.clear_output()
+        self.put_word(world_x)
+
+    def _place_terrain(self):
+        """Anything else, placed from the raster line the road has reached."""
+        self.poly_cx_left = self.take_word()
+        self.take_word()
+        world_x = self.take_word()
+        world_y = self.take_word()
+
+        self.segments = signed16(self.poly_bottom - self.raster)
+        self.sprite_x = signed16(
+            self.viewport_cx + signed16((world_x * self.distance) >> 15) - self.poly_cx_left
+        )
+        self.sprite_y = signed16(
+            self.viewport_bottom - self.segments + signed16((world_y * self.distance) >> 15)
+        )
+
+    def _pack_tiles(self):
+        """The tiles of one sprite, until something says there are no more.
+
+        Answers whether the whole command ended rather than only this sprite,
+        because the end marker can arrive in the middle of a sprite and means the
+        same thing there as it does between them.
+        """
+        while True:
+            yield 2
+            self.raster = self.take_word()
+            if self.raster == END_OF_TRACK:
+                return True
+            if self.raster == NO_SPRITE:
+                if not self.sprite_size:
+                    return False
+                self.sprite_size = 0
+                continue
+            if ((self.raster & 0xFFFF) >> 8) not in SPRITE_HEADERS:
+                return False
+
+            yield 4
+            self._pack_one_tile()
+
+    def _pack_one_tile(self):
+        """One tile, drawn where it belongs and again where the road clips it."""
+        offset_y = self.take_word()
+        offset_x = self.take_word()
+        sprite_x = signed16(self.sprite_x + offset_x)
+        sprite_y = signed16(self.sprite_y + offset_y)
+        attributes = signed16(self.sprite_attr + self.raster)
+        pixels = 15 if self.sprite_size else 7
+
+        self.clear_output()
+        draw = True
+        if (
+            self.sprite_clipy - pixels <= sprite_y <= self.sprite_clipy
+            and self.viewport_left - pixels <= sprite_x <= self.viewport_right
+            and self.viewport_top - pixels <= self.sprite_clipy <= self.viewport_bottom
+        ):
+            draw = self._place_sprite(
+                draw, sprite_x, self.sprite_clipy, CLIPPING_TILE, self.sprite_size, stop=False
+            )
+        if (
+            self.viewport_left - pixels <= sprite_x <= self.viewport_right
+            and self.viewport_top - pixels <= sprite_y <= self.viewport_bottom
+            and sprite_y <= self.sprite_clipy
+        ):
+            draw = self._place_sprite(
+                draw, sprite_x, sprite_y, attributes, self.sprite_size, stop=False
+            )
+        self._place_sprite(draw, 0, OFFSCREEN_ROW, 0, 0, stop=True)
 
     def _project_shared_track(self):
         """The multi-player road, which is the single-player one without the forks.

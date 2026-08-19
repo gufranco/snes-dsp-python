@@ -237,9 +237,9 @@ class UnfinishedTest(unittest.TestCase):
 
     def test_a_renderer_says_it_is_not_here_rather_than_going_quiet(self):
         chip = dsp4.Dsp4()
-        chip.write(0x09)
+        chip.write(0x0F)
         chip.write(0x00)
-        for _ in range(13):
+        for _ in range(45):
             chip.write(0)
 
         with self.assertRaises(dsp4.Unimplemented):
@@ -247,15 +247,15 @@ class UnfinishedTest(unittest.TestCase):
 
     def test_and_the_refusal_names_the_command(self):
         chip = dsp4.Dsp4()
-        chip.write(0x09)
+        chip.write(0x0F)
         chip.write(0x00)
-        for _ in range(13):
+        for _ in range(45):
             chip.write(0)
 
         with self.assertRaises(dsp4.Unimplemented) as caught:
             chip.write(0)
 
-        self.assertIn("0x0009", str(caught.exception))
+        self.assertIn("0x000f", str(caught.exception))
 
 
 class TrackTest(unittest.TestCase):
@@ -711,6 +711,197 @@ class SolidRendererTest(unittest.TestCase):
 
         self.assertEqual(answered(chip, 2), [0, 0])
         self.assertTrue(chip.waiting)
+
+
+class SpriteProjectionTest(unittest.TestCase):
+    """Sprites placed along the road, which is the longest-running command here."""
+
+    ONE_PLAYER = 0x0003
+    TWO_PLAYER = 0x000E
+    SPRITE_ROW = 12
+
+    def projecting(self, selection=ONE_PLAYER, chip=None):
+        chip = chip or dsp4.Dsp4()
+        if selection is not None:
+            chip.write(selection & 0xFF)
+            chip.write(selection >> 8)
+        chip.write(0x09)
+        chip.write(0x00)
+        for value in word(128) + word(100) + word(0) + word(0) + word(255) + word(0) + word(200):
+            chip.write(value)
+        return chip
+
+    def terrain(self, chip, height=-100):
+        for value in word(50) + word(0x4000):
+            chip.write(value)
+        for value in word(0) + word(0) + word(0) + word(height) + word(0):
+            chip.write(value)
+        return chip
+
+    def tile(self, chip, header=0x2000):
+        for value in word(header) + word(0) + word(0):
+            chip.write(value)
+        answered(chip, chip.out_count)
+        return chip
+
+    def crowd(self, row, until):
+        """Sprites placed one at a time until the row holds as many as asked for."""
+        chip = dsp4.Dsp4()
+        chip.write(self.TWO_PLAYER & 0xFF)
+        chip.write(self.TWO_PLAYER >> 8)
+        for _ in range(until):
+            chip.write(0x0B)
+            chip.write(0x00)
+            for value in word(10) + word(row * 8) + word(0):
+                chip.write(value)
+            answered(chip, chip.out_count)
+        return chip
+
+    def test_the_projection_asks_for_four_bytes_once_the_screen_is_in(self):
+        chip = self.projecting()
+
+        self.assertEqual(chip.in_count, 4)
+
+    def test_a_place_with_no_sprite_in_it_asks_for_the_next_one(self):
+        chip = self.projecting()
+
+        for value in word(50) + word(0):
+            chip.write(value)
+
+        self.assertEqual(chip.in_count, 4)
+        self.assertFalse(chip.waiting)
+
+    def test_a_sprite_on_the_terrain_wants_ten_bytes(self):
+        chip = self.projecting()
+
+        for value in word(50) + word(0x4000):
+            chip.write(value)
+
+        self.assertEqual(chip.in_count, 10)
+
+    def test_a_vehicle_wants_fourteen_and_hands_back_where_it_sits(self):
+        chip = self.projecting()
+
+        for value in word(50) + word(-0x7000):
+            chip.write(value)
+
+        self.assertEqual(chip.in_count, 14)
+
+    def test_a_vehicle_answers_its_own_horizontal_position(self):
+        chip = self.projecting()
+        for value in word(50) + word(-0x7000):
+            chip.write(value)
+
+        for value in word(0) + word(0) + word(0) + word(0) + word(20) + word(0x4000) + word(70):
+            chip.write(value)
+
+        self.assertEqual(answered(chip, 2), word(50))
+
+    def test_and_then_wants_a_lift_and_an_attribute(self):
+        chip = self.projecting()
+        for value in word(50) + word(-0x7000):
+            chip.write(value)
+        for value in word(0) + word(0) + word(0) + word(0) + word(20) + word(0x4000) + word(70):
+            chip.write(value)
+        answered(chip, chip.out_count)
+
+        self.assertEqual(chip.in_count, 4)
+
+    def test_a_sprite_asks_for_a_tile_header_next(self):
+        chip = self.terrain(self.projecting())
+
+        self.assertEqual(chip.in_count, 2)
+
+    def test_a_recognised_header_asks_for_its_offsets(self):
+        chip = self.terrain(self.projecting())
+
+        for value in word(0x2000):
+            chip.write(value)
+
+        self.assertEqual(chip.in_count, 4)
+
+    def test_a_header_the_chip_does_not_know_ends_the_sprite(self):
+        chip = self.terrain(self.projecting())
+
+        for value in word(0x1234):
+            chip.write(value)
+
+        self.assertEqual(chip.in_count, 4)
+
+    def test_a_zero_switches_to_the_smaller_tiles_before_it_ends_anything(self):
+        chip = self.terrain(self.projecting())
+
+        for value in word(0):
+            chip.write(value)
+
+        self.assertEqual(chip.in_count, 2)
+        self.assertEqual(chip.sprite_size, 0)
+
+    def test_and_a_second_zero_ends_the_sprite(self):
+        chip = self.terrain(self.projecting())
+        for value in word(0):
+            chip.write(value)
+
+        for value in word(0):
+            chip.write(value)
+
+        self.assertEqual(chip.in_count, 4)
+
+    def test_a_drawn_tile_carries_its_position_and_attribute(self):
+        chip = self.terrain(self.projecting())
+
+        for value in word(0x2000) + word(0) + word(0):
+            chip.write(value)
+
+        self.assertEqual(answered(chip, 6), [1, 0, 128, 100, 0x00, 0x20])
+
+    def test_and_then_a_word_saying_nothing_follows_it(self):
+        chip = self.terrain(self.projecting())
+        for value in word(0x2000) + word(0) + word(0):
+            chip.write(value)
+        answered(chip, 6)
+
+        self.assertEqual(answered(chip, 2), [0, 0])
+
+    def test_the_end_marker_arriving_inside_a_sprite_ends_the_command(self):
+        chip = self.terrain(self.projecting())
+
+        for value in word(-0x8000):
+            chip.write(value)
+
+        self.assertTrue(chip.waiting)
+
+    def test_the_end_marker_between_sprites_ends_it_too(self):
+        chip = self.projecting()
+
+        for value in word(50) + word(-0x8000):
+            chip.write(value)
+
+        self.assertTrue(chip.waiting)
+
+    def test_a_tall_tile_is_refused_when_the_row_it_starts_in_is_full(self):
+        chip = self.crowd(self.SPRITE_ROW, until=15)
+        self.terrain(self.projecting(selection=None, chip=chip))
+
+        self.tile(chip)
+
+        self.assertEqual(chip.oam_row[self.SPRITE_ROW], 15)
+
+    def test_and_when_only_the_row_below_it_is(self):
+        chip = self.crowd(self.SPRITE_ROW + 1, until=15)
+        self.terrain(self.projecting(selection=None, chip=chip))
+
+        self.tile(chip)
+
+        self.assertEqual(chip.oam_row[self.SPRITE_ROW], 0)
+
+    def test_a_tall_tile_that_fits_counts_two_against_both_rows(self):
+        chip = self.terrain(self.projecting(self.TWO_PLAYER))
+
+        self.tile(chip)
+
+        self.assertEqual(chip.oam_row[self.SPRITE_ROW], 2)
+        self.assertEqual(chip.oam_row[self.SPRITE_ROW + 1], 2)
 
 
 class ReciprocalTest(unittest.TestCase):
