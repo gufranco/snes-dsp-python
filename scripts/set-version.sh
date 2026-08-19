@@ -5,7 +5,7 @@ set -euo pipefail
 readonly VERSION_PATTERN='^[0-9]+\.[0-9]+\.[0-9]+([-+].*)?$'
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-readonly VERSION_FILE="${root}/dsp2/version.py"
+readonly VERSION_FILE="${root}/snesdsp/version.py"
 
 fail() {
   printf '%s\n' "$1" >&2
@@ -19,7 +19,7 @@ version_recorded_in_file() {
 replace_recorded_version() {
   local wanted=$1
   local scratch
-  scratch=$(mktemp "${TMPDIR:-/tmp}/dsp2-version-XXXXXX")
+  scratch=$(mktemp "${TMPDIR:-/tmp}/snesdsp-version-XXXXXX")
 
   sed "s/^VERSION = \".*\"$/VERSION = \"${wanted}\"/" "${VERSION_FILE}" >"${scratch}"
   cat "${scratch}" >"${VERSION_FILE}"
