@@ -362,6 +362,17 @@ class Dsp4:
         for value in self.oam_attr:
             self.put_word(value)
 
+    @property
+    def pending_output(self):
+        """How many bytes are waiting, where the model knows a count.
+
+        Uniform across the family in meaning rather than in kind. A model that
+        computed a result knows how long it is; the part does not, and neither
+        does the microcode backend, which can only say whether it wants
+        attention. A caller that loops while this is truthy works on both.
+        """
+        return max(0, self.out_count - self.out_index)
+
     def read(self):
         """One byte of whatever the last command produced."""
         if not self.out_count:

@@ -226,7 +226,10 @@ class Microcode:
         options = dict(self.build)
         if projector.ALIASES.get(command, command) in projector.DUMP_OFFSET:
             options["data_rom"] = table_of(self.part)
-        chip = snesdsp.Dsp(model=self.part, **options)
+        # The model by name, never the default. Since the microcode became the
+        # default wherever an image is present, taking it here would compare the
+        # silicon against itself and report perfect agreement.
+        chip = snesdsp.Dsp(model=self.part, backend=snesdsp.MODELLED, **options)
         chip.write(command)
         for value in arguments:
             chip.write(value & 0xFF)

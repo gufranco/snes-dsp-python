@@ -20,6 +20,19 @@ A model with no corpus behind it does not belong in this table, because then its
 fidelity would be a claim rather than a measurement.
 """
 
+SHARES_MICROCODE = {"dsp1a": "dsp1"}
+"""Parts whose program is another part's, so their behaviour is that part's.
+
+The DSP-1 was masked three times and only twice did the program change. The
+DSP-1A is a die shrink of the DSP-1 with the same program and data ROM; the
+DSP-1B is the one that corrected an arithmetic fault, which Pilotwings had come
+to depend on for its attract sequence.
+
+So this is three parts and two programs, and saying which shares which is more
+honest than either collapsing the middle one into the first or refusing to answer
+for it at all.
+"""
+
 
 class UnknownModelError(Exception):
     pass
@@ -46,6 +59,15 @@ def _build_dsp2(model, **options):
     from .chip import Chip as Dsp2
 
     chip = Dsp2(**options)
+    chip.model = model.name
+    return chip
+
+
+def _build_dsp1a(model, **options):
+    """The middle mask, which runs the first mask's program on a smaller die."""
+    from .dsp1 import Dsp1
+
+    chip = Dsp1(revision=SHARES_MICROCODE[model.name], **options)
     chip.model = model.name
     return chip
 
@@ -86,6 +108,19 @@ _CATALOGUE = (
         parameter_bytes=512,
         core=_build_dsp1,
         aliases=("dsp-1", "upd77c25dsp1", "nintendodsp1"),
+    ),
+    Model(
+        name="dsp1a",
+        summary=(
+            "The same program on a smaller die. The DSP-1A is a die shrink of the "
+            "DSP-1 carrying the same program and data ROM, so it answers everything "
+            "the DSP-1 answers and shares its one arithmetic fault. It is a part in "
+            "its own right and is answered as one, and the microcode backend runs "
+            "the DSP-1 image for it because that is the image it has."
+        ),
+        parameter_bytes=512,
+        core=_build_dsp1a,
+        aliases=("dsp-1a", "upd77c25dsp1a", "nintendodsp1a"),
     ),
     Model(
         name="dsp1b",
@@ -136,13 +171,7 @@ _CATALOGUE = (
 
 MODELS = {model.name: model for model in _CATALOGUE}
 
-NOT_MODELLED = {
-    "dsp1a": (
-        "the DSP-1A is the middle mask of the three, and no image of it has been "
-        "measured here; the first and the last both have one, so they are modelled "
-        "and this one is not rather than being assumed to match either"
-    ),
-}
+NOT_MODELLED = {}
 """Names that belong to a real part the package deliberately does not answer to."""
 
 _BY_ALIAS = {}

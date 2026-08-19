@@ -10,7 +10,7 @@ from snesdsp import models
 
 class CatalogueTest(unittest.TestCase):
     def test_the_package_names_every_model_it_covers(self):
-        self.assertEqual(set(models.MODELS), {"dsp1", "dsp1b", "dsp2", "dsp3", "dsp4"})
+        self.assertEqual(set(models.MODELS), {"dsp1", "dsp1a", "dsp1b", "dsp2", "dsp3", "dsp4"})
 
     def test_a_model_says_what_it_is_and_what_it_holds(self):
         found = models.describe("dsp2")
@@ -30,18 +30,21 @@ class CatalogueTest(unittest.TestCase):
         for written in ("DSP1B", "dsp-1b", "DSP_1B"):
             self.assertEqual(models.describe(written).name, "dsp1b")
 
-    def test_the_middle_mask_is_refused_because_none_was_measured(self):
-        with self.assertRaises(models.UnknownModelError) as raised:
-            models.describe("dsp1a")
+    def test_the_middle_mask_is_a_part_in_its_own_right(self):
+        self.assertIn("dsp1a", models.MODELS)
 
-        self.assertIn("measured", str(raised.exception))
+    def test_the_middle_mask_runs_the_first_mask_program(self):
+        self.assertEqual(models.SHARES_MICROCODE["dsp1a"], "dsp1")
+
+    def test_and_the_last_mask_shares_nobody_else_program(self):
+        self.assertNotIn("dsp1b", models.SHARES_MICROCODE)
 
     def test_the_two_masks_are_not_the_same_model(self):
         self.assertIsNot(models.describe("dsp1"), models.describe("dsp1b"))
 
     def test_and_they_do_not_answer_the_same_way(self):
-        first = snesdsp.Dsp(model="dsp1", fill=0)
-        later = snesdsp.Dsp(model="dsp1b", fill=0)
+        first = snesdsp.Dsp(model="dsp1", backend="modelled", fill=0)
+        later = snesdsp.Dsp(model="dsp1b", backend="modelled", fill=0)
 
         for chip in (first, later):
             chip.write(0x2F)
@@ -50,9 +53,19 @@ class CatalogueTest(unittest.TestCase):
 
         self.assertNotEqual((first.read(), first.read()), (later.read(), later.read()))
 
-    def test_every_revision_that_is_refused_says_why(self):
-        for name, why in models.NOT_MODELLED.items():
-            self.assertTrue(why, name)
+    def test_nothing_is_refused_now_that_every_mask_is_covered(self):
+        self.assertEqual(models.NOT_MODELLED, {})
+
+    def test_a_name_the_package_deliberately_refuses_says_why(self):
+        models.NOT_MODELLED["dsp9"] = "there is no such part"
+
+        try:
+            with self.assertRaises(models.UnknownModelError) as raised:
+                models.describe("dsp9")
+
+            self.assertIn("no such part", str(raised.exception))
+        finally:
+            del models.NOT_MODELLED["dsp9"]
 
     def test_the_searcher_answers_to_its_own_names(self):
         for written in ("DSP3", "dsp-3", "DSP_3", "nintendo-dsp3"):
@@ -84,25 +97,27 @@ class CatalogueTest(unittest.TestCase):
 
 class BuildTest(unittest.TestCase):
     def test_a_chip_is_built_from_its_model_name(self):
-        self.assertEqual(snesdsp.Dsp(model="dsp2", fill=0).model, "dsp2")
+        self.assertEqual(snesdsp.Dsp(model="dsp2", backend="modelled", fill=0).model, "dsp2")
 
     def test_the_default_model_is_the_one_the_cartridge_carries(self):
-        self.assertEqual(snesdsp.Dsp(fill=0).model, "dsp2")
+        self.assertEqual(snesdsp.Dsp(backend="modelled", fill=0).model, "dsp2")
 
     def test_options_reach_the_chip_that_gets_built(self):
-        self.assertEqual(snesdsp.Dsp(model="dsp2", fill=0xAA).parameter_ram[0], 0xAA)
+        self.assertEqual(
+            snesdsp.Dsp(model="dsp2", backend="modelled", fill=0xAA).parameter_ram[0], 0xAA
+        )
 
     def test_the_renderer_is_built_from_its_model_name_too(self):
-        self.assertEqual(snesdsp.Dsp(model="dsp4", fill=0).model, "dsp4")
+        self.assertEqual(snesdsp.Dsp(model="dsp4", backend="modelled", fill=0).model, "dsp4")
 
     def test_the_projector_is_built_from_its_model_name_too(self):
-        self.assertEqual(snesdsp.Dsp(model="dsp1", fill=0).model, "dsp1")
+        self.assertEqual(snesdsp.Dsp(model="dsp1", backend="modelled", fill=0).model, "dsp1")
 
     def test_and_so_is_its_later_mask(self):
-        self.assertEqual(snesdsp.Dsp(model="dsp1b", fill=0).model, "dsp1b")
+        self.assertEqual(snesdsp.Dsp(model="dsp1b", backend="modelled", fill=0).model, "dsp1b")
 
     def test_a_built_chip_carries_the_mask_it_was_asked_for(self):
-        self.assertEqual(snesdsp.Dsp(model="dsp1b", fill=0).revision, "dsp1b")
+        self.assertEqual(snesdsp.Dsp(model="dsp1b", backend="modelled", fill=0).revision, "dsp1b")
 
     def test_the_searcher_is_built_from_its_model_name_too(self):
         self.assertEqual(snesdsp.Dsp(model="dsp3").model, "dsp3")

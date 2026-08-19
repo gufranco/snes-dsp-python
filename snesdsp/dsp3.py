@@ -234,6 +234,16 @@ class Dsp3:
         return found
 
     @property
+    def pending_output(self):
+        """Whether a byte would be read as data rather than taken as a command.
+
+        One or nothing, never a count, because this part is clocked a byte at a
+        time and holds no notion of how much is left. That is the shape the
+        microcode backend has too, and for the same reason.
+        """
+        return 0 if self.idle else 1
+
+    @property
     def idle(self):
         """Whether the next byte would be read as a command rather than as data."""
         return self.step == self._command
