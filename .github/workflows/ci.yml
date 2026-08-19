@@ -80,3 +80,31 @@ jobs:
 
       - name: Coverage must be total
         run: python -m coverage report
+
+  firmware:
+    name: Against the microcode, when any is present
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # These checks exist and are meant to be seen. They run the program the
+      # cartridge carries, which belongs to whoever wrote it, so on a machine
+      # without one every check reports as skipped rather than as passed.
+      - name: Run the microcode itself
+        run: |
+          python conformance/against_firmware.py | tee report.txt
+          python conformance/against_firmware.test.py -v 2>&1 | tee -a report.txt
+        shell: bash
+
+      - name: Say what ran and what could not
+        run: |
+          if grep -q "skipped" report.txt; then
+            echo "::notice title=Microcode checks skipped::No firmware image was present, so the checks that run the microcode itself did not run. They are not failures; they had nothing to run against."
+          fi
+        shell: bash
