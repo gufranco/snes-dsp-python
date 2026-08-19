@@ -111,7 +111,6 @@ class AvailabilityTest(unittest.TestCase):
         self.assertTrue(silicon.why_not() is None or isinstance(silicon.why_not(), str))
 
 
-@unittest.skipUnless(PRESENT, silicon.WHY_NOT_FIRMWARE)
 class SuppliedImageTest(unittest.TestCase):
     """Driving the backend with a program nobody owns.
 
