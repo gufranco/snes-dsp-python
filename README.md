@@ -1,8 +1,8 @@
 <div align="center">
 
-<h1>DSP-2</h1>
+<h1>SNES DSP Family</h1>
 
-<strong>A model of the SNES DSP-2, with its commands proved rather than sampled.</strong>
+<strong>The NEC uPD77C25 as Nintendo shipped it, with its commands proved rather than sampled.</strong>
 
 <br>
 <br>
@@ -16,6 +16,7 @@
 
 <p align="center">
   <a href="#quick-start">Quick start</a> &nbsp;|&nbsp;
+  <a href="#models">The family</a> &nbsp;|&nbsp;
   <a href="#the-commands">Commands</a> &nbsp;|&nbsp;
   <a href="#how-this-is-proved">How this is proved</a> &nbsp;|&nbsp;
   <a href="#the-corpus-and-why-it-can-ship">Why the corpus is legal</a> &nbsp;|&nbsp;
@@ -23,7 +24,7 @@
   <a href="https://github.com/gufranco/snes-dsp-python/issues">Issues</a>
 </p>
 
-**6** commands · **1** exhaustively proved bit permutation · shapes from **1,804,133** real cartridge commands · **257** corpus exchanges against the reference chip · **95,784** reads agreeing with snes9x · **100%** statement and branch coverage
+**4** microcodes carried by the reference driver · **1** modelled so far · **6** commands · **1** exhaustively proved bit permutation · shapes from **1,804,133** real cartridge commands · **95,784** reads agreeing with snes9x · **140** tests · **100%** statement and branch coverage
 
 ```python
 from snesdsp import Dsp
@@ -42,7 +43,7 @@ for byte in (0x02, 0x00, 0x03, 0x00):
 
 ## The problem
 
-The DSP-2 is a NEC uPD77C25 with Nintendo's microcode masked into it, and it shipped in exactly one cartridge. There is no published per-instruction test suite for it the way there is for a 6502 or a Z80, and there never will be: the sample size is one game.
+None of these chips has a published per-instruction test suite the way a 6502 or a Z80 does, and none ever will. They are one NEC uPD77C25 with Nintendo's microcode masked into it, and the microcode is what makes each of them a different chip. The DSP-2 modelled here shipped in exactly one cartridge, so its sample size is one game.
 
 The usual answer is to record the real chip and replay the recording. That works, and it has a ceiling. A recording only covers what that one game happened to ask for, so the moment you use the model for anything else, you are outside what was ever tested. It is also the game's own artwork, which makes shipping it a redistribution problem rather than a testing one.
 
@@ -53,6 +54,8 @@ Separate what each command computes from the protocol that feeds it, then prove 
 Five of the six commands are pure functions of their input, and each one has an input space small enough or structured enough to be settled rather than sampled. The tile conversion is a permutation of the 256 bits it is given, so 256 single-bit inputs pin where every bit lands and nothing can be hiding. The merge is a per-nibble rule, so every combination of colour and byte it accepts is checked. The multiply is checked against arithmetic. That is a stronger claim than any recording supports.
 
 The recording still has a job, and it is kept: this model agrees byte for byte with a reference that reproduced **71,970,987 bytes** of real recorded traffic with zero errors, over 1,139,246 reads of randomised command streams that reach lengths the game never used.
+
+The same argument is what the other three microcodes will be held to when they are modelled, which is why the reference driver takes the chip as an argument rather than being built around one of them.
 
 <table>
 <tr>
@@ -107,7 +110,7 @@ cd snes-dsp-python
 ### Verify
 
 ```bash
-python3 dsp2/commands.test.py
+python3 snesdsp/commands.test.py
 # Ran 33 tests in 0.03s
 # OK
 ```
@@ -214,6 +217,13 @@ That profile stays on your machine, and so does any corpus built from it with re
 
 ## Models
 
+Nintendo shipped one part four times. The DSP-1, DSP-2, DSP-3 and DSP-4 are the
+same NEC uPD77C25 with different microcode masked into it, which is why they
+share a port interface and a parameter RAM and answer completely different
+commands through them. A package named after one of them could not grow into the
+others, so this one is named after the family and the microcode is a construction
+argument.
+
 ```python
 from snesdsp import Dsp, describe
 
@@ -223,17 +233,31 @@ describe("dsp-2").parameter_bytes
 chip = Dsp(model="dsp2")
 ```
 
-| Model | Parameter RAM | Notes |
-|:------|:-------------:|:------|
-| `dsp2` | 512 bytes | NEC uPD77C25 with Nintendo DSP-2 microcode. Aliases: `dsp-2`, `upd77c25dsp2`, `nintendodsp2` |
+| Model | State | Parameter RAM | Notes |
+|:------|:------|:-------------:|:------|
+| `dsp2` | modelled | 512 bytes | Six commands. Aliases: `dsp-2`, `upd77c25dsp2`, `nintendodsp2` |
+| `dsp1` | reference driver only | 512 bytes | Fixed-point 3D maths, used by the most cartridges |
+| `dsp3` | reference driver only | n/a | Compression and a coordinate walk |
+| `dsp4` | reference driver only | 512 bytes | The track renderer |
+
+The reference driver in [`conformance/ref/`](conformance/ref/) already carries all
+four and takes the chip as an argument, so adding one is a matter of writing the
+model and the corpus rather than of building the evidence first.
+
+Only `dsp2` is in the catalogue, because only `dsp2` has a corpus behind it. A
+model with nothing behind it would make its fidelity a claim rather than a
+measurement, and listing one would be worse than the gap.
 
 > [!NOTE]
-> The DSP-1, DSP-3 and DSP-4 are the same silicon with different microcode masked in, so they answer completely different commands. They would be separate entries here, each held to its own evidence. A model with nothing behind it would make its fidelity a claim rather than a measurement, so none is listed.
+> The DSP-1 and DSP-3 each carry a thousand-entry table masked into the silicon.
+> That is chip content rather than a description of behaviour, so modelling
+> either one raises a question about redistribution that the DSP-2 and DSP-4 do
+> not. It is named here rather than discovered later.
 
 ## Project structure
 
 ```
-dsp2/
+snesdsp/
   __init__.py     the package, and the model chosen at construction
   chip.py         the port protocol, and nothing else
   commands.py     what each command computes, as functions of their input
@@ -242,6 +266,8 @@ dsp2/
   version.py      rewritten by the release job and by nothing else
 conformance/
   corpus.py       replays a recording you captured yourself
+  capture.py      turns a recording into shapes, and never into payload
+  ref/            the driver around the four reference implementations
 ```
 
 Each module has its tests beside it as `<module>.test.py`, so a module and the cases that pin its behaviour are read together.
@@ -249,7 +275,7 @@ Each module has its tests beside it as `<module>.test.py`, so a module and the c
 ## Tests
 
 ```bash
-for f in dsp2/*.test.py conformance/*.test.py; do python3 "$f"; done
+for f in snesdsp/*.test.py conformance/*.test.py; do python3 "$f"; done
 ```
 
 | Suite | File | Covers |
