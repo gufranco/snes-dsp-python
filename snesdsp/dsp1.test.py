@@ -88,6 +88,55 @@ class ArithmeticTest(unittest.TestCase):
         self.assertEqual(dsp1.halved_if_unnegatable(-0x4000, 3), (-0x4000, 3))
 
 
+class LengthTest(unittest.TestCase):
+    def a_length(self, revision, triple):
+        payload = []
+        for value in triple:
+            payload += word(value)
+        return read_word(asked(0x28, payload, revision=revision))
+
+    def test_a_vector_of_nothing_has_no_length_on_either_mask(self):
+        for revision in dsp1.MASKS:
+            self.assertEqual(self.a_length(revision, (0, 0, 0)), 0)
+
+    def test_the_two_masks_answer_the_same_where_the_fraction_is_small(self):
+        agreed = 0
+        for triple in (
+            (0x264C, 0x04B6, 0x2179),
+            (0x0EBD, 0x0366, 0x0680),
+            (0x1C2B, 0x04C8, 0x2530),
+        ):
+            first = self.a_length(dsp1.FIRST_MASK, triple)
+            later = self.a_length(dsp1.CORRECTED_MASK, triple)
+            agreed += first == later
+
+        self.assertEqual(agreed, 3)
+
+    def test_and_part_where_the_fraction_carries_its_top_bit(self):
+        differing = 0
+        for triple in (
+            (0x15B9, 0x0AA7, 0x1A44),
+            (0x2AA8, 0x0417, 0x05A2),
+            (0x234B, 0x0706, 0x1867),
+            (0x1CC0, 0x1BC3, 0x0578),
+        ):
+            first = self.a_length(dsp1.FIRST_MASK, triple)
+            later = self.a_length(dsp1.CORRECTED_MASK, triple)
+            differing += first != later
+
+        self.assertEqual(differing, 4)
+
+    def test_the_first_mask_reads_its_fraction_as_a_signed_ten_bit_value(self):
+        self.assertTrue(dsp1.SIGNED_FRACTION[dsp1.FIRST_MASK])
+
+    def test_and_the_last_one_as_an_unsigned_nine_bit_value(self):
+        self.assertFalse(dsp1.SIGNED_FRACTION[dsp1.CORRECTED_MASK])
+
+    def test_every_mask_says_which_way_it_reads_that_fraction(self):
+        for revision in dsp1.MASKS:
+            self.assertIn(revision, dsp1.SIGNED_FRACTION)
+
+
 class OddMultiplyTest(unittest.TestCase):
     def test_the_second_multiply_forces_its_answer_odd(self):
         for first, second in ((0x0100, 0x8000), (0x1234, 0x4000), (0x7FFF, 0x7FFF)):

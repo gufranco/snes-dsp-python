@@ -82,6 +82,34 @@ here. There is at least one more, in the vector length at command 0x28, and it
 is deliberately not modelled until it can be read as reliably as this one.
 """
 
+SIGNED_FRACTION = {
+    FIRST_MASK: True,
+    CORRECTED_MASK: False,
+}
+"""How each mask reads the fraction it interpolates the root curve with.
+
+This is the second of the two differences between them, and the larger one.
+Between two nodes of the curve the part blends by a fraction taken from the
+normalised coefficient. The later mask reads nine bits of it, unsigned, which is
+what the blend wants. The first mask reads ten and treats the tenth as a sign, so
+whenever that bit is set it blends the wrong way: instead of moving from the lower
+node towards the higher one it moves the same distance below the lower node.
+
+The two therefore agree on exactly half of all inputs, the half where that bit is
+clear, which is why the fault survived a mask revision without being obvious.
+
+Measured rather than reasoned: over 200 random vectors the signed reading matches
+the first mask on every one and the unsigned reading matches the last on every one.
+"""
+
+FRACTION_BITS = 9
+
+SIGNED_FRACTION_MASK = (1 << (FRACTION_BITS + 1)) - 1
+
+SIGNED_FRACTION_SIGN = 1 << FRACTION_BITS
+
+UNSIGNED_FRACTION_MASK = SIGNED_FRACTION_SIGN - 1
+
 MEMORY_SIZE = VERSION_WORD[FIRST_MASK]
 
 RASTER_COMMANDS = (0x0A, 0x1A)
@@ -547,8 +575,16 @@ class Dsp1:
         step = scaled(coefficient, QUARTER_TURN)
         below = node(step)
         above = node(step + 1)
-        found = (((above - below) * (coefficient & 0x1FF)) >> 9) + below
+        found = (((above - below) * self._fraction(coefficient)) >> FRACTION_BITS) + below
         self._put([signed16(found) >> (exponent >> 1)])
+
+    def _fraction(self, coefficient):
+        """How far between two nodes to blend, read the way this mask reads it."""
+        if not SIGNED_FRACTION[self.revision]:
+            return coefficient & UNSIGNED_FRACTION_MASK
+
+        found = coefficient & SIGNED_FRACTION_MASK
+        return found - (SIGNED_FRACTION_SIGN << 1) if found & SIGNED_FRACTION_SIGN else found
 
     def _turn(self):
         """A point turned about the origin, which is the plainest command here."""

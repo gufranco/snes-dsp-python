@@ -252,8 +252,8 @@ chip = Dsp(model="dsp2")
 
 | Model | State | Parameter RAM | Notes |
 |:------|:------|:-------------:|:------|
-| `dsp1` | modelled | 512 bytes | The first mask, in Pilotwings alone. Thirty one commands: a camera, three attitude matrices, and the projections that ask questions of them. Aliases: `dsp-1`, `upd77c25dsp1`, `nintendodsp1` |
-| `dsp1b` | modelled | 512 bytes | The last mask, in nearly every other cartridge of the family. Aliases: `dsp-1b`, `upd77c25dsp1b`, `nintendodsp1b` |
+| `dsp1` | modelled | 512 bytes | The first mask, in Pilotwings alone, with its own vector length and its own version word. Thirty one commands: a camera, three attitude matrices, and the projections that ask questions of them. Aliases: `dsp-1`, `upd77c25dsp1`, `nintendodsp1` |
+| `dsp1b` | modelled | 512 bytes | The last mask, in nearly every other cartridge of the family. It corrects the first mask's vector length. Aliases: `dsp-1b`, `upd77c25dsp1b`, `nintendodsp1b` |
 | `dsp2` | modelled | 512 bytes | Six commands. Aliases: `dsp-2`, `upd77c25dsp2`, `nintendodsp2` |
 | `dsp3` | modelled | none | Thirteen commands: a decompressor, a bit plane converter, a hex grid search. Aliases: `dsp-3`, `upd77c25dsp3`, `nintendodsp3` |
 | `dsp4` | modelled | 512 bytes | Fifteen commands, seven of them renderers. Aliases: `dsp-4`, `upd77c25dsp4`, `nintendodsp4` |
@@ -289,14 +289,39 @@ hex(names_itself("dsp1"))  # '0x100'
 hex(names_itself("dsp1b"))  # '0x101'
 ```
 
-It is a version word: the part names its own mask. That is the one difference
-between the two that is pinned down here, and it is measured rather than assumed.
+It is a version word: the part names its own mask.
 
-There is at least one more. The vector length at command `0x28` answers differently
-on the two images for about half the inputs tried, and it is deliberately **not**
-modelled yet: the console-side framing for that command is not yet read reliably
-enough here to say what the difference is, and writing down a delta that has not
-been isolated would be recording a guess rather than a measurement.
+The second difference is the one that matters, and it is a real fault. Between two
+nodes of its root curve the part blends by a fraction taken from a normalised
+coefficient. The last mask reads nine bits of that fraction, unsigned, which is what
+the blend wants. **The first mask reads ten and treats the tenth as a sign**, so
+whenever that bit is set it blends the wrong way: instead of moving from the lower
+node towards the higher one it moves the same distance below the lower node.
+
+```python
+from snesdsp import Dsp
+
+
+def length(model, x, y, z):
+    chip = Dsp(model=model, fill=0)
+    chip.write(0x28)
+    for value in (x, y, z):
+        chip.write(value & 0xFF)
+        chip.write(value >> 8)
+    return chip.read() | chip.read() << 8
+
+
+length("dsp1", 0x15B9, 0x0AA7, 0x1A44)  # 8908
+length("dsp1b", 0x15B9, 0x0AA7, 0x1A44)  # 9140
+```
+
+The two agree on exactly the half of all inputs where that bit is clear, which is
+why the fault survived long enough to need a mask revision. Both readings were
+measured against their own image: over 200 random vectors the signed reading
+matches the first mask on every one, and the unsigned reading matches the last on
+every one.
+
+Every command of both masks now matches its own microcode: **365 of 365 each**.
 
 The middle mask is refused by name, because no image of it has been measured:
 

@@ -9,6 +9,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import dsp1corpus
 
+from snesdsp import dsp1
+
 FIRST, SECOND = 0, 1
 
 
@@ -57,6 +59,22 @@ class CorpusTest(unittest.TestCase):
         where.write_text(json.dumps({"reference": "x", "cases": []}))
 
         self.assertEqual(dsp1corpus.load(where)["cases"], [])
+
+
+class RecordedMaskTest(unittest.TestCase):
+    def test_the_corpus_says_which_mask_it_recorded(self):
+        self.assertEqual(dsp1corpus.RECORDED_MASK, dsp1corpus.dsp1.CORRECTED_MASK)
+
+    def test_and_replays_against_that_one(self):
+        steps = dsp1corpus.steps_for(0)
+        against_first = dsp1.Dsp1(fill=0, revision=dsp1.FIRST_MASK)
+        for kind, value in steps:
+            if kind == dsp1corpus.WRITE:
+                against_first.write(value)
+            else:
+                against_first.read()
+
+        self.assertNotEqual(dsp1corpus.replay(steps), [])
 
 
 class ReplayTest(unittest.TestCase):

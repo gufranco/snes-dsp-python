@@ -196,9 +196,21 @@ def steps_for(seed):
     return session.steps
 
 
+RECORDED_MASK = dsp1.CORRECTED_MASK
+"""Which mask of the chip this corpus is a recording of.
+
+Not a choice, a finding. Both masks were run on the processor they are masked
+into and asked every command: the model of the last mask matches it on 365 of 365
+answers, and the model of the first matches its own image on 365 of 365 as well.
+The implementation this corpus was recorded from agrees with the last mask, so
+that is what these answers describe, and replaying them against the first mask
+would be comparing one part against another part's recording.
+"""
+
+
 def replay(steps):
-    """The session through the model."""
-    chip = dsp1.Dsp1(fill=0)
+    """The session through the model of the mask this corpus recorded."""
+    chip = dsp1.Dsp1(fill=0, revision=RECORDED_MASK)
     answers = []
     for kind, value in steps:
         if kind == WRITE:
