@@ -133,6 +133,20 @@ class SpriteTest(unittest.TestCase):
 
         self.assertEqual(list(chip.oam_row), [0] * 32)
 
+    def test_the_shared_screen_selection_leaves_half_the_room(self):
+        chip = started(0x000E)
+
+        self.assertEqual(chip.oam_row_max, 16)
+
+    def test_and_empties_every_row_as_well(self):
+        chip = started(0x0003)
+        chip.oam_row[3] = 5
+
+        started(0x000E)
+        chip = started(0x000E)
+
+        self.assertEqual(list(chip.oam_row), [0] * 32)
+
     def test_transferring_the_table_hands_back_thirty_two_bytes(self):
         chip = started(0x0006)
 
@@ -223,10 +237,13 @@ class UnfinishedTest(unittest.TestCase):
 
     def test_a_renderer_says_it_is_not_here_rather_than_going_quiet(self):
         chip = dsp4.Dsp4()
-        chip.write(0x0E)
+        chip.write(0x08)
+        chip.write(0x00)
+        for _ in range(89):
+            chip.write(0)
 
         with self.assertRaises(dsp4.Unimplemented):
-            chip.write(0x00)
+            chip.write(0)
 
     def test_and_the_refusal_names_the_command(self):
         chip = dsp4.Dsp4()
@@ -468,6 +485,93 @@ class TurnoffTest(unittest.TestCase):
             chip.write(value)
 
         self.assertNotEqual(chip.view_x2, first)
+
+
+class SharedTrackTest(unittest.TestCase):
+    """The multi-player road, which differs from the other in two places."""
+
+    def road(self, top=10):
+        chip = dsp4.Dsp4()
+        chip.write(0x0D)
+        chip.write(0x00)
+        for value in (
+            word(0)
+            + word(0x0002)
+            + word(200)
+            + word(top)
+            + word(0)
+            + word(100)
+            + word(0)
+            + word(0x0001)
+            + word(0)
+            + word(0x0100)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0x2000)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+            + word(0)
+        ):
+            chip.write(value)
+        return chip
+
+    def test_it_asks_for_the_next_distance_once_it_has_drawn_a_stretch(self):
+        chip = self.road()
+
+        self.assertEqual(chip.in_count, 2)
+
+    def test_its_horizontal_shaping_is_one_word_rather_than_two(self):
+        chip = self.road()
+
+        self.assertEqual(chip.in_index, 0)
+        self.assertEqual(chip.in_count, 2)
+
+    def test_the_next_stretch_wants_six_bytes(self):
+        chip = self.road()
+        for _ in range(chip.out_count):
+            chip.read()
+
+        chip.write(0x00)
+        chip.write(0x10)
+
+        self.assertEqual(chip.in_count, 6)
+
+    def test_the_end_marker_finishes_the_command(self):
+        chip = self.road()
+        for _ in range(chip.out_count):
+            chip.read()
+
+        chip.write(0x00)
+        chip.write(0x80)
+
+        self.assertTrue(chip.waiting)
+
+    def test_a_stretch_that_is_fed_its_curvature_asks_for_the_next_distance(self):
+        chip = self.road()
+        for _ in range(chip.out_count):
+            chip.read()
+        chip.write(0x00)
+        chip.write(0x10)
+
+        for value in word(1) + word(2) + word(3):
+            chip.write(value)
+
+        self.assertEqual(chip.in_count, 2)
+
+    def test_a_fork_is_not_something_this_projection_understands(self):
+        chip = self.road()
+        for _ in range(chip.out_count):
+            chip.read()
+
+        chip.write(0x01)
+        chip.write(0x80)
+
+        self.assertEqual(chip.in_count, 6)
 
 
 class ReadingTest(unittest.TestCase):

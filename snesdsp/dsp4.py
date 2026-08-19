@@ -393,6 +393,8 @@ class Dsp4:
             0x000B: self._set_sprite,
             0x0001: self._project_track,
             0x0007: self._project_turnoff,
+            0x000D: self._project_shared_track,
+            0x000E: self._select_shared,
             0x0011: self._map_across,
         }
 
@@ -406,6 +408,11 @@ class Dsp4:
 
     def _select(self):
         self.oam_row_max = 33
+        self.oam_row = bytearray(OAM_ROWS)
+
+    def _select_shared(self):
+        """The same, with half the room, because two players share the screen."""
+        self.oam_row_max = 16
         self.oam_row = bytearray(OAM_ROWS)
 
     def _clear_sprites(self):
@@ -516,7 +523,7 @@ class Dsp4:
         self.poly_raster = self.poly_bottom
 
         while True:
-            self._project_one_stretch()
+            self._project_one_stretch(count_from_raster=True, follow_turnoff=True)
 
             yield 2
             self.distance = self.take_word()
@@ -540,8 +547,15 @@ class Dsp4:
             self.view_yofsenv = self.take_word()
             self.world_xenv = 0
 
-    def _project_one_stretch(self):
-        """One stretch of road: where it lands on screen, and the lines it fills."""
+    def _project_one_stretch(self, count_from_raster, follow_turnoff):
+        """One stretch of road: where it lands on screen, and the lines it fills.
+
+        The two projections that use this differ in two places and nowhere else.
+        The single-player one counts its scanlines down from the last line it
+        drew; the multi-player one counts them from where the viewer was, which
+        gives a different answer once a stretch has been clipped. And only the
+        single-player one carries a fork, because only it can be given one.
+        """
         far_x = signed32(self.world_x + self.world_xenv) >> 16
         self.view_x2 = signed16(
             ((far_x * self.distance) >> 15) + ((self.view_turnoff_x * self.distance) >> 15)
@@ -558,7 +572,8 @@ class Dsp4:
         self.put_word(self.world_y >> 16)
         self.put_word(self.view_y2)
 
-        self.segments = signed16(self.poly_raster - self.view_y2)
+        start = self.poly_raster if count_from_raster else self.view_y1
+        self.segments = signed16(start - self.view_y2)
         if self.view_y2 >= self.poly_raster:
             self.segments = 0
         else:
@@ -583,7 +598,8 @@ class Dsp4:
         self.world_dy = signed32(self.world_dy + sign_extend_low(self.world_ddy))
         self.world_x = signed32(self.world_x + self.world_dx + self.world_xenv)
         self.world_y = signed32(self.world_y + self.world_dy)
-        self.view_turnoff_x = signed16(self.view_turnoff_x + self.view_turnoff_dx)
+        if follow_turnoff:
+            self.view_turnoff_x = signed16(self.view_turnoff_x + self.view_turnoff_dx)
 
     def _rasterise(self):
         """Walk between two projected points, one scanline at a time."""
@@ -605,6 +621,52 @@ class Dsp4:
             self.poly_ptr = signed16(self.poly_ptr - 4)
             scroll_x = signed32(scroll_x + step_x)
             scroll_y = signed32(scroll_y + step_y)
+
+    def _project_shared_track(self):
+        """The multi-player road, which is the single-player one without the forks.
+
+        It also takes its horizontal shaping as one word rather than two, and
+        counts its scanlines from where the viewer was rather than from the last
+        line drawn. Neither difference is visible until a stretch is clipped, and
+        then both are.
+        """
+        self.world_y = self.take_dword()
+        self.poly_bottom = self.take_word()
+        self.poly_top = self.take_word()
+        self.poly_cx_right = self.take_word()
+        self.viewport_bottom = self.take_word()
+        self.world_x = self.take_dword()
+        self.poly_cx_left = self.take_word()
+        self.poly_ptr = self.take_word()
+        self.world_yofs = self.take_word()
+        self.world_dy = self.take_dword()
+        self.world_dx = self.take_dword()
+        self.distance = self.take_word()
+        self.take_word()
+        self.world_xenv = sign_extend_low(self.take_word())
+        self.world_ddy = self.take_word()
+        self.world_ddx = self.take_word()
+        self.view_yofsenv = self.take_word()
+
+        self.view_x1 = signed16(signed32(self.world_x + self.world_xenv) >> 16)
+        self.view_y1 = signed16(self.world_y >> 16)
+        self.view_xofs1 = signed16(self.world_x >> 16)
+        self.view_yofs1 = self.world_yofs
+        self.poly_raster = self.poly_bottom
+
+        while True:
+            self._project_one_stretch(count_from_raster=False, follow_turnoff=False)
+
+            yield 2
+            self.distance = self.take_word()
+            if self.distance == END_OF_TRACK:
+                return
+
+            yield 6
+            self.world_ddy = self.take_word()
+            self.world_ddx = self.take_word()
+            self.view_yofsenv = self.take_word()
+            self.world_xenv = 0
 
     def _project_turnoff(self):
         """The road that leaves the road, drawn the same way and steered differently.

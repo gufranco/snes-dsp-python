@@ -1,8 +1,8 @@
 """Hold the DSP-4's track projection to the chip's own reference.
 
-Each case is a road: a viewpoint and a stretch of track, then several more
-stretches fed in as the projection asks for them, then the marker that says the
-track has ended. The numbers are generated from a seed but shaped like a road
+Each case is a road, drawn by one of the three projections in turn: a viewpoint
+and a stretch of track, then several more stretches fed in as the projection asks
+for them, then the marker that says the track has ended. The numbers are generated from a seed but shaped like a road
 rather than like noise, because a projection given nonsense produces nonsense and
 the two would agree about it without either being right.
 
@@ -58,6 +58,10 @@ PROJECT_TRACK = 0x0001
 
 PROJECT_TURNOFF = 0x0007
 
+PROJECT_SHARED = 0x000D
+
+PROJECTIONS = (PROJECT_TRACK, PROJECT_TURNOFF, PROJECT_SHARED)
+
 END_OF_TRACK = (0x00, 0x80)
 
 OVERRUNNING_SEED = 105
@@ -84,8 +88,8 @@ def _dword(value):
     return [(value >> shift) & 0xFF for shift in (0, 8, 16, 24)]
 
 
-def _road(source):
-    """One stretch of track, with each field in the range a road would use."""
+def _viewport(source):
+    """The part of the opening every projection shares: where the viewer is looking."""
     return (
         _dword(source.randrange(-0x40000, 0x40000))
         + _word(source.randrange(150, 224))
@@ -96,27 +100,79 @@ def _road(source):
         + _word(source.randrange(-256, 256))
         + _word(source.randrange(0, 0x4000))
         + _word(source.randrange(-128, 128))
+    )
+
+
+def _road(source):
+    """One stretch of the single-player track, in the ranges a road would use."""
+    return (
+        _viewport(source)
         + _dword(source.randrange(-0x4000, 0x4000))
         + _dword(source.randrange(-0x8000, 0x8000))
         + _word(source.randrange(0x0400, 0x4000))
         + _word(0)
         + _dword(source.randrange(-0x1000, 0x1000))
-        + _word(source.randrange(-32, 32))
+        + _curvature(source)
+    )
+
+
+def _shared(source):
+    """The multi-player road, whose horizontal shaping is one word rather than two."""
+    return (
+        _viewport(source)
+        + _dword(source.randrange(-0x4000, 0x4000))
+        + _dword(source.randrange(-0x8000, 0x8000))
+        + _word(source.randrange(0x0400, 0x4000))
+        + _word(0)
+        + _word(source.randrange(-64, 64))
+        + _curvature(source)
+    )
+
+
+def _branch(source):
+    """The fork, which is told where it sits on screen rather than where it is in the world."""
+    return _viewport(source) + _word(source.randrange(0x0400, 0x4000)) + _branch_shape(source)
+
+
+def _curvature(source):
+    """How the road bends over the next stretch."""
+    return (
+        _word(source.randrange(-32, 32))
         + _word(source.randrange(-32, 32))
         + _word(source.randrange(-32, 32))
     )
 
 
+def _branch_shape(source):
+    """Where the fork sits on screen and how fast it crosses it."""
+    return (
+        _word(source.randrange(0, 224))
+        + _word(source.randrange(-32, 32))
+        + _word(source.randrange(-256, 256))
+        + _word(source.randrange(-32, 32))
+        + _word(source.randrange(-32, 32))
+    )
+
+
+def command_for(seed):
+    """Which of the three projections a seed exercises."""
+    return PROJECTIONS[seed % len(PROJECTIONS)]
+
+
 def steps_for(seed):
     """The whole exchange for one road, as writes and reads in order."""
     source = random.Random(seed)
-    steps = [(WRITE, PROJECT_TRACK & 0xFF), (WRITE, PROJECT_TRACK >> 8)]
-    steps += [(WRITE, value) for value in _road(source)]
+    command = command_for(seed)
+    opening = {PROJECT_TRACK: _road, PROJECT_TURNOFF: _branch, PROJECT_SHARED: _shared}[command]
+    following = _branch_shape if command == PROJECT_TURNOFF else _curvature
+
+    steps = [(WRITE, command & 0xFF), (WRITE, command >> 8)]
+    steps += [(WRITE, value) for value in opening(source)]
     steps += [(READ, 0)] * BUFFER_BYTES
     for _ in range(STRETCHES):
         steps += [(WRITE, value) for value in _word(source.randrange(0x0400, 0x4000))]
         steps += [(READ, 0)] * BUFFER_BYTES
-        steps += [(WRITE, value) for value in _word(source.randrange(-32, 32)) * 3]
+        steps += [(WRITE, value) for value in following(source)]
         steps += [(READ, 0)] * BUFFER_BYTES
     steps += [(WRITE, value) for value in END_OF_TRACK]
     steps += [(READ, 0)] * 8

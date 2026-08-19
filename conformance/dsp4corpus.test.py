@@ -17,10 +17,33 @@ class CaseTest(unittest.TestCase):
 
         self.assertTrue(all(kind in (dsp4corpus.WRITE, dsp4corpus.READ) for kind, _ in steps))
 
-    def test_a_case_starts_by_asking_for_the_track_projection(self):
-        self.assertEqual(
-            dsp4corpus.steps_for(0)[:2], [(dsp4corpus.WRITE, 0x01), (dsp4corpus.WRITE, 0x00)]
-        )
+    def test_a_case_starts_by_asking_for_the_projection_its_seed_names(self):
+        for seed in range(len(dsp4corpus.PROJECTIONS)):
+            command = dsp4corpus.command_for(seed)
+
+            self.assertEqual(
+                dsp4corpus.steps_for(seed)[:2],
+                [(dsp4corpus.WRITE, command & 0xFF), (dsp4corpus.WRITE, command >> 8)],
+            )
+
+    def test_consecutive_seeds_walk_the_projections_in_turn(self):
+        found = [dsp4corpus.command_for(seed) for seed in range(len(dsp4corpus.PROJECTIONS))]
+
+        self.assertEqual(found, list(dsp4corpus.PROJECTIONS))
+
+    def test_the_corpus_exercises_every_projection_that_is_modelled(self):
+        commands = {dsp4corpus.command_for(case["seed"]) for case in dsp4corpus.load()["cases"]}
+
+        self.assertEqual(commands, set(dsp4corpus.PROJECTIONS))
+
+    def test_the_fork_takes_a_longer_continuation_than_the_roads_do(self):
+        def writes(seed):
+            return [value for kind, value in dsp4corpus.steps_for(seed) if kind == dsp4corpus.WRITE]
+
+        fork = dsp4corpus.PROJECTIONS.index(dsp4corpus.PROJECT_TURNOFF)
+        road = dsp4corpus.PROJECTIONS.index(dsp4corpus.PROJECT_TRACK)
+
+        self.assertGreater(len(writes(fork)), len(writes(road)))
 
     def test_a_case_ends_by_telling_the_chip_the_track_has_ended(self):
         steps = dsp4corpus.steps_for(0)
