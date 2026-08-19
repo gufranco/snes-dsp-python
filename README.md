@@ -17,14 +17,15 @@
 <p align="center">
   <a href="#quick-start">Quick start</a> &nbsp;|&nbsp;
   <a href="#models">The family</a> &nbsp;|&nbsp;
-  <a href="#the-commands">Commands</a> &nbsp;|&nbsp;
+  <a href="#the-dsp-2-commands">Commands</a> &nbsp;|&nbsp;
   <a href="#how-this-is-proved">How this is proved</a> &nbsp;|&nbsp;
   <a href="#the-corpus-and-why-it-can-ship">Why the corpus is legal</a> &nbsp;|&nbsp;
   <a href="#the-rescale-reads-past-its-own-data">The rescale</a> &nbsp;|&nbsp;
+  <a href="#models">The DSP-4</a> &nbsp;|&nbsp;
   <a href="https://github.com/gufranco/snes-dsp-python/issues">Issues</a>
 </p>
 
-**4** microcodes carried by the reference driver · **1** modelled so far · **6** commands · **1** exhaustively proved bit permutation · shapes from **1,804,133** real cartridge commands · **95,784** reads agreeing with snes9x · **140** tests · **100%** statement and branch coverage
+**4** microcodes carried by the reference driver · **2** modelled · **21** commands · **7** renderers that suspend and resume · **1** exhaustively proved bit permutation · shapes from **1,804,133** real cartridge commands · **820,816** bytes agreeing with snes9x · **283** tests · **100%** statement and branch coverage
 
 ```python
 from snesdsp import Dsp
@@ -37,6 +38,20 @@ for byte in (0x02, 0x00, 0x03, 0x00):
 
 [chip.read() for _ in range(4)]
 # [6, 0, 0, 0]
+```
+
+```python
+from snesdsp import Dsp
+
+road = Dsp(model="dsp4")
+
+road.write(0x01)
+road.write(0x00)
+for byte in opening_stretch:
+    road.write(byte)
+
+road.out_count
+# how many bytes of scanline this stretch produced
 ```
 
 ---
@@ -55,7 +70,9 @@ Five of the six commands are pure functions of their input, and each one has an 
 
 The recording still has a job, and it is kept: this model agrees byte for byte with a reference that reproduced **71,970,987 bytes** of real recorded traffic with zero errors, over 1,139,246 reads of randomised command streams that reach lengths the game never used.
 
-The same argument is what the other three microcodes will be held to when they are modelled, which is why the reference driver takes the chip as an argument rather than being built around one of them.
+The DSP-4 does not fit that argument, and gets a different one. It is a renderer rather than a calculator: nothing it does is a small pure function, and several of its commands cannot finish in one go. So it is held to a corpus of roads generated from seeds and answered by the chip's own reference, 140 of them and 725,032 bytes, covering every one of its seven renderers. That comparison found two defects in this model and one in the reference.
+
+The reference driver takes the chip as an argument rather than being built around one of them, which is why adding the third and fourth microcodes is a matter of writing the model rather than of building the evidence first.
 
 <table>
 <tr>
@@ -115,7 +132,7 @@ python3 snesdsp/commands.test.py
 # OK
 ```
 
-## The commands
+## The DSP-2 commands
 
 Everything reaches the chip through one byte-wide port: a command, then any lengths it needs, then its data. Results leave the same way, a byte at a time, and reading past the end gives `$FF`.
 
@@ -236,36 +253,51 @@ chip = Dsp(model="dsp2")
 | Model | State | Parameter RAM | Notes |
 |:------|:------|:-------------:|:------|
 | `dsp2` | modelled | 512 bytes | Six commands. Aliases: `dsp-2`, `upd77c25dsp2`, `nintendodsp2` |
+| `dsp4` | modelled | 512 bytes | Fifteen commands, seven of them renderers. Aliases: `dsp-4`, `upd77c25dsp4`, `nintendodsp4` |
 | `dsp1` | reference driver only | 512 bytes | Fixed-point 3D maths, used by the most cartridges |
 | `dsp3` | reference driver only | n/a | Compression and a coordinate walk |
-| `dsp4` | protocol, seven commands, and both single-player projections | 512 bytes | The remaining six renderers are not modelled yet and raise rather than answering |
 
 The reference driver in [`conformance/ref/`](conformance/ref/) already carries all
 four and takes the chip as an argument, so adding one is a matter of writing the
 model and the corpus rather than of building the evidence first.
 
-The DSP-4 is part way through that. Its port protocol, the seven commands that
-finish in one go, and both single-player projections are modelled: the track
-itself, and the road that leaves it. Those two are the interesting ones. Each
-draws as much road as its input describes, then stops and asks for the next
-stretch, resuming where it left off. Eighty roads and 369,280 bytes of output
-agree with the reference.
+The DSP-4 is the odd one in the family. It draws rather than answers: a command
+hands it a viewpoint and a stretch of track and it walks that track outwards from
+the viewer, producing scanline segments and sprite entries until it runs out of
+either. Seven of its commands cannot finish in one go. They consume a batch of
+input, produce output, and then wait for the next batch, resuming exactly where
+they stopped, and the resumption point is state. Two of them suspend in places
+that ask for the same number of bytes, so which one it is cannot be recovered
+from what arrives next.
 
-Its other six renderers are not here yet. Asking for one raises, because a
-command that quietly produced nothing would be indistinguishable from a road with
-no segments in it, which is a real answer this chip can give.
+The reference implements that by jumping back into the middle of a function. Here
+each such command is a generator, which resumes where it yielded for the same
+reason and without the jump.
 
-One thing the comparison had to decide. The chip's output buffer is 512 bytes,
-and a stretch that would produce more than that cannot be expressed through the
-interface: there is nowhere for the bytes to go. The reference does not notice. It
-writes past the end of its own buffer and over the variables that follow, one of
-which is the loop counter, so the loop stops at a length decided by the layout of
-a C struct. That is a property of that program rather than of the chip, so those
-cases are not in the corpus, and the corpus says so.
+Three things the comparison settled that reading the code would not have.
 
-Only `dsp2` is in the catalogue, because only `dsp2` has a corpus behind it. A
-model with nothing behind it would make its fidelity a claim rather than a
-measurement, and listing one would be worse than the gap.
+The reciprocal table holds one over one as a value the lookup hands back signed,
+so a run of a single scanline steps the wrong way. Every caller then negates that
+step again, so the two mistakes cancel where they meet and neither is visible on
+its own. Ten single-line runs in the corpus pin it.
+
+A fork in the road does not interrupt the wait for the next distance, it restarts
+it. The two bytes after one are a distance in their own right and may be another
+fork, or the marker that ends the track. Reading them as the curvature that
+normally follows bends the road by whatever the caller meant as an ending. Nine of
+the twelve forked cases catch it.
+
+And the chip's output buffer is 512 bytes, so a stretch that would produce more
+than that cannot be expressed through the interface: there is nowhere for the
+bytes to go. The reference does not notice. It writes past the end of its own
+buffer and over the variables that follow, one of which is the loop counter, so
+the loop stops at a length decided by the layout of a C struct. That is a property
+of that program rather than of the chip, so those cases are not in the corpus, and
+the corpus says so.
+
+Only `dsp2` and `dsp4` are in the catalogue, because only those two have a corpus
+behind them. A model with nothing behind it would make its fidelity a claim rather
+than a measurement, and listing one would be worse than the gap.
 
 > [!NOTE]
 > The DSP-1 and DSP-3 each carry a thousand-entry table masked into the silicon.
@@ -278,14 +310,16 @@ measurement, and listing one would be worse than the gap.
 ```
 snesdsp/
   __init__.py     the package, and the model chosen at construction
-  chip.py         the port protocol, and nothing else
-  commands.py     what each command computes, as functions of their input
+  chip.py         the DSP-2 port protocol, and nothing else
+  commands.py     what each DSP-2 command computes, as functions of their input
+  dsp4.py         the DSP-4: its port, its commands, and its seven renderers
   memory.py       parameter RAM that holds what it held
   models.py       what each part is
   version.py      rewritten by the release job and by nothing else
 conformance/
-  corpus.py       replays a recording you captured yourself
+  corpus.py       replays a DSP-2 recording you captured yourself
   capture.py      turns a recording into shapes, and never into payload
+  dsp4corpus.py   roads generated from seeds, answered by the reference
   ref/            the driver around the four reference implementations
 ```
 
@@ -303,7 +337,9 @@ for f in snesdsp/*.test.py conformance/*.test.py; do python3 "$f"; done
 | Protocol | [`snesdsp/chip.test.py`](snesdsp/chip.test.py) | Command framing, lengths, payload assembly, result readout, unknown commands |
 | Parameter RAM | [`snesdsp/memory.test.py`](snesdsp/memory.test.py) | Scrambled fills, explicit zeroes, seeding, size |
 | Models | [`snesdsp/models.test.py`](snesdsp/models.test.py) | The catalogue, alias matching, construction |
+| DSP-4 | [`snesdsp/dsp4.test.py`](snesdsp/dsp4.test.py) | The port, the eight single-shot commands, all seven renderers, the sprite packer, the reciprocal table |
 | Corpus harness | [`conformance/corpus.test.py`](conformance/corpus.test.py) | Replay, comparison, reporting, the command line |
+| DSP-4 corpus | [`conformance/dsp4corpus.test.py`](conformance/dsp4corpus.test.py) | Case generation, the buffer-overrun exclusion, recording, replay against 140 recorded roads |
 
 Coverage is enforced at 100% of statements and branches by [`pyproject.toml`](pyproject.toml), so a new branch without a test fails the build rather than quietly lowering the number.
 
@@ -315,7 +351,8 @@ Coverage is enforced at 100% of statements and branches by [`pyproject.toml`](py
 | `ruff check .` | Lint |
 | `python3 -m coverage run -a <file>` | Run one test file under coverage |
 | `python3 -m coverage report` | Coverage, which fails below 100% |
-| `python3 conformance/corpus.py <file>` | Replay a recording |
+| `python3 conformance/corpus.py <file>` | Replay a DSP-2 recording |
+| `python3 conformance/dsp4corpus.py` | Replay the 140 recorded roads |
 
 ## Project conventions
 
@@ -363,7 +400,7 @@ Because the chip never clears it, and one command reads past its own data straig
 <summary><strong>Does this emulate the uPD77C25 processor itself?</strong></summary>
 <br>
 
-No. This models the DSP-2 at its port: the commands the cartridge sends and the bytes that come back. Emulating the uPD77C25 core and running Nintendo's microcode on it would need that microcode, which is copyrighted and not distributable, so it would not be a package anyone could use.
+No. This models each chip at its port: the commands the cartridge sends and the bytes that come back. Emulating the uPD77C25 core and running Nintendo's microcode on it would need that microcode, which is copyrighted and not distributable, so it would not be a package anyone could use.
 
 </details>
 
