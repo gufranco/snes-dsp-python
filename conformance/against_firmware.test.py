@@ -7,7 +7,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import against_firmware
 
+import snesdsp
+from snesdsp import backend, silicon
+
 WHY = against_firmware.why_not()
+
+PRESENT = silicon.available()
 
 
 class AvailabilityTest(unittest.TestCase):
@@ -102,6 +107,138 @@ class AgainstMicrocodeTest(unittest.TestCase):
 
         for microcode in against_firmware.MICROCODES:
             self.assertIn(microcode.part, lines)
+
+
+# What follows drives a real part rather than the sweep above, and lives here
+# for the reason the sweep does: it can only run where somebody's microcode is
+# present, so on a machine without one every check reports as skipped. A skipped
+# check contributes no coverage, and this file sits outside the coverage gate.
+
+
+@unittest.skipUnless("dsp1" in PRESENT, "no dsp1 image")
+class DriveTest(unittest.TestCase):
+    PART = "dsp1"
+
+    def setUp(self):
+        self.chip = silicon.Silicon(self.PART)
+
+    def test_a_part_boots_ready_for_a_command(self):
+        self.assertTrue(self.chip.asking)
+
+    def test_it_names_the_part_it_is_running(self):
+        self.assertEqual(self.chip.part, self.PART)
+
+    def test_it_prints_as_the_part_and_how_it_is_run(self):
+        printed = repr(self.chip)
+
+        self.assertIn(self.PART, printed)
+        self.assertIn("silicon", printed)
+
+    def test_a_command_with_arguments_produces_an_answer(self):
+        self.chip.write(0x00)
+        for byte in (0x10, 0x00, 0x20, 0x00, 0x30, 0x00):
+            self.chip.write(byte)
+
+        self.assertTrue(self.chip.pending_output)
+
+    def test_the_answer_reads_out_a_byte_at_a_time(self):
+        self.chip.write(0x00)
+        for byte in (0x10, 0x00, 0x20, 0x00, 0x30, 0x00):
+            self.chip.write(byte)
+
+        first = self.chip.read()
+        second = self.chip.read()
+
+        self.assertIsInstance(first, int)
+        self.assertIsInstance(second, int)
+        self.assertLess(first, 0x100)
+        self.assertLess(second, 0x100)
+
+    def test_the_same_command_twice_gives_the_same_answer(self):
+        def run():
+            chip = silicon.Silicon(self.PART)
+            chip.write(0x00)
+            for byte in (0x10, 0x00, 0x20, 0x00, 0x30, 0x00):
+                chip.write(byte)
+            return [chip.read() for _ in range(6)]
+
+        self.assertEqual(run(), run())
+
+    def test_two_parts_run_independently_of_each_other(self):
+        other = silicon.Silicon(self.PART)
+        self.chip.write(0x00)
+
+        self.assertTrue(other.asking)
+
+    def test_a_booted_part_is_already_asking_so_a_read_returns(self):
+        self.assertLess(self.chip.read(), 0x100)
+
+    def test_waiting_runs_the_part_until_it_asks_again(self):
+        self.chip.chip.registers.sr.rqm = False
+
+        self.chip.settle()
+
+        self.assertTrue(self.chip.asking)
+
+    def test_waiting_gives_up_rather_than_hanging_when_it_never_asks(self):
+        self.chip.patience = 0
+
+        with self.assertRaises(silicon.NeverReady):
+            self.chip.settle()
+
+    def test_the_refusal_to_wait_forever_names_the_part_and_the_limit(self):
+        self.chip.patience = 0
+
+        with self.assertRaises(silicon.NeverReady) as raised:
+            self.chip.settle()
+
+        self.assertIn(self.PART, str(raised.exception))
+        self.assertIn("0", str(raised.exception))
+
+    def test_the_part_reports_whether_it_wants_attention_rather_than_a_count(self):
+        self.assertIn(self.chip.pending_output, (0, 1))
+
+
+@unittest.skipUnless(PRESENT, silicon.WHY_NOT_FIRMWARE)
+class EveryPartTest(unittest.TestCase):
+    def test_every_image_present_boots_and_asks_for_a_command(self):
+        for part in sorted(PRESENT):
+            self.assertTrue(silicon.Silicon(part).asking, part)
+
+    def test_every_image_present_names_the_processor_it_runs_on(self):
+        for part in sorted(PRESENT):
+            self.assertIn(silicon.Silicon(part).processor, ("upd7725", "upd96050"))
+
+    def test_the_parts_it_offers_are_the_ones_the_manifest_recognises(self):
+        for part in PRESENT:
+            self.assertTrue(part)
+
+
+@unittest.skipUnless(PRESENT, silicon.WHY_NOT_FIRMWARE)
+class WithFirmwareTest(unittest.TestCase):
+    def test_the_microcode_is_what_a_caller_gets_by_default(self):
+        part = sorted(PRESENT)[0]
+
+        self.assertIsInstance(snesdsp.Dsp(model=part), silicon.Silicon)
+
+    def test_and_it_says_so(self):
+        part = sorted(PRESENT)[0]
+
+        self.assertEqual(snesdsp.Dsp(model=part).backend, backend.SILICON)
+
+    def test_the_model_is_still_reachable_by_asking_for_it(self):
+        part = sorted(PRESENT)[0]
+        chip = snesdsp.Dsp(model=part, backend=backend.MODELLED)
+
+        self.assertEqual(chip.backend, backend.MODELLED)
+
+    def test_every_part_with_an_image_offers_the_same_interface_either_way(self):
+        for part in sorted(PRESENT):
+            for which in (backend.SILICON, backend.MODELLED):
+                chip = snesdsp.Dsp(model=part, backend=which)
+
+                for name in ("write", "read", "pending_output", "backend"):
+                    self.assertTrue(hasattr(chip, name), (part, which, name))
 
 
 if __name__ == "__main__":

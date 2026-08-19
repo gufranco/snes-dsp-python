@@ -63,6 +63,10 @@ class BuildTest(unittest.TestCase):
             self.assertTrue(hasattr(chip, name), name)
 
 
+HELD = {"dsp1": (None, None)}
+"""A catalogue naming one part, standing in for what a search would return."""
+
+
 class ChoosingTest(unittest.TestCase):
     """Which backend a caller ends up with, decided without any image present.
 
@@ -73,26 +77,22 @@ class ChoosingTest(unittest.TestCase):
     asked for by name and is not there.
     """
 
-    HELD = {"dsp1": (None, None)}
-
     def test_the_microcode_is_chosen_when_there_is_an_image_for_the_part(self):
-        self.assertEqual(backend.chosen("dsp1", images=self.HELD), backend.SILICON)
+        self.assertEqual(backend.chosen("dsp1", images=HELD), backend.SILICON)
 
     def test_and_the_model_when_there_is_not(self):
-        self.assertEqual(backend.chosen("dsp4", images=self.HELD), backend.MODELLED)
+        self.assertEqual(backend.chosen("dsp4", images=HELD), backend.MODELLED)
 
     def test_asking_for_the_microcode_by_name_gets_it_when_it_is_there(self):
-        self.assertEqual(backend.chosen("dsp1", backend.SILICON, images=self.HELD), backend.SILICON)
+        self.assertEqual(backend.chosen("dsp1", backend.SILICON, images=HELD), backend.SILICON)
 
     def test_and_is_refused_rather_than_quietly_given_the_model(self):
         with self.assertRaises(silicon.NoFirmware):
-            backend.chosen("dsp4", backend.SILICON, images=self.HELD)
+            backend.chosen("dsp4", backend.SILICON, images=HELD)
 
     def test_asking_for_the_model_by_name_gets_it_either_way(self):
         for part in ("dsp1", "dsp4"):
-            self.assertEqual(
-                backend.chosen(part, backend.MODELLED, images=self.HELD), backend.MODELLED
-            )
+            self.assertEqual(backend.chosen(part, backend.MODELLED, images=HELD), backend.MODELLED)
 
 
 class PendingOutputTest(unittest.TestCase):
@@ -128,33 +128,6 @@ class ModelNameTest(unittest.TestCase):
         chip = snesdsp.Dsp(model="dsp1a", backend=backend.MODELLED)
 
         self.assertEqual(chip.revision, "dsp1")
-
-
-@unittest.skipUnless(PRESENT, silicon.WHY_NOT_FIRMWARE)
-class WithFirmwareTest(unittest.TestCase):
-    def test_the_microcode_is_what_a_caller_gets_by_default(self):
-        part = sorted(PRESENT)[0]
-
-        self.assertIsInstance(snesdsp.Dsp(model=part), silicon.Silicon)
-
-    def test_and_it_says_so(self):
-        part = sorted(PRESENT)[0]
-
-        self.assertEqual(snesdsp.Dsp(model=part).backend, backend.SILICON)
-
-    def test_the_model_is_still_reachable_by_asking_for_it(self):
-        part = sorted(PRESENT)[0]
-        chip = snesdsp.Dsp(model=part, backend=backend.MODELLED)
-
-        self.assertEqual(chip.backend, backend.MODELLED)
-
-    def test_every_part_with_an_image_offers_the_same_interface_either_way(self):
-        for part in sorted(PRESENT):
-            for which in (backend.SILICON, backend.MODELLED):
-                chip = snesdsp.Dsp(model=part, backend=which)
-
-                for name in ("write", "read", "pending_output", "backend"):
-                    self.assertTrue(hasattr(chip, name), (part, which, name))
 
 
 if __name__ == "__main__":
