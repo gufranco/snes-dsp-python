@@ -238,11 +238,18 @@ chip = Dsp(model="dsp2")
 | `dsp2` | modelled | 512 bytes | Six commands. Aliases: `dsp-2`, `upd77c25dsp2`, `nintendodsp2` |
 | `dsp1` | reference driver only | 512 bytes | Fixed-point 3D maths, used by the most cartridges |
 | `dsp3` | reference driver only | n/a | Compression and a coordinate walk |
-| `dsp4` | reference driver only | 512 bytes | The track renderer |
+| `dsp4` | port protocol and seven commands | 512 bytes | The track renderer. The eight renderers themselves are not modelled yet and raise rather than answering |
 
 The reference driver in [`conformance/ref/`](conformance/ref/) already carries all
 four and takes the chip as an argument, so adding one is a matter of writing the
 model and the corpus rather than of building the evidence first.
+
+The DSP-4 is part way through that. Its port protocol and the seven commands that
+finish in one go are modelled and agree with the reference across three hundred
+randomised command sequences. Its eight track renderers consume input in batches
+and resume where they stopped, and they are not here yet. Asking for one raises,
+because a command that quietly produced nothing would be indistinguishable from a
+road with no segments in it, which is a real answer this chip can give.
 
 Only `dsp2` is in the catalogue, because only `dsp2` has a corpus behind it. A
 model with nothing behind it would make its fidelity a claim rather than a
