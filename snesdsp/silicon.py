@@ -110,11 +110,15 @@ def available(held=None):
     return held
 
 
-def why_not():
-    """Why this backend cannot run, or nothing when it can."""
+def why_not(held=None):
+    """Why this backend cannot run, or nothing when it can.
+
+    `held` is passed through to `available` for the same reason it exists there:
+    so the answer can be checked on a machine that has no image at all.
+    """
     if _processor() is None:
         return WHY_NOT_PROCESSOR
-    if not available():
+    if not available(held):
         return WHY_NOT_FIRMWARE
     return None
 
@@ -125,7 +129,8 @@ class Silicon:
     An image can be supplied rather than found on disk. That is what a caller with
     the bytes already in hand wants, and it is also what lets this class be driven
     in a test by a program nobody owns, on a machine where no real microcode is
-    present.
+    present. `images` replaces the search instead of the image, for a caller that
+    knows where the files are but wants them read the usual way.
 
     The interface is the one the models offer, so a caller swaps backends without
     knowing which it holds. What differs is `pending_output`, which the hardware
@@ -143,6 +148,7 @@ class Silicon:
         gap=GAP,
         image=None,
         identity=None,
+        images=None,
     ):
         found = _processor()
         if found is None:
@@ -151,7 +157,7 @@ class Silicon:
         firmware, models, ports = found
 
         if image is None:
-            images = available()
+            images = available(images)
             wanted = SHARES_IMAGE.get(part, part)
             if wanted not in images:
                 raise NoFirmware(

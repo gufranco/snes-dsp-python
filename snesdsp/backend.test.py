@@ -63,6 +63,73 @@ class BuildTest(unittest.TestCase):
             self.assertTrue(hasattr(chip, name), name)
 
 
+class ChoosingTest(unittest.TestCase):
+    """Which backend a caller ends up with, decided without any image present.
+
+    `chosen` takes the catalogue rather than looking for one, so every branch of
+    the decision can be checked on a machine that has nothing on disk. What is
+    checked here is the rule: the microcode when it can be run, the model when it
+    cannot, and a refusal rather than a silent substitution when the microcode was
+    asked for by name and is not there.
+    """
+
+    HELD = {"dsp1": (None, None)}
+
+    def test_the_microcode_is_chosen_when_there_is_an_image_for_the_part(self):
+        self.assertEqual(backend.chosen("dsp1", images=self.HELD), backend.SILICON)
+
+    def test_and_the_model_when_there_is_not(self):
+        self.assertEqual(backend.chosen("dsp4", images=self.HELD), backend.MODELLED)
+
+    def test_asking_for_the_microcode_by_name_gets_it_when_it_is_there(self):
+        self.assertEqual(backend.chosen("dsp1", backend.SILICON, images=self.HELD), backend.SILICON)
+
+    def test_and_is_refused_rather_than_quietly_given_the_model(self):
+        with self.assertRaises(silicon.NoFirmware):
+            backend.chosen("dsp4", backend.SILICON, images=self.HELD)
+
+    def test_asking_for_the_model_by_name_gets_it_either_way(self):
+        for part in ("dsp1", "dsp4"):
+            self.assertEqual(
+                backend.chosen(part, backend.MODELLED, images=self.HELD), backend.MODELLED
+            )
+
+
+class PendingOutputTest(unittest.TestCase):
+    """The one field the two backends answer differently, checked on every model.
+
+    A model knows how many bytes it computed. The hardware knows only that it
+    wants attention. Both are truthy while there is something to read and falsy
+    when there is not, which is the whole contract a caller loops on, so it is
+    checked on every part rather than on one.
+    """
+
+    def test_a_part_with_nothing_to_give_reports_nothing_pending(self):
+        for part in ("dsp1", "dsp1a", "dsp1b", "dsp2", "dsp3", "dsp4"):
+            chip = snesdsp.Dsp(model=part, backend=backend.MODELLED)
+
+            self.assertFalse(chip.pending_output, part)
+
+    def test_and_the_count_is_never_negative(self):
+        for part in ("dsp1", "dsp2", "dsp3", "dsp4"):
+            chip = snesdsp.Dsp(model=part, backend=backend.MODELLED)
+
+            self.assertGreaterEqual(chip.pending_output, 0, part)
+
+
+class ModelNameTest(unittest.TestCase):
+    def test_every_part_carries_the_name_it_was_asked_for(self):
+        for part in ("dsp1", "dsp1a", "dsp1b", "dsp2", "dsp3", "dsp4"):
+            chip = snesdsp.Dsp(model=part, backend=backend.MODELLED)
+
+            self.assertEqual(chip.model, part)
+
+    def test_the_middle_mask_runs_the_first_mask_program(self):
+        chip = snesdsp.Dsp(model="dsp1a", backend=backend.MODELLED)
+
+        self.assertEqual(chip.revision, "dsp1")
+
+
 @unittest.skipUnless(PRESENT, silicon.WHY_NOT_FIRMWARE)
 class WithFirmwareTest(unittest.TestCase):
     def test_the_microcode_is_what_a_caller_gets_by_default(self):

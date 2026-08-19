@@ -36,23 +36,12 @@ class WithoutTest(unittest.TestCase):
 
     def test_with_a_processor_but_no_image_it_says_that_instead(self):
         silicon._processor = lambda: (None, None, None)
-        real_available = silicon.available
-        silicon.available = dict
 
-        try:
-            self.assertEqual(silicon.why_not(), silicon.WHY_NOT_FIRMWARE)
-        finally:
-            silicon.available = real_available
+        self.assertEqual(silicon.why_not({}), silicon.WHY_NOT_FIRMWARE)
 
     def test_a_part_sharing_an_image_that_is_absent_is_refused(self):
-        real_available = silicon.available
-        silicon.available = dict
-
-        try:
-            with self.assertRaises(silicon.NoFirmware):
-                silicon.Silicon("dsp1a")
-        finally:
-            silicon.available = real_available
+        with self.assertRaises(silicon.NoFirmware):
+            silicon.Silicon("dsp1a", images={})
 
 
 class SharingTest(unittest.TestCase):
@@ -109,6 +98,47 @@ class AvailabilityTest(unittest.TestCase):
 
     def test_the_reason_is_the_same_one_the_refusal_carries(self):
         self.assertTrue(silicon.why_not() is None or isinstance(silicon.why_not(), str))
+
+
+class FoundOnDiskTest(unittest.TestCase):
+    """The path that reads an image the search turned up.
+
+    A machine with real microcode takes this path and a hosted runner does not,
+    so the search is replaced rather than the file: the bytes are a program of
+    zeroes written to a temporary file, and everything from the lookup onwards is
+    the same code a real image goes through.
+    """
+
+    def _catalogue(self):
+        import sys as system
+        import tempfile
+
+        system.path.insert(0, str(silicon.PROCESSOR))
+        from upd7725 import firmware
+
+        identity = firmware.Identity("dsp1", "upd7725", "MADE UP", 2048, 1024)
+        where = Path(tempfile.mkdtemp()) / "made-up.bin"
+        where.write_bytes(bytes(2048 * 3 + 1024 * 2))
+        return {"dsp1": (identity, where)}
+
+    def test_an_image_the_search_found_is_read_from_its_file(self):
+        chip = silicon.Silicon("dsp1", images=self._catalogue(), boot=64)
+
+        self.assertEqual(chip.part, "dsp1")
+
+    def test_a_part_sharing_another_part_image_is_built_from_it(self):
+        chip = silicon.Silicon("dsp1a", images=self._catalogue(), boot=64)
+
+        self.assertEqual(chip.part, "dsp1a")
+
+    def test_a_part_with_no_image_anywhere_is_refused_by_name(self):
+        with self.assertRaises(silicon.NoFirmware) as raised:
+            silicon.Silicon("dsp4", images=self._catalogue())
+
+        self.assertIn("dsp4", str(raised.exception))
+
+    def test_with_an_image_present_there_is_no_reason_it_cannot_run(self):
+        self.assertIsNone(silicon.why_not(self._catalogue()))
 
 
 class SuppliedImageTest(unittest.TestCase):
