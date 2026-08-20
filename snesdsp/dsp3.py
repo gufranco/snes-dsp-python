@@ -267,7 +267,7 @@ class Dsp3:
             0x0F: self._test_memory,
             0x10: self._absorb_until_end,
             0x18: self._convert,
-            0x1C: self._absorb_two_answer_two,
+            0x1C: self._absorb,
             0x1E: self._search_reachable,
             0x1F: self._dump_data_rom,
             0x38: self._decode,
@@ -282,7 +282,17 @@ class Dsp3:
         self.index = 0
 
     def _test_memory(self):
+        """Answer one word of zero, which takes two steps rather than one.
+
+        The word has to be handed over before the part goes back to waiting, and
+        a restart in the same step hands back the command byte and then nothing.
+        Its own microcode gives two words, the command echoed and then the zero,
+        and only then returns to the command loop.
+        """
         self.data = 0x0000
+        self.step = self._tested_memory
+
+    def _tested_memory(self):
         self._restart()
 
     def _dump_data_rom(self):
@@ -387,47 +397,52 @@ class Dsp3:
         if self.data == END_OF_LIST:
             self._restart()
 
-    def _absorb_two_answer_two(self):
-        """Two words in and two zeroes out, which is all anything ever saw it do.
+    def _absorb(self):
+        """Swallow words and hand the last one back, for as long as it is asked.
 
-        Four steps for two words and two answers, because the chip counts the
-        words it has been given rather than the bytes, and zeroes the answer only
-        once both have arrived. A model that zeroes it a step early hands back the
-        second word instead of the first zero, and nothing else about it differs.
+        Written here for years as two words in and two zeroes out, which is what
+        the reference everyone works from does. The part does not: given one word
+        or eight, its answer is the last word it was written and it goes on
+        answering that. It never produces a zero and never returns to waiting for
+        a command.
+
+        Measured against its own microcode, which is what settles it. Staying in
+        this state is the whole of the behaviour, so the step does nothing: a
+        write leaves its word where reads find it, and reads hand back what is
+        there.
         """
-        self.step = self._absorb_second_word
-
-    def _absorb_second_word(self):
-        self.step = self._answer_zero
-
-    def _answer_zero(self):
-        self.data = 0
-        self.step = self._answer_zero_again
-
-    def _answer_zero_again(self):
-        self.data = 0
-        self.step = self._restart
 
     def _convert(self):
-        """Eight bytes of bitmap in, eight bytes of bit plane out, repeatedly."""
+        """Eight bytes of bitmap in, eight bytes of bit plane out, repeatedly.
+
+        The bitmap goes in a byte at a time and the part says so, which is what
+        its microcode does and what its own status register reports while the
+        eight bytes are arriving. A console that assembled them into words would
+        be feeding the same bytes and would never be told it had guessed right.
+        The planes come back as words, so the part switches once the eighth byte
+        has landed.
+        """
         self.count = self.data
         self.bitmap_index = 0
+        self.status = READY | BYTE_AT_A_TIME
         self.step = self._convert_next
 
     def _convert_next(self):
         if self.bitmap_index < TILE_BYTES:
             self.bitmap[self.bitmap_index] = low(self.data)
-            self.bitmap[self.bitmap_index + 1] = high(self.data)
-            self.bitmap_index += 2
+            self.bitmap_index += 1
             if self.bitmap_index == TILE_BYTES:
                 self._transpose()
+                self.status = READY
 
         if self.bitmap_index != TILE_BYTES:
             return
         if self.bitplane_index == TILE_BYTES:
             if not self.count:
                 self._restart()
+                return
             self.bitmap_index = 0
+            self.status = READY | BYTE_AT_A_TIME
             return
         self.data = self.bitplane[self.bitplane_index] | (
             self.bitplane[self.bitplane_index + 1] << 8

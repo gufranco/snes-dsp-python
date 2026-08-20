@@ -162,6 +162,46 @@ class ConvertTest(unittest.TestCase):
         self.assertEqual(chip.read_status(), dsp3.RESET_STATUS)
 
 
+class ConvertStatusTest(unittest.TestCase):
+    """What the console is told while the bitmap is going in.
+
+    The part takes those eight bytes one at a time and says so, which is the
+    difference between a console that feeds it correctly and one that feeds it
+    the same bytes assembled into words and is never told it guessed right.
+    Measured against the part's own microcode.
+    """
+
+    def test_the_part_asks_for_bytes_once_the_count_has_arrived(self):
+        chip = commanded(0x18, word(1))
+
+        self.assertEqual(chip.read_status(), dsp3.READY | dsp3.BYTE_AT_A_TIME)
+
+    def test_and_keeps_asking_for_bytes_until_the_last_one(self):
+        chip = commanded(0x18, word(1))
+        seen = []
+        for value in [0xFF, 0x00] * 4:
+            chip.write(value)
+            seen.append(chip.read_status())
+
+        self.assertEqual(seen[:7], [dsp3.READY | dsp3.BYTE_AT_A_TIME] * 7)
+
+    def test_then_goes_back_to_words_to_hand_the_planes_over(self):
+        chip = commanded(0x18, word(1))
+        for value in [0xFF, 0x00] * 4:
+            chip.write(value)
+
+        self.assertEqual(chip.read_status(), dsp3.READY)
+
+    def test_the_bytes_land_in_the_order_they_were_written(self):
+        chip = commanded(0x18, word(1))
+        for value in (0x81, 0x42, 0x24, 0x18, 0x18, 0x24, 0x42, 0x81):
+            chip.write(value)
+
+        self.assertEqual(
+            bytes(chip.bitmap), bytes((0x81, 0x42, 0x24, 0x18, 0x18, 0x24, 0x42, 0x81))
+        )
+
+
 class DataRomTest(unittest.TestCase):
     def test_the_dump_command_refuses_when_no_table_was_supplied(self):
         chip = commanded(0x1F, [0x00])
@@ -194,16 +234,26 @@ class DataRomTest(unittest.TestCase):
 
 
 class AbsorbTest(unittest.TestCase):
-    def test_the_command_that_swallows_two_words_answers_the_second_first(self):
+    def test_the_command_that_swallows_words_hands_back_the_last_one(self):
         chip = commanded(0x1C, word(0x1234) + word(0x5678))
 
         self.assertEqual(answered(chip, 2), word(0x5678))
 
-    def test_and_then_two_zeroes(self):
+    def test_and_keeps_handing_it_back_rather_than_going_to_zero(self):
         chip = commanded(0x1C, word(0x1234) + word(0x5678))
         answered(chip, 2)
 
-        self.assertEqual(answered(chip, 4), [0, 0, 0, 0])
+        self.assertEqual(answered(chip, 4), word(0x5678) + word(0x5678))
+
+    def test_it_swallows_as_many_words_as_it_is_given(self):
+        chip = commanded(0x1C, word(0x1234) + word(0x5678) + word(0x9ABC) + word(0xDEF0))
+
+        self.assertEqual(answered(chip, 2), word(0xDEF0))
+
+    def test_and_one_word_is_enough_for_it_to_answer(self):
+        chip = commanded(0x1C, word(0x1234))
+
+        self.assertEqual(answered(chip, 2), word(0x1234))
 
     def test_the_command_that_swallows_a_word_answers_nothing(self):
         chip = commanded(0x0C, word(0x1234))
@@ -221,9 +271,199 @@ class AbsorbTest(unittest.TestCase):
         self.assertEqual(chip.read_status(), dsp3.RESET_STATUS)
 
     def test_the_memory_test_answers_zero(self):
-        chip = commanded(0x0F, word(0))
+        chip = dsp3.Dsp3()
+        chip.write(0x0F)
+        chip.read()
+        chip.read()
 
-        self.assertEqual(chip.data, dsp3.RESET_DATA)
+        self.assertEqual([chip.read(), chip.read()], [0x00, 0x00])
+
+    def test_it_hands_back_two_words_before_going_back_to_waiting(self):
+        chip = dsp3.Dsp3()
+        chip.write(0x0F)
+
+        said = [chip.read() for _ in range(4)]
+
+        self.assertEqual(said, [0x0F, 0x00, 0x00, 0x00])
+
+    def test_and_only_then_is_it_waiting_for_the_next_command(self):
+        chip = dsp3.Dsp3()
+        chip.write(0x0F)
+        for _ in range(3):
+            chip.read()
+
+        self.assertNotEqual(chip.read_status(), dsp3.RESET_STATUS)
+
+    def test_which_it_is_once_the_second_word_has_gone(self):
+        chip = dsp3.Dsp3()
+        chip.write(0x0F)
+        for _ in range(4):
+            chip.read()
+
+        self.assertEqual(chip.read_status(), dsp3.RESET_STATUS)
+
+
+class MultipleTilesTest(unittest.TestCase):
+    """A conversion asked for more than one tile, which is what the count is for."""
+
+    SOLID = [0xFF, 0x00] * 4
+
+    def test_a_second_tile_is_asked_for_a_byte_at_a_time_like_the_first(self):
+        chip = commanded(0x18, word(2))
+        for value in self.SOLID:
+            chip.write(value)
+        answered(chip, 8)
+
+        self.assertEqual(chip.read_status(), dsp3.READY | dsp3.BYTE_AT_A_TIME)
+
+    def test_and_it_converts_the_same_way(self):
+        chip = commanded(0x18, word(2))
+        for value in self.SOLID:
+            chip.write(value)
+        answered(chip, 8)
+        for value in self.SOLID:
+            chip.write(value)
+
+        self.assertEqual(chip.bitplane, bytearray([0xAA] * 8))
+
+    def test_the_count_is_what_says_how_many_there_are(self):
+        chip = commanded(0x18, word(2))
+        for value in self.SOLID:
+            chip.write(value)
+        answered(chip, 8)
+        for value in self.SOLID:
+            chip.write(value)
+        answered(chip, 8)
+
+        self.assertEqual(chip.read_status(), dsp3.RESET_STATUS)
+
+
+class RunLengthTest(unittest.TestCase):
+    """A run that carries on past its first word, and the count that ends it.
+
+    The decompressor answers either one symbol or a run of them, and a run has a
+    second half: the length arrives in its own bits after the code that announced
+    it. Driving it only far enough to see the announcement leaves that half
+    unread, which is where it used to stop being checked.
+    """
+
+    STREAM = (0xA3, 0x27, 0x5F, 0x6D)
+
+    TAIL = (0x0E, 0x4A)
+
+    def decoding(self, outwords):
+        chip = commanded(0x38, word(1) + word(outwords))
+        for value in self.STREAM:
+            chip.write(value)
+        return chip
+
+    def _turn(self, chip):
+        answered(chip, 2)
+        for value in self.TAIL:
+            chip.write(value)
+
+    def test_a_run_reaches_the_state_that_reads_its_length(self):
+        chip = self.decoding(3)
+        seen = set()
+        for _ in range(8):
+            seen.add(chip.lz_code)
+            self._turn(chip)
+
+        self.assertIn(2, seen)
+
+    def test_the_stream_ends_when_the_word_count_runs_out(self):
+        chip = self.decoding(3)
+        for _ in range(8):
+            self._turn(chip)
+
+        self.assertEqual(chip.read_status(), dsp3.RESET_STATUS)
+
+    def test_a_shorter_stream_ends_sooner(self):
+        chip = self.decoding(2)
+        for _ in range(8):
+            self._turn(chip)
+
+        self.assertEqual(chip.read_status(), dsp3.RESET_STATUS)
+
+    def test_and_the_part_is_waiting_for_a_command_once_it_has(self):
+        chip = self.decoding(2)
+        for _ in range(8):
+            self._turn(chip)
+
+        self.assertTrue(chip.idle)
+
+
+class StarvedDecoderTest(unittest.TestCase):
+    """A stream that runs out of bits in the middle of reading one.
+
+    The decompressor reads a code, then a length, then a symbol, and any of the
+    three can arrive half-written when the console has not fed enough. It has to
+    stop where it is and pick the same place up when more arrives, and the
+    stopping is what these cover.
+    """
+
+    def starved(self, outwords, stream, turns):
+        chip = commanded(0x38, word(1) + word(outwords))
+        for value in stream:
+            chip.write(value)
+        for _ in range(turns):
+            answered(chip, 2)
+            for value in stream[:2]:
+                chip.write(value)
+        return chip
+
+    def test_a_stream_that_stops_mid_code_leaves_the_part_waiting(self):
+        chip = self.starved(3, (0xCA, 0xF5), 2)
+
+        self.assertFalse(chip.idle)
+
+    def test_and_it_carries_on_when_more_arrives(self):
+        chip = self.starved(3, (0xCA, 0xF5), 2)
+        before = chip.data
+
+        chip.write(0xCA)
+        chip.write(0xF5)
+
+        self.assertIsInstance(before, int)
+        self.assertIsInstance(chip.data, int)
+
+    def test_a_stream_that_stops_mid_length_does_the_same(self):
+        chip = self.starved(5, (0x5E, 0xB6, 0xDF, 0xA4), 2)
+
+        self.assertFalse(chip.idle)
+
+    def test_nothing_it_hands_back_while_starved_is_wider_than_a_byte(self):
+        chip = self.starved(5, (0x5E, 0xB6, 0xDF, 0xA4), 2)
+
+        for value in answered(chip, 4):
+            self.assertTrue(0 <= value <= 0xFF)
+
+    def test_a_table_that_ends_on_the_last_bit_does_not_run_into_the_tree(self):
+        chip = commanded(0x38, word(3) + word(3))
+        for value in (0x62, 0x88, 0xE3, 0x07):
+            chip.write(value)
+        answered(chip, 2)
+        chip.write(0x62)
+        chip.write(0x88)
+
+        self.assertFalse(chip.idle)
+
+    def test_a_tree_that_ends_on_the_last_bit_does_not_run_into_the_data(self):
+        chip = commanded(0x38, word(1) + word(4))
+        for value in (0x48, 0x85):
+            chip.write(value)
+
+        self.assertFalse(chip.idle)
+
+    def test_both_pick_up_where_they_stopped_once_more_bits_arrive(self):
+        chip = commanded(0x38, word(1) + word(4))
+        for value in (0x48, 0x85):
+            chip.write(value)
+
+        chip.write(0x48)
+        chip.write(0x85)
+
+        self.assertFalse(chip.idle)
 
 
 class SearchRangeTest(unittest.TestCase):

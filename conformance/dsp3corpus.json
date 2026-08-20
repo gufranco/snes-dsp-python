@@ -1,246 +1,1576 @@
 {
-  "comment": "Sessions generated from seeds and answered by the chip's own reference. The command that hands back the chip's mask ROM is not among them.",
-  "reference": "snes9x dsp3.cpp, through conformance/ref",
+  "note": "Recorded from the part itself, which is the authority on what it answers. The scripts are arithmetic from a seed and carry nothing belonging to anybody.",
+  "part": "dsp3",
+  "recordedFrom": "the part's own microcode, run on the processor it is masked into",
   "cases": [
     {
       "seed": 0,
-      "expected": "hQARA00AAQACeqlb2fH7aoRA+YaGL4mPSUgmkwAAvPEAAEkANQAhADYADQAiACMASgA3AEsAOABMAGAAXgBfAHIAdABzAIYAXQBxAHAAhQCEAG8AXABbAEcAbgBaAEYASAAzADQAMgAfACAA//81AP8hAP82AP8NAP8iAP8jAP9KAP83AP9LAP84AP9MAP9gAP9eAP9fAP9yAP90AP9zAP+GAP9dAP9xAP9wAP+FAP+EAP9vAP9cAP9bAP9HAP9uAP9aAP9GAP9IAP8zAP80AP8yAP8fAP8gAP///wAAAAAAAAAAAAAMAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "command": 2,
+      "script": [
+        ["w", 2],
+        ["w", 62],
+        ["w", 197],
+        ["w", 85],
+        ["w", 215],
+        ["w", 186],
+        ["w", 20],
+        ["w", 144],
+        ["w", 132],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "kIQAgFLD"
     },
     {
       "seed": 1,
-      "expected": "OgAEBWgAAQAuYb81G42HtFJQMTvYgGZL4gRGxQAAqQ8AACoAFgACAAMA3gDfAAQAFwAYACwABQAZAC0AKwBAAD8AQQBUAFMAPgBSAD0AZgBRAFAAKQA8ACgATwA7ACcAFQAUAAEAEwAAAN0A//8WADACAP8DAP/eAP/fAP8EAP8XAP8YAP8sAP8FAP8ZAP8tAP8rAD9AAP8/AP9BAP9UAP9TAP8+AA1SADI9AP9mAP9RAP9QAP8pAP88AP8oAP9PAP87AP8nAP8VAP8UAP8BAP8TAP8AAP/dAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "command": 2,
+      "script": [
+        ["w", 2],
+        ["w", 203],
+        ["w", 68],
+        ["w", 79],
+        ["w", 32],
+        ["w", 152],
+        ["w", 130],
+        ["w", 95],
+        ["w", 60],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "PAA8ADwA"
     },
     {
       "seed": 2,
-      "expected": "AgAGBn4AAQAlCYsoMw9sfGwte9dIlaxNkSOiQQAA49gAAFcAQwAvAEQAGwAwADEAWABFAFkARgBaAG4AbABtAIAAggCBAJQAawB/AH4AkwCSAH0AagBpAFUAfABoAFQAVgBBAEIAQAAtAC4A//9DAB0vAP9EAP8bAP8wAP8xAP9YAC5FAP9ZAP9GAP9aAP9uAP9sACxtAP+AAP+CAP+BAP+UAP9rAP9/AP9+AP+TAP+SAP99AP9qAA1pAP9VAP98AP9oAP9UAP9WAB9BAP9CAP9AAP8tAP8uAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "command": 2,
+      "script": [
+        ["w", 2],
+        ["w", 244],
+        ["w", 28],
+        ["w", 228],
+        ["w", 46],
+        ["w", 116],
+        ["w", 43],
+        ["w", 220],
+        ["w", 184],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "3LgAgOif"
+    },
+    {
+      "seed": 3,
+      "command": 2,
+      "script": [
+        ["w", 2],
+        ["w", 214],
+        ["w", 121],
+        ["w", 198],
+        ["w", 66],
+        ["w", 106],
+        ["w", 189],
+        ["w", 183],
+        ["w", 242],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "8vLy8vLy"
     },
     {
       "seed": 4,
-      "expected": "RQAMAAwAAQAHERIF6QTU5JUrQdI6iRt2x+mOcAAAQIUAAIAAbABYAFkARABFAFoAbQBuAIIAWwBvAIMAgQCWAJUAlwCqAKkAlACoAJMAvACnAKYAfwCSAH4AkQB9AGkAawBqAFcAVQBWAEMA//9sACdYAP9ZAP9EAP9FAP9aAP9tACZuAP+CAP9bAP9vAP+DAP+BAP+WAP+VAP+XAP+qAP+pABmUAP+oADiTAP+8AP+nAP+mAP9/AP+SAP9+AP+RAP99AP9pAP9rAP9qAP9XAP9VAP9WAP9DAP///wAAAAACAAIAAgAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA=="
+      "command": 2,
+      "script": [
+        ["w", 2],
+        ["w", 219],
+        ["w", 120],
+        ["w", 73],
+        ["w", 155],
+        ["w", 210],
+        ["w", 52],
+        ["w", 200],
+        ["w", 202],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "yMoAgO1N"
     },
     {
-      "seed": 5,
-      "expected": "vAAPCtcAAQBGDScoaLOTe/ffpZQkxzcMtr7EygAAOV0AAKcAkwB/AJQAawCAAIEAqACVAKkAlgCqAL4AvAC9ANAA0gDRAOQAuwDPAM4A4wDiAM0AugC5AKUAzAC4AKQApgCRAJIAkAB9AH4A//+TABF/AP+UAP9rAP+AAP+BAP+oABmVAP+pAP+WAP+qAP++AP+8AP+9AP/QAP/SAP/RAP/kAP+7AP/PAP/OAP/jAP/iAP/NAP+6AAG5AP+lAP/MAP+4AP+kAP+mAA2RAP+SAP+QAP99AP9+AP///wAAAAAAAAAAAAB7gEoAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 0,
+      "command": 3,
+      "script": [
+        ["w", 3],
+        ["w", 62],
+        ["w", 197],
+        ["w", 85],
+        ["w", 215],
+        ["w", 186],
+        ["w", 20],
+        ["w", 144],
+        ["w", 132],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "gICAgICA"
     },
     {
-      "seed": 7,
-      "expected": "aAABCskAAQDZDvY2YM8dFseQBQVZVoQ3O3ybgQAArB8AAKMAjwB7AJAAZwB8AH0ApACRAKUAkgCmALoAuAC5AMwAzgDNAOAAtwDLAMoA3wDeAMkAtgC1AKEAyAC0AKAAogCNAI4AjAB5AHoA//+PAAV7AP+QAP9nAP98AP99AP+kAAiRAP+lAP+SAP+mAP+6AP+4AB+5AP/MAP/OAP/NAP/gAP+3AP/LAP/KAP/fAP/eAP/JAP+2AP+1AP+hAP/IAP+0AP+gAP+iABWNAP+OAP+MAP95AP96AP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 1,
+      "command": 3,
+      "script": [
+        ["w", 3],
+        ["w", 203],
+        ["w", 68],
+        ["w", 79],
+        ["w", 32],
+        ["w", 152],
+        ["w", 130],
+        ["w", 95],
+        ["w", 60],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "PAA8ADwA"
     },
     {
-      "seed": 8,
-      "expected": "RwAGAi4AAQBYP5s13TxS1wmFRWcUGT5uBG9/dAAA5ncAADIAHgAKAAsA5gDnAAwAHwAgADQADQAhADUAMwBIAEcASQBcAFsARgBaAEUAbgBZAFgAMQBEADAAQwAvABsAHQAcAAkABwAIAOUA//8eADwKAP8LAP/mAP/nAP8MAP8fAAsgAP80AP8NAP8hAP81AP8zAP9IAP9HAP9JAP9cAP9bAP9GAP9aABxFAP9uAP9ZAP9YAP8xACBEAP8wAP9DAP8vAP8bAP8dAA4cAP8JAP8HAP8IAP/lAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 2,
+      "command": 3,
+      "script": [
+        ["w", 3],
+        ["w", 244],
+        ["w", 28],
+        ["w", 228],
+        ["w", 46],
+        ["w", 116],
+        ["w", 43],
+        ["w", 220],
+        ["w", 184],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "3ACAgICA"
     },
     {
-      "seed": 9,
-      "expected": "nwADAz8AAQC2drAUwk2bSjNiJWbgyeuyP8r9UAAAzUMAAEoANgAiACMADgAPACQANwA4AEwAJQA5AE0ASwBgAF8AYQB0AHMAXgByAF0AhgBxAHAASQBcAEgAWwBHADMANQA0ACEAHwAgAA0A//82ACUiAP8jAP8OAP8PAP8kAP83AP84AP9MAP8lAP85AP9NAP9LAP9gAP9fAP9hAP90AP9zADVeAP9yAAtdAP+GAP9xAP9wAP9JAP9cAP9IAP9bAP9HAP8zAP81ABk0AP8hAP8fAP8gAP8NAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "seed": 3,
+      "command": 3,
+      "script": [
+        ["w", 3],
+        ["w", 214],
+        ["w", 121],
+        ["w", 198],
+        ["w", 66],
+        ["w", 106],
+        ["w", 189],
+        ["w", 183],
+        ["w", 242],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "8vLy8vLy"
     },
     {
-      "seed": 11,
-      "expected": "nQDIgwQLAQCpLxgYuLHjHzjDZtjmHmwY4Y69PgAAQRIAAG0AWQBFAFoAMQBGAEcAbgBbAG8AXABwAIQAggCDAJYAmACXAKoAgQCVAJQAqQCoAJMAgAB/AGsAkgB+AGoAbABXAFgAVgBDAEQA//9ZAP9FAP9aAP8xAP9GAP9HAP9uAApbAP9vAP9cAP9wAP+EAP+CAAiDAP+WAP+YAP+XAP+qAP+BACKVAP+UAP+pAP+oAP+TAP+AACl/AP9rAP+SAP9+AP9qAP9sAP9XAP9YAP9WAP9DAP9EAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "seed": 4,
+      "command": 3,
+      "script": [
+        ["w", 3],
+        ["w", 219],
+        ["w", 120],
+        ["w", 73],
+        ["w", 155],
+        ["w", 210],
+        ["w", 52],
+        ["w", 200],
+        ["w", 202],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "gICAgICA"
     },
     {
-      "seed": 13,
-      "expected": "WQAGCs4AAQBVISES5BT1bztCa7O3ORaPCqhhhAAAn98AAFoARgAyADMAHgAfADQARwBIAFwANQBJAF0AWwBwAG8AcQCEAIMAbgCCAG0AlgCBAIAAWQBsAFgAawBXAEMARQBEADEALwAwAB0A//9GAP8yAP8zAP8eAP8fAP80AP9HADhIAP9cAP81AP9JAP9dAP9bAP9wAP9vAP9xAP+EAP+DAP9uADaCABxtAP+WAP+BAP+AAP9ZAP9sAP9YAP9rAP9XAP9DAP9FAP9EAP8xAP8vAP8wAP8dAP///wAAAAACAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 0,
+      "command": 6,
+      "script": [
+        ["w", 6],
+        ["w", 62],
+        ["w", 197],
+        ["w", 85],
+        ["w", 215],
+        ["w", 186],
+        ["w", 20],
+        ["w", 144],
+        ["w", 132],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "gICAgICA"
     },
     {
-      "seed": 14,
-      "expected": "JwAHAi8AAQAic5BNHFJD9yPJ1N6t8WmoG5WyzQAAdVIAAH8AawBXAGwAQwBYAFkAgABtAIEAbgCCAJYAlACVAKgAqgCpALwAkwCnAKYAuwC6AKUAkgCRAH0ApACQAHwAfgBpAGoAaABVAFYA//9rAAhXAP9sAP9DAP9YAP9ZAP+AAC5tAP+BAP9uAP+CAP+WAP+UAA+VAP+oAP+qAP+pAP+8AP+TABWnAP+mAP+7AP+6AP+lAP+SAB6RAP99AP+kAP+QAP98AP9+AP9pAP9qAP9oAP9VAP9WAP///wAAAAAAAAAAAACXgCEPgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 1,
+      "command": 6,
+      "script": [
+        ["w", 6],
+        ["w", 203],
+        ["w", 68],
+        ["w", 79],
+        ["w", 32],
+        ["w", 152],
+        ["w", 130],
+        ["w", 95],
+        ["w", 60],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "XzxfPF88"
     },
     {
-      "seed": 15,
-      "expected": "PAAAC9wAAQARDrIlpTTB/359GGkk9FRPEnjD3wAAqGkAAJgAhABwAHEAXABdAHIAhQCGAJoAcwCHAJsAmQCuAK0ArwDCAMEArADAAKsA1AC/AL4AlwCqAJYAqQCVAIEAgwCCAG8AbQBuAFsA//+EAP9wAP9xAP9cAP9dAP9yAP+FAP+GAP+aAP9zAP+HAP+bAP+ZAP+uAP+tAP+vAP/CAP/BAP+sACfAAP+rAP/UAP+/AP++AP+XAA6qAP+WAP+pAP+VAP+BAP+DAP+CAP9vAP9tAP9uAP9bAP///wAADgAeAC4ALgAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "seed": 2,
+      "command": 6,
+      "script": [
+        ["w", 6],
+        ["w", 244],
+        ["w", 28],
+        ["w", 228],
+        ["w", 46],
+        ["w", 116],
+        ["w", 43],
+        ["w", 220],
+        ["w", 184],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "1BcAANUX"
     },
     {
-      "seed": 16,
-      "expected": "cwBNCe0VAQDWaERCXysNylN48qO4U6t9QZgG+wAAbgoAAFIAPgAqACsAFgAXACwAPwBAAFQALQBBAFUAUwBoAGcAaQB8AHsAZgB6AGUAjgB5AHgAUQBkAFAAdwBjAE8APQA8ACkAOwAoABUA//8+ADoqAP8rAP8WAP8XAP8sAP8/ACVAAP9UAP8tAP9BAP9VAP9TAP9oAP9nAP9pAP98AP97AP9mAAp6AP9lAP+OAP95AP94AP9RAAlkAP9QAP93AP9jAP9PAP89ADI8AP8pAP87AP8oAP8VAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "seed": 3,
+      "command": 6,
+      "script": [
+        ["w", 6],
+        ["w", 214],
+        ["w", 121],
+        ["w", 198],
+        ["w", 66],
+        ["w", 106],
+        ["w", 189],
+        ["w", 183],
+        ["w", 242],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "8vLy8vLy"
     },
     {
-      "seed": 17,
-      "expected": "rQAJBoEAAQDlBrg/JJNSCLiJcPftP9/mjiB5ygAAfakAAEAALAAYABkABAAFABoALQAuAEIAGwAvAEMAQQBWAFUAVwBqAGkAVABoAFMAfABnAGYAPwBSAD4AUQA9ACkAKwAqABcAFQAWAAMA//8sAP8YAP8ZAP8EAP8FAP8aAP8tAD0uAP9CAP8bAP8vAP9DAP9BACNWAP9VAP9XAP9qAP9pACJUAP9oACxTAP98AP9nAP9mAP8/AP9SAP8+AP9RAP89AP8pAP8rAAYqAP8XAP8VAP8WAP8DAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 4,
+      "command": 6,
+      "script": [
+        ["w", 6],
+        ["w", 219],
+        ["w", 120],
+        ["w", 73],
+        ["w", 155],
+        ["w", 210],
+        ["w", 52],
+        ["w", 200],
+        ["w", 202],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "gICAgICA"
     },
     {
-      "seed": 18,
-      "expected": "KwC/gdMKAQDXLtJ6RnRFskg7m3RBphw5mbSjxAAAg2YAAJQAgABsAG0AWABZAG4AgQCCAJYAbwCDAJcAlQCqAKkAqwC+AL0AqAC8AKcA0AC7ALoAkwCmAJIApQCRAH0AfwB+AGsAaQBqAFcA//+AABtsAP9tAP9YAP9ZAP9uAP+BAP+CAP+WAP9vAP+DAP+XAP+VAAyqAP+pAP+rAP++AP+9AD6oAB+8AC2nAP/QAP+7AP+6AP+TADGmAP+SAP+lAP+RAP99AP9/AP9+AP9rAP9pAP9qAP9XAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 0,
+      "command": 7,
+      "script": [
+        ["w", 7],
+        ["w", 62],
+        ["w", 197],
+        ["w", 85],
+        ["w", 215],
+        ["w", 186],
+        ["w", 20],
+        ["w", 144],
+        ["w", 132],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "hISEhISE"
     },
     {
-      "seed": 20,
-      "expected": "4AAEC+AAAQBZaSBogcvyKDDTpiGofboJZtnf3gAAUKgAAKQAkAB8AH0AaABpAH4AkQCSAKYAfwCTAKcApQC6ALkAuwDOAM0AuADMALcA4ADLAMoAowC2AKIAtQChAI0AjwCOAHsAeQB6AGcA//+QAP98AP99AP9oAP9pAP9+AP+RACCSAP+mAP9/AP+TAP+nAP+lAP+6AP+5AP+7AP/OAP/NABC4AP/MAA63AP/gAP/LAP/KAP+jACi2AP+iAP+1AP+hAP+NAP+PAP+OAP97AP95AP96AP9nAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 1,
+      "command": 7,
+      "script": [
+        ["w", 7],
+        ["w", 203],
+        ["w", 68],
+        ["w", 79],
+        ["w", 32],
+        ["w", 152],
+        ["w", 130],
+        ["w", 95],
+        ["w", 60],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "PAA8ADwA"
     },
     {
-      "seed": 22,
-      "expected": "LwAOCK4AAQBkFFM7/w+q+ZMmoc4jj2P8UIpoaQAAblwAAD8AKwAXACwAAwAYABkAQAAtAEEALgBCAFYAVABVAGgAagBpAHwAUwBnAGYAewB6AGUAUgBRAD0AZABQADwAPgApACoAKAAVABYA//8rAP8XAP8sAP8DAP8YAP8ZAP9AAP8tAP9BAP8uAP9CAP9WAP9UADdVAP9oAP9qAP9pAP98AP9TAP9nAP9mAP97AP96AP9lAP9SAP9RAP89AP9kAP9QAP88AP8+AP8pAP8qAP8oAP8VAP8WAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 2,
+      "command": 7,
+      "script": [
+        ["w", 7],
+        ["w", 244],
+        ["w", 28],
+        ["w", 228],
+        ["w", 46],
+        ["w", 116],
+        ["w", 43],
+        ["w", 220],
+        ["w", 184],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "uLi4uLi4"
     },
     {
-      "seed": 23,
-      "expected": "UgAJCKkAAQBbISYxNbSuYimbkfABpzT7jO/C4gAA0twAAI8AewBnAHwAUwBoAGkAkAB9AJEAfgCSAKYApAClALgAugC5AMwAowC3ALYAywDKALUAogChAI0AtACgAIwAjgB5AHoAeABlAGYA//97AARnAP98AP9TAP9oAP9pAP+QAP99AP+RAP9+AP+SAP+mAP+kACOlAP+4AP+6AP+5AP/MAP+jAD+3AP+2AP/LAP/KAP+1AP+iAAKhAP+NAP+0AP+gAP+MAP+OAP95AP96AP94AP9lAP9mAP///wAAAQAAAAoAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 3,
+      "command": 7,
+      "script": [
+        ["w", 7],
+        ["w", 214],
+        ["w", 121],
+        ["w", 198],
+        ["w", 66],
+        ["w", 106],
+        ["w", 189],
+        ["w", 183],
+        ["w", 242],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "8vLy8vLy"
     },
     {
-      "seed": 24,
-      "expected": "6AAFARkAAQB/F7smRbObC8oPD23J1bb7TeEtAwAAlCsAAH8AawBXAGwAQwBYAFkAgABtAIEAbgCCAJYAlACVAKgAqgCpALwAkwCnAKYAuwC6AKUAkgCRAH0ApACQAHwAfgBpAGoAaABVAFYA//9rAP9XAP9sAP9DAP9YAP9ZAP+AAP9tAP+BAP9uAP+CAP+WAP+UABCVAP+oAP+qAP+pAP+8AP+TACenAP+mAP+7AP+6AP+lAP+SAP+RAP99AP+kAP+QAP98AP9+AD9pAP9qAP9oAP9VAP9WAP///wAATABKAAAAAABHAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "seed": 4,
+      "command": 7,
+      "script": [
+        ["w", 7],
+        ["w", 219],
+        ["w", 120],
+        ["w", 73],
+        ["w", 155],
+        ["w", 210],
+        ["w", 52],
+        ["w", 200],
+        ["w", 202],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "ysrKysrK"
     },
     {
-      "seed": 25,
-      "expected": "eAAPA0sAAQBPTpBsU5gcmvD9DCsTEPtCX7dMtAAA2LQAAGsAVwBDAFgALwBEAEUAbABZAG0AWgBuAIIAgACBAJQAlgCVAKgAfwCTAJIApwCmAJEAfgB9AGkAkAB8AGgAagBVAFYAVABBAEIA//9XAP9DAP9YAP8vAP9EAP9FAP9sAP9ZAP9tAP9aAP9uAP+CAP+AAD2BAP+UAP+WAP+VAP+oAP9/ABKTAP+SAP+nAP+mAP+RAP9+AP99AP9pAP+QAP98AP9oAP9qAP9VAP9WAP9UAP9BAP9CAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 0,
+      "command": 12,
+      "script": [
+        ["w", 12],
+        ["w", 62],
+        ["w", 197],
+        ["w", 85],
+        ["w", 215],
+        ["w", 186],
+        ["w", 20],
+        ["w", 144],
+        ["w", 132],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "gICAgICA"
     },
     {
-      "seed": 26,
-      "expected": "4gATBXcAAQCvCu8rR2mTWNy738ScY+jkmJA/qAAAgroAAGYAUgA+AD8AKgArAEAAUwBUAGgAQQBVAGkAZwB8AHsAfQCQAI8AegCOAHkAogCNAIwAZQB4AGQAiwB3AGMAUQBQAD0ATwA8ACkA//9SAP8+AP8/AP8qAP8rAP9AAP9TABlUAP9oAP9BAP9VAP9pAP9nAP98AP97AP99AP+QAP+PAC16AB6OABF5AP+iAP+NAP+MAP9lAAF4AP9kAP+LAP93AP9jAP9RAP9QAP89AP9PAP88AP8pAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 1,
+      "command": 12,
+      "script": [
+        ["w", 12],
+        ["w", 203],
+        ["w", 68],
+        ["w", 79],
+        ["w", 32],
+        ["w", 152],
+        ["w", 130],
+        ["w", 95],
+        ["w", 60],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "PAA8ADwA"
     },
     {
-      "seed": 27,
-      "expected": "1wAHBFcAAQBDVb5ApNnffU3DP9oS+g7zcHXymAAAA+EAAI4AegBmAGcAUgBTAGgAewB8AJAAaQB9AJEAjwCkAKMApQC4ALcAogC2AKEAygC1ALQAjQCgAIwAswCfAIsAeQB4AGUAdwBkAFEA//96ACBmAP9nAP9SAP9TAP9oAP97AP98AP+QAP9pAP99AP+RAP+PADukAP+jAP+lAP+4AP+3AB+iAP+2AP+hAP/KAP+1AP+0AP+NAP+gAP+MAP+zAP+fAP+LAP95AC94AP9lAP93AP9kAP9RAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "seed": 2,
+      "command": 12,
+      "script": [
+        ["w", 12],
+        ["w", 244],
+        ["w", 28],
+        ["w", 228],
+        ["w", 46],
+        ["w", 116],
+        ["w", 43],
+        ["w", 220],
+        ["w", 184],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "3ACAgICA"
     },
     {
-      "seed": 28,
-      "expected": "GAAECbgAAQDlav41+SFC3IHidyzu742jghZUAAAAoTAAAKwAmACEAIUAcABxAIYAmQCaAK4AhwCbAK8ArQDCAMEAwwDWANUAwADUAL8A6ADTANIAqwC+AKoAvQCpAJUAlwCWAIMAgQCCAG8A//+YAP+EAP+FAP9wAP9xAP+GAP+ZAP+aAP+uAP+HAP+bAP+vAP+tAP/CAP/BAP/DAP/WAP/VAAfAAC3UAP+/AP/oAP/TAP/SAP+rADu+AP+qAP+9AP+pAP+VAP+XAP+WAP+DAP+BAP+CAP9vAP///wAAAAAAAAAAAAAFAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 3,
+      "command": 12,
+      "script": [
+        ["w", 12],
+        ["w", 214],
+        ["w", 121],
+        ["w", 198],
+        ["w", 66],
+        ["w", 106],
+        ["w", 189],
+        ["w", 183],
+        ["w", 242],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "8vLy8vLy"
     },
     {
-      "seed": 29,
-      "expected": "ogASCcYAAQCWZF1qZSGs6B4HAaPOdwGv8XdrOwAA+OQAAFkARQAxAEYAHQAyADMAWgBHAFsASABcAHAAbgBvAIIAhACDAJYAbQCBAIAAlQCUAH8AbABrAFcAfgBqAFYAWABDAEQAQgAvADAA//9FAP8xAP9GAP8dAP8yAP8zAP9aADJHAP9bAP9IAP9cAP9wAP9uAP9vAP+CAP+EAP+DAP+WAP9tAP+BAP+AAP+VAP+UAP9/AP9sABZrAP9XAP9+AP9qAP9WAP9YAP9DAP9EAP9CAP8vAP8wAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 4,
+      "command": 12,
+      "script": [
+        ["w", 12],
+        ["w", 219],
+        ["w", 120],
+        ["w", 73],
+        ["w", 155],
+        ["w", 210],
+        ["w", 52],
+        ["w", 200],
+        ["w", 202],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "gICAgICA"
     },
     {
-      "seed": 30,
-      "expected": "qQASABIAAQCuZU1gEynOHAC2Tqadgvby6+xDAgAAhc0AADEAHQAJAB4A5QAKAAsAMgAfADMAIAA0AEgARgBHAFoAXABbAG4ARQBZAFgAbQBsAFcARABDAC8AVgBCAC4AMAAbABwAGgAHAAgA//8dAP8JAP8eAP/lAP8KAP8LAP8yAP8fAP8zAP8gAP80AP9IAP9GAP9HAP9aAP9cAP9bAP9uAP9FAP9ZAP9YAP9tAP9sAP9XAP9EAP9DAP8vAP9WAP9CAP8uAP8wACAbAP8cAP8aAP8HAP8IAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 0,
+      "command": 15,
+      "script": [
+        ["w", 15],
+        ["w", 62],
+        ["w", 197],
+        ["w", 85],
+        ["w", 215],
+        ["w", 186],
+        ["w", 20],
+        ["w", 144],
+        ["w", 132],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "AACAgICA"
     },
     {
-      "seed": 31,
-      "expected": "DwAEB5AAAQBXO7wjT0QnzrSi4yK05Hqr7HvXFgAATs4AAJQAgABsAG0AWABZAG4AgQCCAJYAbwCDAJcAlQCqAKkAqwC+AL0AqAC8AKcA0AC7ALoAkwCmAJIApQCRAH0AfwB+AGsAaQBqAFcA//+AACpsAP9tAP9YAP9ZAP9uAP+BABqCAP+WAP9vAP+DAP+XAP+VAByqAP+pAP+rAP++AP+9AP+oACe8ACWnAP/QAP+7AP+6AP+TABmmAP+SAP+lAP+RAP99AP9/ABh+AP9rAP9pAP9qAP9XAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA=="
+      "seed": 1,
+      "command": 15,
+      "script": [
+        ["w", 15],
+        ["w", 203],
+        ["w", 68],
+        ["w", 79],
+        ["w", 32],
+        ["w", 152],
+        ["w", 130],
+        ["w", 95],
+        ["w", 60],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "AACAgICA"
     },
     {
-      "seed": 32,
-      "expected": "GgAGBWoAAQCpGSBTcaozUzXnBkeKAgYjKaGZKwAAe+QAAEgANAAgACEADAANACIANQA2AEoAIwA3AEsASQBeAF0AXwByAHEAXABwAFsAhABvAG4ARwBaAEYAWQBFADEAMwAyAB8AHQAeAAsA//80AAQgAP8hAP8MAP8NAP8iAP81AP82AP9KAP8jAP83AP9LAP9JADNeAP9dAP9fAP9yAP9xAAdcAP9wACZbAP+EAP9vAP9uAP9HAD5aAP9GAP9ZAP9FAP8xAP8zAP8yAP8fAP8dAP8eAP8LAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA=="
+      "seed": 2,
+      "command": 15,
+      "script": [
+        ["w", 15],
+        ["w", 244],
+        ["w", 28],
+        ["w", 228],
+        ["w", 46],
+        ["w", 116],
+        ["w", 43],
+        ["w", 220],
+        ["w", 184],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "AACAgICA"
     },
     {
-      "seed": 33,
-      "expected": "uQAQBGAAAQD8cT5ILjfDmZ/ALh0Lf2l/VmhkZwAArhwAAJcAgwBvAIQAWwBwAHEAmACFAJkAhgCaAK4ArACtAMAAwgDBANQAqwC/AL4A0wDSAL0AqgCpAJUAvACoAJQAlgCBAIIAgABtAG4A//+DAAhvAP+EAP9bAP9wAP9xAP+YAP+FAP+ZAP+GAP+aAP+uAP+sADStAP/AAP/CAP/BAP/UAP+rAAi/AP++AP/TAP/SAP+9AP+qAEepAP+VAP+8AP+oAP+UAP+WAP+BAP+CAP+AAP9tAP9uAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA=="
+      "seed": 3,
+      "command": 15,
+      "script": [
+        ["w", 15],
+        ["w", 214],
+        ["w", 121],
+        ["w", 198],
+        ["w", 66],
+        ["w", 106],
+        ["w", 189],
+        ["w", 183],
+        ["w", 242],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "AACAgICA"
     },
     {
-      "seed": 34,
-      "expected": "qwAGAAYAAQCHEJBsIxnbcUQ8i/DsqLAQTOyiHgAACL0AAHsAZwBTAGgAPwBUAFUAfABpAH0AagB+AJIAkACRAKQApgClALgAjwCjAKIAtwC2AKEAjgCNAHkAoACMAHgAegBlAGYAZABRAFIA//9nAP9TAP9oAP8/AP9UAP9VAP98AB5pAP99AP9qAP9+AP+SAP+QAP+RAP+kAP+mAP+lAP+4AP+PAP+jAP+iAP+3AP+2AP+hAP+OADqNAP95AP+gAP+MAP94AP96AP9lAP9mAP9kAP9RAP9SAP///wAAAAA9AAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA=="
+      "seed": 4,
+      "command": 15,
+      "script": [
+        ["w", 15],
+        ["w", 219],
+        ["w", 120],
+        ["w", 73],
+        ["w", 155],
+        ["w", 210],
+        ["w", 52],
+        ["w", 200],
+        ["w", 202],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "AACAgICA"
     },
     {
-      "seed": 35,
-      "expected": "qgAJC+UAAQCMQNIPNBFq0bU1gHu1CHuJD42pIwAACv4AACoAFgACAAMA3gDfAAQAFwAYACwABQAZAC0AKwBAAD8AQQBUAFMAPgBSAD0AZgBRAFAAKQA8ACgATwA7ACcAFQAUAAEAEwAAAN0A//8WACkCAP8DAP/eAP/fAP8EAP8XAP8YAP8sAP8FAP8ZAP8tAP8rADxAAP8/AP9BAP9UAP9TAP8+AP9SAAo9AP9mAP9RAP9QAP8pACU8AP8oAP9PAP87AP8nAP8VAP8UAP8BAP8TAP8AAP/dAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 0,
+      "command": 16,
+      "script": [
+        ["w", 16],
+        ["w", 62],
+        ["w", 197],
+        ["w", 85],
+        ["w", 215],
+        ["w", 186],
+        ["w", 20],
+        ["w", 144],
+        ["w", 132],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "gICAgICA"
     },
     {
-      "seed": 36,
-      "expected": "ZQACAz4AAQD4RLFulmwMWEPEK9sY2RBpRuzZ/wAANT8AALwAqACUAJUAgACBAJYAqQCqAL4AlwCrAL8AvQDSANEA0wDmAOUA0ADkAM8ACADjAOIAuwDOALoAzQC5AKUApwCmAJMAkQCSAH8A//+oAP+UAP+VAP+AAP+BAP+WAP+pAP+qAP++AP+XAP+rAP+/AP+9ABbSAP/RAP/TAP/mAP/lAP/QAP/kAP/PAP8IAP/jAP/iAP+7AP/OAP+6AP/NAP+5AP+lAP+nAP+mAP+TAP+RAP+SAP9/AP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA=="
+      "seed": 1,
+      "command": 16,
+      "script": [
+        ["w", 16],
+        ["w", 203],
+        ["w", 68],
+        ["w", 79],
+        ["w", 32],
+        ["w", 152],
+        ["w", 130],
+        ["w", 95],
+        ["w", 60],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "PAA8ADwA"
     },
     {
-      "seed": 38,
-      "expected": "1QAzCw8BAQD7Xy4LZubOI9g+aB+7LDNzvM4F9QAAGkgAAKkAlQCBAJYAbQCCAIMAqgCXAKsAmACsAMAAvgC/ANIA1ADTAOYAvQDRANAA5QDkAM8AvAC7AKcAzgC6AKYAqACTAJQAkgB/AIAA//+VADCBAP+WAP9tAP+CAP+DAP+qADKXAP+rAP+YAP+sAP/AAP++AP+/AP/SAP/UAP/TAP/mAP+9AP/RAP/QAP/lAP/kAP/PAP+8AP+7AP+nAP/OAP+6AP+mAP+oAP+TAP+UAP+SAP9/AP+AAP///wAAAABCgN0HQ4BhBgAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "seed": 2,
+      "command": 16,
+      "script": [
+        ["w", 16],
+        ["w", 244],
+        ["w", 28],
+        ["w", 228],
+        ["w", 46],
+        ["w", 116],
+        ["w", 43],
+        ["w", 220],
+        ["w", 184],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "gICAgICA"
     },
     {
-      "seed": 39,
-      "expected": "RAAGAAYAAQAzQShb+0wf0kYj4C5nzhxhRWQpwQAAgsgAAIIAbgBaAFsARgBHAFwAbwBwAIQAXQBxAIUAgwCYAJcAmQCsAKsAlgCqAJUAvgCpAKgAgQCUAIAAkwB/AGsAbQBsAFkAVwBYAEUA//9uAP9aAP9bAP9GAP9HAP9cAP9vAP9wAP+EAP9dAP9xAP+FAP+DAAuYAP+XAP+ZAP+sAP+rADiWAP+qABCVAP++AP+pAP+oAP+BAP+UAP+AAP+TAP9/AP9rAP9tAP9sAP9ZAP9XAP9YAP9FAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 3,
+      "command": 16,
+      "script": [
+        ["w", 16],
+        ["w", 214],
+        ["w", 121],
+        ["w", 198],
+        ["w", 66],
+        ["w", 106],
+        ["w", 189],
+        ["w", 183],
+        ["w", 242],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "8vLy8vLy"
     },
     {
-      "seed": 40,
-      "expected": "ngAGAAYAAQAwWfFGwp0buwvoTuBe1WK9LdrzMAAAbaYAAFUAQQAtAEIAGQAuAC8AVgBDAFcARABYAGwAagBrAH4AgAB/AJIAaQB9AHwAkQCQAHsAaABnAFMAegBmAFIAVAA/AEAAPgArACwA//9BAAYtAP9CAP8ZAP8uAP8vAP9WAP9DAP9XAP9EAP9YAP9sAP9qAP9rAP9+AP+AAP9/AP+SAP9pABd9AP98AP+RAP+QAP97AP9oACxnAP9TAP96AP9mAP9SAP9UAP8/AP9AAP8+AP8rAP8sAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 4,
+      "command": 16,
+      "script": [
+        ["w", 16],
+        ["w", 219],
+        ["w", 120],
+        ["w", 73],
+        ["w", 155],
+        ["w", 210],
+        ["w", 52],
+        ["w", 200],
+        ["w", 202],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "yMrIysjK"
     },
     {
-      "seed": 41,
-      "expected": "ggANASEAAQBjAsM/xo4HZSK6vTJ0Z5MJG0K6bAAATJAAAGgAVABAAEEALAAtAEIAVQBWAGoAQwBXAGsAaQB+AH0AfwCSAJEAfACQAHsApACPAI4AZwB6AGYAeQBlAFEAUwBSAD8APQA+ACsA//9UADxAAP9BAP8sAP8tAP9CAP9VABdWAP9qAP9DAP9XAP9rAP9pAP9+AP99AP9/AP+SAP+RAAF8ACmQABF7AP+kAP+PAP+OAP9nAP96AP9mAP95AP9lAP9RAP9TAClSAP8/AP89AP8+AP8rAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "seed": 0,
+      "command": 24,
+      "script": [
+        ["w", 24],
+        ["w", 62],
+        ["w", 197],
+        ["w", 85],
+        ["w", 215],
+        ["w", 186],
+        ["w", 20],
+        ["w", 144],
+        ["w", 132],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "hITAYNcg"
     },
     {
-      "seed": 42,
-      "expected": "ywAICtAAAQA9GkEWLYWlR1IDakL1en9muNHTigAAb44AAC8AGwAHABwA4wAIAAkAMAAdADEAHgAyAEYARABFAFgAWgBZAGwAQwBXAFYAawBqAFUAQgBBAC0AVABAACwALgAZABoAGAAFAAYA//8bACsHAP8cAP/jAP8IAP8JAP8wAP8dAP8xAP8eAP8yAP9GAP9EAApFAP9YAP9aAP9ZAP9sAP9DAAlXAP9WAP9rAP9qAP9VAP9CADFBAP8tAP9UAP9AAP8sAP8uAP8ZAP8aAP8YAP8FAP8GAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 1,
+      "command": 24,
+      "script": [
+        ["w", 24],
+        ["w", 203],
+        ["w", 68],
+        ["w", 79],
+        ["w", 32],
+        ["w", 152],
+        ["w", 130],
+        ["w", 95],
+        ["w", 60],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "PDyImI+v"
     },
     {
-      "seed": 43,
-      "expected": "CQAKCKoAAQDnBLFujvHydXvqFdzMFNzEdjYrqQAA8P0AAF4ASgA2ADcAIgAjADgASwBMAGAAOQBNAGEAXwB0AHMAdQCIAIcAcgCGAHEAmgCFAIQAXQBwAFwAbwBbAEcASQBIADUAMwA0ACEA//9KAP82AP83AP8iAP8jAP84AP9LAAdMAP9gAP85AP9NAP9hAP9fAC90AP9zAP91AP+IAP+HAP9yAP+GAAtxAP+aAP+FAP+EAP9dAP9wAP9cAP9vAP9bAP9HAP9JAAtIAP81AP8zAP80AP8hAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "seed": 2,
+      "command": 24,
+      "script": [
+        ["w", 24],
+        ["w", 244],
+        ["w", 28],
+        ["w", 228],
+        ["w", 46],
+        ["w", 116],
+        ["w", 43],
+        ["w", 220],
+        ["w", 184],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "uLgQUOhf"
     },
     {
-      "seed": 44,
-      "expected": "iAACC94AAQAhSnIHcdsEsnFxQiidEwGR0KJPHQAAea0AAH8AawBXAGwAQwBYAFkAgABtAIEAbgCCAJYAlACVAKgAqgCpALwAkwCnAKYAuwC6AKUAkgCRAH0ApACQAHwAfgBpAGoAaABVAFYA//9rAAhXAP9sAP9DAP9YAP9ZAP+AAP9tAP+BAP9uAP+CAP+WAP+UADqVAP+oAP+qAP+pAP+8AP+TAP+nAP+mAP+7AP+6AP+lAP+SADyRAP99AP+kAP+QAP98AP9+ABZpAP9qAP9oAP9VAP9WAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA=="
+      "seed": 3,
+      "command": 24,
+      "script": [
+        ["w", 24],
+        ["w", 214],
+        ["w", 121],
+        ["w", 198],
+        ["w", 66],
+        ["w", 106],
+        ["w", 189],
+        ["w", 183],
+        ["w", 242],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "8vIY75gw"
     },
     {
-      "seed": 45,
-      "expected": "XQBDCeIVAQCEEvh7RJDrMR2RKqRJdGloWAahQAAAVdsAAEsANwAjADgADwAkACUATAA5AE0AOgBOAGIAYABhAHQAdgB1AIgAXwBzAHIAhwCGAHEAXgBdAEkAcABcAEgASgA1ADYANAAhACIA//83AAcjAP84AP8PAP8kAP8lAP9MACg5AP9NAP86AP9OAP9iAP9gAP9hAP90AP92AP91AP+IAP9fAP9zAP9yAP+HAP+GAP9xAP9eACNdAP9JAP9wAP9cAP9IAP9KAP81AP82AP80AP8hAP8iAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 4,
+      "command": 24,
+      "script": [
+        ["w", 24],
+        ["w", 219],
+        ["w", 120],
+        ["w", 73],
+        ["w", 155],
+        ["w", 210],
+        ["w", 52],
+        ["w", 200],
+        ["w", 202],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "ysrAZxDP"
     },
     {
-      "seed": 47,
-      "expected": "ZgA+CN4AAQB1ZHgKqEJ8sG4MykDLcnwokhkQewAA2bcAAL0AqQCVAKoAgQCWAJcAvgCrAL8ArADAANQA0gDTAOYA6ADnAAoA0QDlAOQACQAIAOMA0ADPALsA4gDOALoAvACnAKgApgCTAJQA//+pAC+VAP+qAP+BAP+WAP+XAP++AAyrAP+/AP+sAP/AAP/UAP/SAP/TAP/mAP/oAP/nAP8KAP/RADjlAP/kAP8JAP8IAP/jAP/QACjPAP+7AP/iAP/OAP+6AP+8AP+nAP+oAP+mAP+TAP+UAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 0,
+      "command": 28,
+      "script": [
+        ["w", 28],
+        ["w", 62],
+        ["w", 197],
+        ["w", 85],
+        ["w", 215],
+        ["w", 186],
+        ["w", 20],
+        ["w", 144],
+        ["w", 132],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "kISQhJCE"
     },
     {
-      "seed": 49,
-      "expected": "HwA6AU4AAQCDJ290QOXji/W5GAW8n9d8rAbN4gAAMacAAJYAggBuAG8AWgBbAHAAgwCEAJgAcQCFAJkAlwCsAKsArQDAAL8AqgC+AKkA0gC9ALwAlQCoAJQApwCTAH8AgQCAAG0AawBsAFkA//+CAAZuAP9vAP9aAP9bAP9wAP+DAP+EAP+YAP9xAP+FAP+ZAP+XAP+sAP+rAP+tAP/AAP+/AP+qADi+AP+pAP/SAP+9AP+8AP+VACuoAP+UAP+nAP+TAP9/AP+BAP+AAP9tAP9rAP9sAP9ZAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA=="
+      "seed": 1,
+      "command": 28,
+      "script": [
+        ["w", 28],
+        ["w", 203],
+        ["w", 68],
+        ["w", 79],
+        ["w", 32],
+        ["w", 152],
+        ["w", 130],
+        ["w", 95],
+        ["w", 60],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "XzxfPF88"
     },
     {
-      "seed": 51,
-      "expected": "TAAGAi4AAQCvdqhXAr+9z0DIk1dKXoUUMpKgiQAAzbEAAIUAcQBdAHIASQBeAF8AhgBzAIcAdACIAJwAmgCbAK4AsACvAMIAmQCtAKwAwQDAAKsAmACXAIMAqgCWAIIAhABvAHAAbgBbAFwA//9xABhdAP9yAP9JAP9eAP9fAP+GADdzAP+HAP90AP+IAP+cAP+aAAGbAP+uAP+wAP+vAP/CAP+ZACOtAP+sAP/BAP/AAP+rAP+YACWXAP+DAP+qAP+WAP+CAP+EAP9vAP9wAP9uAP9bAP9cAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "seed": 2,
+      "command": 28,
+      "script": [
+        ["w", 28],
+        ["w", 244],
+        ["w", 28],
+        ["w", 228],
+        ["w", 46],
+        ["w", 116],
+        ["w", 43],
+        ["w", 220],
+        ["w", 184],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "3LjcuNy4"
     },
     {
-      "seed": 52,
-      "expected": "UQAKB5YAAQC9KLlp/CjKSHI0xJbLEjMqaC4UlgAAMFcAAL0AqQCVAKoAgQCWAJcAvgCrAL8ArADAANQA0gDTAOYA6ADnAAoA0QDlAOQACQAIAOMA0ADPALsA4gDOALoAvACnAKgApgCTAJQA//+pAD6VAP+qAP+BAP+WAP+XAP++AP+rAP+/AP+sAP/AAP/UAP/SAP/TAP/mAP/oAP/nAP8KAP/RABXlAP/kAP8JAP8IAP/jAP/QABXPAP+7AP/iAP/OAP+6AP+8ACanAP+oAP+mAP+TAP+UAP///wAAAABYAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "seed": 3,
+      "command": 28,
+      "script": [
+        ["w", 28],
+        ["w", 214],
+        ["w", 121],
+        ["w", 198],
+        ["w", 66],
+        ["w", 106],
+        ["w", 189],
+        ["w", 183],
+        ["w", 242],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "t/K38rfy"
     },
     {
-      "seed": 53,
-      "expected": "ugDHhBcLAQBrCVYrvBInAUNKMG4LwMMWXY1LhAAAyEAAAF0ASQA1AEoAIQA2ADcAXgBLAF8ATABgAHQAcgBzAIYAiACHAJoAcQCFAIQAmQCYAIMAcABvAFsAggBuAFoAXABHAEgARgAzADQA//9JAP81AP9KAP8hAP82AP83AP9eAP9LAP9fAP9MAP9gAP90AP9yAP9zAP+GAP+IAP+HAP+aAP9xADyFAP+EAP+ZAP+YAP+DAP9wAP9vAP9bAP+CAP9uAP9aAP9cAD5HAP9IAP9GAP8zAP80AP///wAAAAAAAMYAAAANAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "seed": 4,
+      "command": 28,
+      "script": [
+        ["w", 28],
+        ["w", 219],
+        ["w", 120],
+        ["w", 73],
+        ["w", 155],
+        ["w", 210],
+        ["w", 52],
+        ["w", 200],
+        ["w", 202],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "yMrIysjK"
     },
     {
-      "seed": 54,
-      "expected": "NgAOBF4AAQBNcn9UaPwnGwG+fOLwt91laFfw+QAA6kgAAEYAMgAeAB8ACgALACAAMwA0AEgAIQA1AEkARwBcAFsAXQBwAG8AWgBuAFkAggBtAGwARQBYAEQAVwBDAC8AMQAwAB0AGwAcAAkA//8yAP8eAP8fAP8KAP8LAP8gAP8zAP80AP9IAP8hAP81AP9JAP9HACtcAP9bAP9dAP9wAP9vAP9aAD1uAP9ZAP+CAP9tAP9sAP9FAP9YAP9EAP9XAP9DAP8vAP8xAP8wAP8dAP8bAP8cAP8JAP///wAAAAAAAAAAEwARAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 0,
+      "command": 30,
+      "script": [
+        ["w", 30],
+        ["w", 62],
+        ["w", 197],
+        ["w", 85],
+        ["w", 215],
+        ["w", 186],
+        ["w", 20],
+        ["w", 144],
+        ["w", 132],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "AAAAAQAA"
     },
     {
-      "seed": 55,
-      "expected": "GgAIAAgAAQCoFgRa8y2XK0rCdd+78a6QNsKY+wAA1e0AAGcAUwA/AFQAKwBAAEEAaABVAGkAVgBqAH4AfAB9AJAAkgCRAKQAewCPAI4AowCiAI0AegB5AGUAjAB4AGQAZgBRAFIAUAA9AD4A//9TAB0/AP9UAP8rAP9AAP9BAP9oAP9VAP9pAP9WAP9qAP9+AP98AP99AP+QAP+SAP+RAP+kAP97ACaPAP+OAP+jAP+iAP+NAP96AP95AP9lAP+MAP94AP9kAP9mADVRAP9SAP9QAP89AP8+AP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 1,
+      "command": 30,
+      "script": [
+        ["w", 30],
+        ["w", 203],
+        ["w", 68],
+        ["w", 79],
+        ["w", 32],
+        ["w", 152],
+        ["w", 130],
+        ["w", 95],
+        ["w", 60],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "AAAAAQAA"
     },
     {
-      "seed": 56,
-      "expected": "oABRD2gWAQAxGOtfiGUQuyLxCbzW3at+rLC5KAAAV8UAAGsAVwBDAFgALwBEAEUAbABZAG0AWgBuAIIAgACBAJQAlgCVAKgAfwCTAJIApwCmAJEAfgB9AGkAkAB8AGgAagBVAFYAVABBAEIA//9XABlDAP9YAP8vAP9EAP9FAP9sAD9ZAP9tAP9aAP9uAP+CAP+AAP+BAP+UAP+WAP+VAP+oAP9/ACaTAP+SAP+nAP+mAP+RAP9+AP99AP9pAP+QAP98AP9oAP9qAP9VAP9WAP9UAP9BAP9CAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 2,
+      "command": 30,
+      "script": [
+        ["w", 30],
+        ["w", 244],
+        ["w", 28],
+        ["w", 228],
+        ["w", 46],
+        ["w", 116],
+        ["w", 43],
+        ["w", 220],
+        ["w", 184],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "AAAAAQAA"
     },
     {
-      "seed": 57,
-      "expected": "CwATCLMAAQBNSuFvyjuNESULRst2tqY5Lw9x+wAAYkcAAKYAkgB+AH8AagBrAIAAkwCUAKgAgQCVAKkApwC8ALsAvQDQAM8AugDOALkA4gDNAMwApQC4AKQAtwCjAI8AkQCQAH0AewB8AGkA//+SAP9+AP9/AP9qAP9rAP+AAP+TAP+UAP+oAP+BAP+VAP+pAP+nACy8AP+7AP+9AP/QAP/PAP+6AP/OAP+5AP/iAP/NAP/MAP+lAP+4AP+kAP+3AP+jAP+PAP+RABWQAP99AP97AP98AP9pAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA=="
+      "seed": 3,
+      "command": 30,
+      "script": [
+        ["w", 30],
+        ["w", 214],
+        ["w", 121],
+        ["w", 198],
+        ["w", 66],
+        ["w", 106],
+        ["w", 189],
+        ["w", 183],
+        ["w", 242],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "AAAAAQAA"
     },
     {
-      "seed": 58,
-      "expected": "ugAGCs4AAQDIZ3taes89ikGMrVd6p7yp2xOJYwAAlOcAAK0AmQCFAJoAcQCGAIcArgCbAK8AnACwAMQAwgDDANYA2ADXAOoAwQDVANQA6QDoANMAwAC/AKsA0gC+AKoArACXAJgAlgCDAIQA//+ZAP+FAP+aAP9xAP+GAP+HAP+uAP+bAP+vAP+cAP+wAP/EAP/CAP/DAP/WAP/YAP/XAP/qAP/BAD/VAP/UAP/pAP/oAP/TAP/AAEO/AP+rAP/SAP++AP+qAP+sACqXAP+YAP+WAP+DAP+EAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 4,
+      "command": 30,
+      "script": [
+        ["w", 30],
+        ["w", 219],
+        ["w", 120],
+        ["w", 73],
+        ["w", 155],
+        ["w", 210],
+        ["w", 52],
+        ["w", 200],
+        ["w", 202],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "AAAAAQAA"
     },
     {
-      "seed": 59,
-      "expected": "PgC8fGwKAQAkfNVgKyCL0VRh5FsOdwNb9RfqCwAAHi0AADAAHAAIAAkA5ADlAAoAHQAeADIACwAfADMAMQBGAEUARwBaAFkARABYAEMAbABXAFYALwBCAC4AQQAtABkAGwAaAAcABQAGAOMA//8cAP8IAP8JAP/kAP/lAP8KAP8dABweAP8yAP8LAP8fAP8zAP8xAP9GAP9FAP9HAP9aAP9ZAC9EAChYAP9DAP9sAP9XAP9WAP8vABNCAP8uAP9BAP8tAP8ZAP8bABQaAP8HAP8FAP8GAP/jAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "seed": 0,
+      "command": 56,
+      "script": [
+        ["w", 56],
+        ["w", 62],
+        ["w", 197],
+        ["w", 85],
+        ["w", 215],
+        ["w", 186],
+        ["w", 20],
+        ["w", 144],
+        ["w", 132],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "AAAAAAAA"
     },
     {
-      "seed": 60,
-      "expected": "WQAHARsAAQAgVYoKwd1/XLjiPStL++YSeRqRqQAARkwAAC0AGQAFABoA4QAGAAcALgAbAC8AHAAwAEQAQgBDAFYAWABXAGoAQQBVAFQAaQBoAFMAQAA/ACsAUgA+ACoALAAXABgAFgADAAQA//8ZAP8FAP8aAP/hAP8GAP8HAP8uAA8bAP8vAP8cAP8wAP9EAP9CADFDAP9WAP9YAP9XAP9qAP9BACBVAP9UAP9pAP9oAP9TAP9AACQ/AP8rAP9SAP8+AP8qAP8sAP8XAP8YAP8WAP8DAP8EAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "seed": 1,
+      "command": 56,
+      "script": [
+        ["w", 56],
+        ["w", 203],
+        ["w", 68],
+        ["w", 79],
+        ["w", 32],
+        ["w", 152],
+        ["w", 130],
+        ["w", 95],
+        ["w", 60],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "AAAAAAAA"
     },
     {
-      "seed": 61,
-      "expected": "kQAJAjEAAQB1fIBbfGbtjerTpc2drTrmmka45AAAgQ0AAKYAkgB+AH8AagBrAIAAkwCUAKgAgQCVAKkApwC8ALsAvQDQAM8AugDOALkA4gDNAMwApQC4AKQAtwCjAI8AkQCQAH0AewB8AGkA//+SADN+AP9/AP9qAP9rAP+AAP+TAP+UAP+oAP+BAP+VAP+pAP+nAP+8AP+7AP+9AP/QAP/PAD66ADbOAP+5AP/iAP/NAP/MAP+lAP+4AP+kAP+3AP+jAP+PAP+RADKQAP99AP97AP98AP9pAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 2,
+      "command": 56,
+      "script": [
+        ["w", 56],
+        ["w", 244],
+        ["w", 28],
+        ["w", 228],
+        ["w", 46],
+        ["w", 116],
+        ["w", 43],
+        ["w", 220],
+        ["w", 184],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "AAAAAAAA"
     },
     {
-      "seed": 62,
-      "expected": "uQAPA0sAAQDkL1kpfO89o4eprppXasLDvL60NgAAVSgAAJwAiAB0AHUAYABhAHYAiQCKAJ4AdwCLAJ8AnQCyALEAswDGAMUAsADEAK8A2ADDAMIAmwCuAJoArQCZAIUAhwCGAHMAcQByAF8A//+IADJ0AP91AP9gAP9hAP92AP+JAP+KAP+eAP93AP+LAP+fAP+dAP+yAP+xAP+zAP/GAP/FAP+wAAnEAAKvAP/YAP/DAP/CAP+bACGuAP+aAP+tAP+ZAP+FAP+HAP+GAP9zAP9xAP9yAP9fAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "seed": 3,
+      "command": 56,
+      "script": [
+        ["w", 56],
+        ["w", 214],
+        ["w", 121],
+        ["w", 198],
+        ["w", 66],
+        ["w", 106],
+        ["w", 189],
+        ["w", 183],
+        ["w", 242],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "AAAAAAAA"
     },
     {
-      "seed": 63,
-      "expected": "mgAPBXMAAQBPE9czNAFVLWWYoub6iqAHQ8fRpAAAfFMAAHMAXwBLAGAANwBMAE0AdABhAHUAYgB2AIoAiACJAJwAngCdALAAhwCbAJoArwCuAJkAhgCFAHEAmACEAHAAcgBdAF4AXABJAEoA//9fAC5LAP9gAP83AP9MAP9NAP90ADJhAP91AP9iAP92AP+KAP+IAP+JAP+cAP+eAP+dAP+wAP+HAP+bAP+aAP+vAP+uAP+ZAP+GAP+FAP9xAP+YAP+EAP9wAP9yAP9dAP9eAP9cAP9JAP9KAP///wAAAAAAAAAAAAADAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
+      "seed": 4,
+      "command": 56,
+      "script": [
+        ["w", 56],
+        ["w", 219],
+        ["w", 120],
+        ["w", 73],
+        ["w", 155],
+        ["w", 210],
+        ["w", 52],
+        ["w", 200],
+        ["w", 202],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "AAAAAAAA"
     },
     {
-      "seed": 65,
-      "expected": "gQAHCbsAAQDCVrxvZeUdrOLe5CWvncQoNFj4kwAA2T8AAF0ASQA1AEoAIQA2ADcAXgBLAF8ATABgAHQAcgBzAIYAiACHAJoAcQCFAIQAmQCYAIMAcABvAFsAggBuAFoAXABHAEgARgAzADQA//9JAC41AP9KAP8hAP82AP83AP9eAP9LAP9fAP9MAP9gAP90AP9yAP9zAP+GAP+IAP+HAP+aAP9xACSFAP+EAP+ZAP+YAP+DAP9wABNvAP9bAP+CAP9uAP9aAP9cAP9HAP9IAP9GAP8zAP80AP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "seed": 0,
+      "command": 62,
+      "script": [
+        ["w", 62],
+        ["w", 62],
+        ["w", 197],
+        ["w", 85],
+        ["w", 215],
+        ["w", 186],
+        ["w", 20],
+        ["w", 144],
+        ["w", 132],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "gICAgICA"
     },
     {
-      "seed": 68,
-      "expected": "6gASASYAAQD3Q1NUD6kvE7Vz7nBBP/8JVpW6MQAA6GMAAGYAUgA+AD8AKgArAEAAUwBUAGgAQQBVAGkAZwB8AHsAfQCQAI8AegCOAHkAogCNAIwAZQB4AGQAiwB3AGMAUQBQAD0ATwA8ACkA//9SADg+AP8/AP8qAP8rAP9AAP9TAP9UAP9oAP9BAP9VAP9pAP9nADR8AP97AP99AP+QAP+PAP96AP+OAP95AP+iAP+NAP+MAP9lAP94AP9kAP+LAP93AP9jAP9RADZQAP89AP9PAP88AP8pAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA=="
+      "seed": 1,
+      "command": 62,
+      "script": [
+        ["w", 62],
+        ["w", 203],
+        ["w", 68],
+        ["w", 79],
+        ["w", 32],
+        ["w", 152],
+        ["w", 130],
+        ["w", 95],
+        ["w", 60],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "PAA8ADwA"
     },
     {
-      "seed": 69,
-      "expected": "yQACAz4AAQD+dqhtpKIaC6B+bVbi6AGQSQ55eQAA7UgAAIAAbABYAFkARABFAFoAbQBuAIIAWwBvAIMAgQCWAJUAlwCqAKkAlACoAJMAvACnAKYAfwCSAH4AkQB9AGkAawBqAFcAVQBWAEMA//9sAP9YAP9ZAP9EAP9FAP9aAP9tAP9uAP+CAP9bAP9vAP+DAP+BAP+WAP+VAP+XAP+qAP+pADOUAP+oAP+TAP+8AP+nAP+mAP9/AP+SAP9+AP+RAP99AP9pAP9rAAdqAP9XAP9VAP9WAP9DAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA"
+      "seed": 2,
+      "command": 62,
+      "script": [
+        ["w", 62],
+        ["w", 244],
+        ["w", 28],
+        ["w", 228],
+        ["w", 46],
+        ["w", 116],
+        ["w", 43],
+        ["w", 220],
+        ["w", 184],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "3ACAgICA"
     },
     {
-      "seed": 70,
-      "expected": "HQC8g/gKAQBuNxhpq8gPnJg7VMxSaBOwqOkH3QAAWvsAAJcAgwBvAIQAWwBwAHEAmACFAJkAhgCaAK4ArACtAMAAwgDBANQAqwC/AL4A0wDSAL0AqgCpAJUAvACoAJQAlgCBAIIAgABtAG4A//+DAANvAP+EAP9bAP9wAP9xAP+YAAWFAP+ZAP+GAP+aAP+uAP+sAD+tAP/AAP/CAP/BAP/UAP+rAAe/AP++AP/TAP/SAP+9AP+qAP+pAP+VAP+8AP+oAP+UAP+WAP+BAP+CAP+AAP9tAP9uAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA=="
+      "seed": 3,
+      "command": 62,
+      "script": [
+        ["w", 62],
+        ["w", 214],
+        ["w", 121],
+        ["w", 198],
+        ["w", 66],
+        ["w", 106],
+        ["w", 189],
+        ["w", 183],
+        ["w", 242],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "8vLy8vLy"
     },
     {
-      "seed": 71,
-      "expected": "dAAHC+MAAQA0FhEzE7nEZ2M7GAEB3gPoLUZbbAAA58YAAGoAVgBCAEMALgAvAEQAVwBYAGwARQBZAG0AawCAAH8AgQCUAJMAfgCSAH0ApgCRAJAAaQB8AGgAewBnAFMAVQBUAEEAPwBAAC0A//9WADdCAP9DAP8uAP8vAP9EAP9XACxYAP9sAP9FAP9ZAP9tAP9rAD+AAP9/AP+BAP+UAP+TAP9+AAySAP99AP+mAP+RAP+QAP9pAAZ8AP9oAP97AP9nAP9TAP9VACdUAP9BAP8/AP9AAP8tAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA="
-    },
-    {
-      "seed": 72,
-      "expected": "JwAQBXQAAQDDV4Y7H0AEvgkjecrLmb5oqmVObAAAGwkAAKoAlgCCAIMAbgBvAIQAlwCYAKwAhQCZAK0AqwDAAL8AwQDUANMAvgDSAL0A5gDRANAAqQC8AKgAuwCnAJMAlQCUAIEAfwCAAG0A//+WACyCAP+DAP9uAP9vAP+EAP+XAP+YAP+sAP+FAP+ZAP+tAP+rAAfAAP+/AP/BAP/UAP/TACG+ACrSAP+9AP/mAP/RAP/QAP+pAP+8AP+oAP+7AP+nAP+TAP+VAB6UAP+BAP9/AP+AAP9tAP///wAAAAAAAAAAAAAAAICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA=="
+      "seed": 4,
+      "command": 62,
+      "script": [
+        ["w", 62],
+        ["w", 219],
+        ["w", 120],
+        ["w", 73],
+        ["w", 155],
+        ["w", 210],
+        ["w", 52],
+        ["w", 200],
+        ["w", 202],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0],
+        ["r", 0]
+      ],
+      "expected": "gICAgICA"
     }
-  ]
+  ],
+  "knownGaps": [
+    {
+      "seed": 0,
+      "command": 2,
+      "indices": [2, 3, 4, 5],
+      "note": "command 0x02: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 1,
+      "command": 2,
+      "indices": [0, 1, 2, 4, 5],
+      "note": "command 0x02: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 2,
+      "command": 2,
+      "indices": [2, 3, 4, 5],
+      "note": "command 0x02: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 3,
+      "command": 2,
+      "indices": [0, 2, 3, 4],
+      "note": "command 0x02: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 4,
+      "command": 2,
+      "indices": [2, 3, 4, 5],
+      "note": "command 0x02: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 0,
+      "command": 3,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x03: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 1,
+      "command": 3,
+      "indices": [1, 3, 5],
+      "note": "command 0x03: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 2,
+      "command": 3,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x03: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 4,
+      "command": 3,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x03: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 0,
+      "command": 6,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x06: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 1,
+      "command": 6,
+      "indices": [0, 2, 4],
+      "note": "command 0x06: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 2,
+      "command": 6,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x06: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 4,
+      "command": 6,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x06: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 1,
+      "command": 7,
+      "indices": [1, 3, 5],
+      "note": "command 0x07: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 0,
+      "command": 12,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x0c: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 1,
+      "command": 12,
+      "indices": [1, 3, 5],
+      "note": "command 0x0c: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 2,
+      "command": 12,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x0c: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 4,
+      "command": 12,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x0c: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 0,
+      "command": 15,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x0f: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 1,
+      "command": 15,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x0f: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 2,
+      "command": 15,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x0f: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 3,
+      "command": 15,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x0f: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 4,
+      "command": 15,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x0f: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 0,
+      "command": 16,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x10: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 1,
+      "command": 16,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x10: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 2,
+      "command": 16,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x10: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 3,
+      "command": 16,
+      "indices": [0, 2, 4],
+      "note": "command 0x10: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 0,
+      "command": 30,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x1e: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 1,
+      "command": 30,
+      "indices": [0, 1, 3],
+      "note": "command 0x1e: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 2,
+      "command": 30,
+      "indices": [0, 1, 3],
+      "note": "command 0x1e: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 3,
+      "command": 30,
+      "indices": [0, 1, 3],
+      "note": "command 0x1e: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 4,
+      "command": 30,
+      "indices": [0, 1, 3],
+      "note": "command 0x1e: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 0,
+      "command": 56,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x38: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 1,
+      "command": 56,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x38: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 2,
+      "command": 56,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x38: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 3,
+      "command": 56,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x38: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 4,
+      "command": 56,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x38: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 0,
+      "command": 62,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x3e: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 1,
+      "command": 62,
+      "indices": [1, 3, 5],
+      "note": "command 0x3e: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 2,
+      "command": 62,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x3e: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    },
+    {
+      "seed": 4,
+      "command": 62,
+      "indices": [0, 1, 2, 3, 4, 5],
+      "note": "command 0x3e: the script writes four words and the part takes fewer, so what it does with the rest is not yet modelled"
+    }
+  ],
+  "knownGapsNote": "Every byte here is a place the model does not yet answer what the part answered. It is a gate rather than an excuse: fixing one removes a line, breaking one adds a line, and either way the check fails until the change is written down."
 }
