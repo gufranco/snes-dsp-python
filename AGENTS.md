@@ -69,6 +69,22 @@ for most users. Every file that does this carries
 uvx --python 3.12 python snesdsp/silicon.test.py
 ```
 
+**Run the suite as a machine that holds nothing.** This is the mistake that has
+cost the most time here, twice. A test that reaches a default which opens a real
+file passes on a workstation holding that file and fails on a runner that does
+not, and the local run gives no hint. Point both directories somewhere empty and
+run everything before pushing:
+
+```bash
+EMPTY=$(mktemp -d)
+for f in snesdsp/*.test.py conformance/*.test.py; do
+  UPD7725_FIRMWARE_DIR="$EMPTY" SNES_CARTRIDGE_DIR="$EMPTY" python3 "$f" || echo "FAILED $f"
+done
+```
+
+Every test that could reach a real image supplies its own digest, its own build,
+or its own path. A default is for a person at a command line, never for a test.
+
 **Coverage that depends on what the machine holds is not coverage.** A test that
 only runs where a microcode image or a cartridge happens to be present is a test
 that reports a pass on a machine that ran nothing. Tests needing a file supply

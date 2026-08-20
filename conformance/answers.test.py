@@ -41,6 +41,16 @@ def puppets(first: int = 0x10) -> Any:
     return build
 
 
+def a_digest(_part: str) -> str:
+    """A digest that names no real image.
+
+    Every test supplies one. Reaching for the digest of a file on disk would make
+    the test pass on a machine holding that file and fail on one that does not,
+    which is not a test of anything in this module.
+    """
+    return "abc123"
+
+
 def a_shape(shape: str = "write1 read1", seen: int = 3, cartridges: int = 1) -> dict[str, Any]:
     return {"shape": shape, "seen": seen, "cartridges": cartridges}
 
@@ -53,57 +63,67 @@ class TakingTest(unittest.TestCase):
     """What a part said, taken in a form that can be written down and compared."""
 
     def test_every_exchange_is_recorded_under_its_shape(self) -> None:
-        found = answers.take("dsp1", puppets(), shapes=some_shapes())
+        found = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest)
 
         self.assertEqual(found["exchanges"][0]["shape"], "write1 read1")
 
     def test_and_what_came_back_is_recorded_as_hex(self) -> None:
-        found = answers.take("dsp1", puppets(), shapes=some_shapes())
+        found = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest)
 
         self.assertEqual(found["exchanges"][0]["said"], ["11"])
 
     def test_a_two_byte_read_is_one_run_of_two_bytes(self) -> None:
-        found = answers.take("dsp1", puppets(), shapes=some_shapes(a_shape("write1 read2")))
+        found = answers.take(
+            "dsp1", puppets(), shapes=some_shapes(a_shape("write1 read2")), digest=a_digest
+        )
 
         self.assertEqual(found["exchanges"][0]["said"], ["1112"])
 
     def test_a_poll_is_recorded_beside_the_reads(self) -> None:
-        found = answers.take("dsp1", puppets(), shapes=some_shapes(a_shape("write1 poll1 read1")))
+        found = answers.take(
+            "dsp1", puppets(), shapes=some_shapes(a_shape("write1 poll1 read1")), digest=a_digest
+        )
 
         self.assertEqual(found["exchanges"][0]["said"], ["80", "11"])
 
     def test_the_seed_the_payloads_came_from_is_recorded(self) -> None:
-        found = answers.take("dsp1", puppets(), shapes=some_shapes(), seed=1234)
+        found = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest, seed=1234)
 
         self.assertEqual(found["seed"], 1234)
 
     def test_and_the_part_it_was_taken_from(self) -> None:
-        self.assertEqual(answers.take("dsp2", puppets(), shapes=some_shapes())["part"], "dsp2")
+        self.assertEqual(
+            answers.take("dsp2", puppets(), shapes=some_shapes(), digest=a_digest)["part"], "dsp2"
+        )
 
     def test_the_digest_of_the_image_that_answered_is_recorded(self) -> None:
-        found = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _part: "abc123")
+        found = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest)
 
         self.assertEqual(found["image"]["sha256"], "abc123")
 
     def test_a_shape_that_reads_nothing_is_left_out(self) -> None:
-        found = answers.take("dsp1", puppets(), shapes=some_shapes(a_shape("write1 write1")))
+        found = answers.take(
+            "dsp1", puppets(), shapes=some_shapes(a_shape("write1 write1")), digest=a_digest
+        )
 
         self.assertEqual(found["exchanges"], [])
 
     def test_and_so_is_one_that_writes_nothing(self) -> None:
-        found = answers.take("dsp1", puppets(), shapes=some_shapes(a_shape("read1 read1")))
+        found = answers.take(
+            "dsp1", puppets(), shapes=some_shapes(a_shape("read1 read1")), digest=a_digest
+        )
 
         self.assertEqual(found["exchanges"], [])
 
     def test_the_same_seed_takes_the_same_answers_twice(self) -> None:
-        first = answers.take("dsp1", puppets(), shapes=some_shapes())
-        second = answers.take("dsp1", puppets(), shapes=some_shapes())
+        first = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest)
+        second = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest)
 
         self.assertEqual(first, second)
 
     def test_and_a_part_that_answers_differently_is_recorded_differently(self) -> None:
-        first = answers.take("dsp1", puppets(first=0x10), shapes=some_shapes())
-        second = answers.take("dsp1", puppets(first=0x20), shapes=some_shapes())
+        first = answers.take("dsp1", puppets(first=0x10), shapes=some_shapes(), digest=a_digest)
+        second = answers.take("dsp1", puppets(first=0x20), shapes=some_shapes(), digest=a_digest)
 
         self.assertNotEqual(first["exchanges"], second["exchanges"])
 
@@ -145,14 +165,12 @@ class CheckingTest(unittest.TestCase):
     """A corpus against the part on this machine, which is the whole point."""
 
     def _corpus(self, **held: Any) -> dict[str, Any]:
-        found = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _part: "abc123")
+        found = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest)
         found.update(held)
         return found
 
     def test_a_part_that_answers_what_was_recorded_agrees(self) -> None:
-        found = answers.check(
-            self._corpus(), puppets(), shapes=some_shapes(), digest=lambda _part: "abc123"
-        )
+        found = answers.check(self._corpus(), puppets(), shapes=some_shapes(), digest=a_digest)
 
         self.assertEqual(found.disagreements, ())
         self.assertTrue(found.agrees)
@@ -162,7 +180,7 @@ class CheckingTest(unittest.TestCase):
             self._corpus(),
             puppets(first=0x20),
             shapes=some_shapes(),
-            digest=lambda _part: "abc123",
+            digest=a_digest,
         )
 
         self.assertFalse(found.agrees)
@@ -173,7 +191,7 @@ class CheckingTest(unittest.TestCase):
             self._corpus(),
             puppets(first=0x20),
             shapes=some_shapes(),
-            digest=lambda _part: "abc123",
+            digest=a_digest,
         )
 
         shape, wanted, got = found.disagreements[0]
@@ -208,7 +226,7 @@ class CheckingTest(unittest.TestCase):
             self._corpus(),
             puppets(),
             shapes=some_shapes(a_shape(), a_shape("write1 write1 read1")),
-            digest=lambda _part: "abc123",
+            digest=a_digest,
         )
 
         self.assertEqual(found.unrecorded, ("write1 write1 read1",))
@@ -217,9 +235,7 @@ class CheckingTest(unittest.TestCase):
         corpus = self._corpus()
         corpus["exchanges"].append({"shape": "write1 read2", "said": ["1112"]})
 
-        found = answers.check(
-            corpus, puppets(), shapes=some_shapes(), digest=lambda _part: "abc123"
-        )
+        found = answers.check(corpus, puppets(), shapes=some_shapes(), digest=a_digest)
 
         self.assertEqual(found.vanished, ("write1 read2",))
 
@@ -228,7 +244,7 @@ class CheckingTest(unittest.TestCase):
             self._corpus(),
             puppets(),
             shapes=some_shapes(a_shape(), a_shape("write1 write1 read1")),
-            digest=lambda _part: "abc123",
+            digest=a_digest,
         )
 
         self.assertTrue(found.agrees)
@@ -237,16 +253,12 @@ class CheckingTest(unittest.TestCase):
         corpus = self._corpus()
         corpus["exchanges"].append({"shape": "write1 read2", "said": ["1112"]})
 
-        found = answers.check(
-            corpus, puppets(), shapes=some_shapes(), digest=lambda _part: "abc123"
-        )
+        found = answers.check(corpus, puppets(), shapes=some_shapes(), digest=a_digest)
 
         self.assertFalse(found.agrees)
 
     def test_the_seed_the_corpus_names_is_the_seed_the_check_uses(self) -> None:
-        corpus = answers.take(
-            "dsp1", puppets(), shapes=some_shapes(), seed=99, digest=lambda _part: "abc123"
-        )
+        corpus = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest, seed=99)
         asked: list[int] = []
 
         def noting(seed: int) -> random.Random:
@@ -257,7 +269,7 @@ class CheckingTest(unittest.TestCase):
             corpus,
             puppets(),
             shapes=some_shapes(),
-            digest=lambda _part: "abc123",
+            digest=a_digest,
             rolls=noting,
         )
 
@@ -268,15 +280,13 @@ class StoringTest(unittest.TestCase):
     def test_a_corpus_is_written_where_the_part_names(self) -> None:
         where = Path(tempfile.mkdtemp())
 
-        answers.store(
-            answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _p: "abc"), where
-        )
+        answers.store(answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest), where)
 
         self.assertTrue((where / "dsp1answers.json").exists())
 
     def test_and_reads_back_as_what_was_written(self) -> None:
         where = Path(tempfile.mkdtemp())
-        taken = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _p: "abc")
+        taken = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest)
 
         answers.store(taken, where)
 
@@ -293,20 +303,20 @@ class StoringTest(unittest.TestCase):
             answers.load("dsp1", where)
 
     def test_an_exchange_carries_the_shape_and_the_answer_and_nothing_else(self) -> None:
-        taken = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _p: "abc")
+        taken = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest)
 
         self.assertEqual(sorted(taken["exchanges"][0]), ["said", "shape"])
 
     def test_so_the_payload_that_was_sent_is_not_stored(self) -> None:
-        taken = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _p: "abc")
+        taken = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest)
 
         self.assertNotIn("payload", json.dumps(taken["exchanges"]))
         self.assertNotIn("wrote", json.dumps(taken["exchanges"]))
 
     def test_and_the_seed_is_enough_to_send_it_again(self) -> None:
-        first = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _p: "abc")
+        first = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest)
         second = answers.take(
-            "dsp1", puppets(), shapes=some_shapes(), seed=first["seed"], digest=lambda _p: "abc"
+            "dsp1", puppets(), shapes=some_shapes(), digest=a_digest, seed=first["seed"]
         )
 
         self.assertEqual(first["exchanges"], second["exchanges"])
@@ -376,7 +386,7 @@ class EntryTest(unittest.TestCase):
             why_not=lambda: None,
             build=puppets(),
             shapes_for=lambda _part: some_shapes(),
-            digest=lambda _part: "abc",
+            digest=a_digest,
             where=where,
             say=said.append,
         )
@@ -393,7 +403,7 @@ class EntryTest(unittest.TestCase):
             why_not=lambda: None,
             build=puppets(),
             shapes_for=lambda _part: some_shapes(),
-            digest=lambda _part: "abc",
+            digest=a_digest,
             where=Path(tempfile.mkdtemp()),
             say=said.append,
         )
@@ -403,16 +413,14 @@ class EntryTest(unittest.TestCase):
 
     def test_a_run_that_agrees_passes(self) -> None:
         where = Path(tempfile.mkdtemp())
-        answers.store(
-            answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _p: "abc"), where
-        )
+        answers.store(answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest), where)
 
         code = answers.main(
             ["dsp1"],
             why_not=lambda: None,
             build=puppets(),
             shapes_for=lambda _part: some_shapes(),
-            digest=lambda _part: "abc",
+            digest=a_digest,
             where=where,
             say=lambda _l: None,
         )
@@ -421,9 +429,7 @@ class EntryTest(unittest.TestCase):
 
     def test_and_one_that_disagrees_fails(self) -> None:
         where = Path(tempfile.mkdtemp())
-        answers.store(
-            answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _p: "abc"), where
-        )
+        answers.store(answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest), where)
         said: list[str] = []
 
         code = answers.main(
@@ -431,7 +437,7 @@ class EntryTest(unittest.TestCase):
             why_not=lambda: None,
             build=puppets(first=0x30),
             shapes_for=lambda _part: some_shapes(),
-            digest=lambda _part: "abc",
+            digest=a_digest,
             where=where,
             say=said.append,
         )
@@ -441,9 +447,7 @@ class EntryTest(unittest.TestCase):
 
     def test_a_corpus_from_another_image_stops_the_run_rather_than_failing_it(self) -> None:
         where = Path(tempfile.mkdtemp())
-        answers.store(
-            answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _p: "abc"), where
-        )
+        answers.store(answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest), where)
         said: list[str] = []
 
         code = answers.main(
@@ -463,7 +467,7 @@ class EntryTest(unittest.TestCase):
         where = Path(tempfile.mkdtemp())
         for part in ("dsp1", "dsp2"):
             answers.store(
-                answers.take(part, puppets(), shapes=some_shapes(), digest=lambda _p: "abc"), where
+                answers.take(part, puppets(), shapes=some_shapes(), digest=a_digest), where
             )
         said: list[str] = []
 
@@ -472,7 +476,7 @@ class EntryTest(unittest.TestCase):
             why_not=lambda: None,
             build=puppets(),
             shapes_for=lambda _part: some_shapes(),
-            digest=lambda _part: "abc",
+            digest=a_digest,
             where=where,
             parts=("dsp1", "dsp2"),
             say=said.append,
