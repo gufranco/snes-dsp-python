@@ -600,6 +600,7 @@ build rather than quietly lowering the number.
 | Tests | Beside the module, named `<module>.test.py` |
 | Types | [mypy](https://mypy.readthedocs.io/) at strict, configured in [`pyproject.toml`](pyproject.toml) |
 | Agent instructions | [`AGENTS.md`](AGENTS.md) |
+| Current behaviour | [`specs/current/`](specs/current/), one requirement per observable behaviour with checkable scenarios |
 
 ## Reporting something
 
