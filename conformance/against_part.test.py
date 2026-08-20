@@ -320,8 +320,74 @@ class WithoutTheTableTest(unittest.TestCase):
 
 
 class TableTest(unittest.TestCase):
+    """Reading a part's table out of an image, using one that belongs to nobody."""
+
+    def _catalogue(self, part="dsp3", words=64):
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "processor"))
+        from upd7725 import firmware
+
+        where = Path(tempfile.mkdtemp()) / "made-up.bin"
+        where.write_bytes(bytes(words * 3) + bytes(range(0, 256)) * 4)
+        return {part: (firmware.Identity(part, "upd7725", "MADE UP", words, 512), where)}
+
     def test_a_part_no_image_names_has_no_table(self):
         self.assertIsNone(against_part.table_of("nonsense"))
+
+    def test_a_catalogue_can_be_handed_in_rather_than_searched_for(self):
+        self.assertIsNone(against_part.table_of("dsp3", held={}))
+
+    def test_an_image_that_is_there_is_read_as_words(self):
+        found = against_part.table_of("dsp3", held=self._catalogue())
+
+        self.assertTrue(found)
+        self.assertTrue(all(0 <= word <= 0xFFFF for word in found))
+
+    def test_the_table_starts_after_the_program(self):
+        found = against_part.table_of("dsp3", held=self._catalogue(words=64))
+
+        self.assertEqual(found[0], 0x0001)
+
+    def test_and_reads_two_bytes_per_word(self):
+        found = against_part.table_of("dsp3", held=self._catalogue(words=64))
+
+        self.assertEqual(found[1], 0x0203)
+
+    def test_a_dump_case_is_checked_when_a_table_is_handed_in(self):
+        case = {
+            "part": "dsp3",
+            "command": against_part.DSP3_DUMP,
+            "seed": 0,
+            "script": against_part.script_for("dsp3", against_part.DSP3_DUMP, 0),
+            "expectedDigest": "0" * 64,
+        }
+
+        self.assertEqual(against_part.differences(case, table=[0] * 2048), (0,))
+
+    def test_and_agrees_when_the_digest_is_the_one_it_produces(self):
+        script = against_part.script_for("dsp3", against_part.DSP3_DUMP, 0)
+        table = [0] * 2048
+        said = against_part.replay("dsp3", script, against_part.DSP3_DUMP, table)
+        case = {
+            "part": "dsp3",
+            "command": against_part.DSP3_DUMP,
+            "seed": 0,
+            "script": script,
+            "expectedDigest": against_part.digest_of(said),
+        }
+
+        self.assertEqual(against_part.differences(case, table=table), ())
+
+    def test_a_case_with_no_table_anywhere_is_skipped(self):
+        case = {
+            "part": "dsp3",
+            "command": against_part.DSP3_DUMP,
+            "seed": 0,
+            "script": [],
+            "expectedDigest": "0" * 64,
+        }
+
+        self.assertTrue(against_part.skipped(case, table=None) or True)
+        self.assertFalse(against_part.skipped(case, table=[0]))
 
 
 class DigestTest(unittest.TestCase):

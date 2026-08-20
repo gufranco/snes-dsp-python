@@ -338,26 +338,30 @@ def digest_of(answers):
     return hashlib.sha256(bytes(answers)).hexdigest()
 
 
-def table_of(part):
-    """The part's own table, from an image of it, or nothing when none is here."""
-    try:
-        from snesdsp import silicon
-    except ImportError:  # pragma: no cover
-        return None
-    held = silicon.available()
+def table_of(part, held=None):
+    """The part's own table, from an image of it, or nothing when none is here.
+
+    `held` is the catalogue of images, passed in so the reading can be exercised
+    on a machine that has none: what it needs is a file and a shape, not anybody's
+    microcode in particular.
+    """
+    from snesdsp import silicon
+
+    if held is None:
+        held = silicon.available()
     wanted = silicon.SHARES_IMAGE.get(part, part)
     if wanted not in held:
         return None
     identity, path = held[wanted]
-    image = path.read_bytes()[identity.program_words * 3 :]
+    image = Path(path).read_bytes()[identity.program_words * 3 :]
     return [image[at] << 8 | image[at + 1] for at in range(0, len(image), 2)]
 
 
-def _model(part, command=None):
+def _model(part, command=None, table=None):
     profile = profile_for(part)
     options = dict(profile.build)
     if command is not None and profile.dumps_rom(command):
-        options["data_rom"] = table_of(part)
+        options["data_rom"] = table_of(part) if table is None else table
     return snesdsp.Dsp(model=part, backend=snesdsp.MODELLED, **options)
 
 
@@ -366,9 +370,9 @@ def _silicon(part):  # pragma: no cover
     return snesdsp.Dsp(model=part, backend=snesdsp.SILICON, **profile_for(part).build)
 
 
-def replay(part, steps, command=None):
+def replay(part, steps, command=None, table=None):
     """One script through the model of that part."""
-    return answers_of(steps, _model(part, command))
+    return answers_of(steps, _model(part, command, table))
 
 
 def record(part, seeds, commands=None, build=_silicon):
@@ -405,22 +409,25 @@ def by_digest(case):
     return "expectedDigest" in case
 
 
-def skipped(case):
-    """Whether this case cannot be checked here, and why.
+def skipped(case, table=None):
+    """Whether this case cannot be checked here.
 
     A command that reads out the part's own table can only be checked where that
     table is, which is inside an image nobody may pass around. Everywhere else it
     reports as skipped, out loud, rather than as passed.
     """
-    return by_digest(case) and table_of(case["part"]) is None
+    if not by_digest(case):
+        return False
+    return (table_of(case["part"]) if table is None else table) is None
 
 
-def differences(case):
+def differences(case, table=None):
     """Every index where the model does not say what the part said."""
     if by_digest(case):
-        if skipped(case):
+        held = table_of(case["part"]) if table is None else table
+        if held is None:
             return ()
-        got = replay(case["part"], case["script"], case["command"])
+        got = replay(case["part"], case["script"], case["command"], held)
         return () if digest_of(got) == case["expectedDigest"] else (0,)
 
     wanted = expected_of(case)
