@@ -27,7 +27,7 @@ from . import timing
 
 ROOT = Path(__file__).resolve().parent.parent
 
-PROCESSOR = ROOT / "processor"
+PROCESSOR = ROOT / "nec-upd7725-python"
 
 BOOT_STEPS = 20000
 """Instructions to run before the part is spoken to.
@@ -58,9 +58,9 @@ SETTLE_LIMIT = 400000
 """How long to wait for the part to ask for attention before giving up."""
 
 WHY_NOT_PROCESSOR = (
-    "the processor is not here: this backend runs the part's own microcode on it,"
-    " so the submodule has to be checked out with"
-    " git submodule update --init --recursive"
+    "the processor is not here: this backend runs the part's own microcode on"
+    " the NEC uPD7725, which sits beside this package as a submodule, so it has"
+    " to be checked out with git submodule update --init --recursive"
 )
 
 WHY_NOT_FIRMWARE = (

@@ -37,6 +37,11 @@ snesdsp = ["*.test.py"]
 [tool.ruff]
 target-version = "py312"
 line-length = 100
+# The processor is another project checked out beside this one, named after
+# itself so anybody browsing the repository can see what this is built on. It
+# carries its own gate at its own version, and this repository's lint passing or
+# failing should never depend on a commit made in a different repository.
+extend-exclude = ["nec-upd7725-python"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF", "PL", "BLE", "C4", "N", "A", "T20", "PTH"]

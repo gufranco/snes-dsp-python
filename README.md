@@ -19,11 +19,12 @@
   <a href="#the-family">The family</a> &nbsp;|&nbsp;
   <a href="#why-there-is-no-model-here">Why there is no model</a> &nbsp;|&nbsp;
   <a href="#the-microcode-you-supply">The microcode you supply</a> &nbsp;|&nbsp;
+  <a href="#driving-it-the-way-a-console-does">Driving it</a> &nbsp;|&nbsp;
   <a href="#what-is-checked-without-one">What is checked without one</a> &nbsp;|&nbsp;
   <a href="https://github.com/gufranco/snes-dsp-python/issues">Issues</a>
 </p>
 
-**6** parts across **5** microcodes · **1** processor underneath them all · **0** commands described by hand · **142** tests · **100%** statement and branch coverage · every image confirmed by **SHA-256** before a byte of it runs
+**6** parts across **5** microcodes · **1** processor underneath them all · **0** commands described by hand · paced at **7.6 MHz** against the console's own clock · **46** exchanges read out of four real cartridges · **176** tests · **100%** statement and branch coverage · every image confirmed by **SHA-256** before a byte of it runs
 
 ```python
 from snesdsp import Dsp
@@ -107,8 +108,11 @@ git clone --recurse-submodules https://github.com/gufranco/snes-dsp-python.git
 cd snes-dsp-python
 ```
 
-The submodule is [`nec-upd7725-python`](https://github.com/gufranco/nec-upd7725-python),
-the processor these parts are built on. Without it nothing here can run at all.
+The submodule sits at the repository root as
+[`nec-upd7725-python/`](https://github.com/gufranco/nec-upd7725-python), named
+after itself rather than buried under a generic folder, because it is the
+processor every one of these parts is built on and anybody browsing this should
+see that immediately. Without it nothing here can run at all.
 
 ### Supply the microcode
 
@@ -158,6 +162,52 @@ certutil -hashfile firmware\dsp1.bin SHA256   # Windows
 A file that does not match is refused rather than run, and the refusal says what
 was computed so you can search for it.
 
+## Driving it the way a console does
+
+A part is only half of an exchange. The other half is when the console next
+speaks to it, and that is not a number this package gets to choose.
+
+### Timing
+
+The part runs one instruction per clock at **7,600,000 Hz**. The console counts
+at six times its colour carrier, **21,477,273 Hz**, and one cartridge access
+costs it **eight** of those clocks, or six on a board wired for it.
+
+A 65816 store to a long address takes five cycles, each one reaching memory. So
+the least a console can possibly leave the part between two accesses is
+**14 instructions**, and that is the default here. It is a floor rather than a
+guess: Super Mario Kart's driver was read to check what a real one does, and it
+puts between one and twelve of its own instructions between consecutive
+accesses, so in practice the part gets more.
+
+A caller who knows how long their console actually spent says so, and the
+conversion is done for them:
+
+```python
+from snesdsp import Dsp, MASTER_CLOCK
+
+chip = Dsp("dsp1")
+chip.elapsed(MASTER_CLOCK // 60)
+```
+
+### The bus
+
+A console does not call a method on a coprocessor. It reads and writes an
+address, and the part decides from the lowest bit of that address whether the
+access was the data port or the status register.
+
+```python
+chip.write_bus(0x3F8000, 0x09)
+chip.read_bus(0x3F8001)
+```
+
+An even address is the data port. An odd one is the status register.
+
+Nothing above that bit matters, which is why one of these answers across a whole
+window rather than at a single address. The decode lives here rather than in
+whoever calls this, because every caller that reimplements it is a caller that
+can get it the wrong way round.
+
 ## The family
 
 | Part | What it does | Image it runs |
@@ -181,7 +231,8 @@ wrong, because the part-specific knowledge is no longer in the code.
 | Layer | What is checked | Needs an image |
 |:--|:--|:--:|
 | The processor | Every instruction, in [`nec-upd7725-python`](https://github.com/gufranco/nec-upd7725-python) | No |
-| The port | The handshake, the pacing, the status register, driven by a program of zeroes | No |
+| The port | The handshake, the pacing, the status register and the bus decode, driven by a program of zeroes | No |
+| Timing | That the pacing follows from the two oscillators rather than from a chosen number | No |
 | Identity | That every part names an image with a deciding digest, so a supplied file is confirmed rather than trusted | No |
 | The catalogue | Every part, every name it answers to, and which image each runs | No |
 | The parts | Driven through the exchanges a real cartridge makes with them | Yes |
@@ -198,12 +249,20 @@ cartridge by [`snes-driver-python`](https://github.com/gufranco/snes-driver-pyth
 which disassembles the routine that drives the part rather than running the game.
 
 What comes back is a shape, the accesses a routine makes with the width of each
-and no payload attached. [`conformance/dsp3shapes.json`](conformance/dsp3shapes.json)
-holds the seventeen the only DSP-3 cartridge uses, with the digests of the game
-they were read from and none of its bytes.
+and no payload attached. Each file holds the digests of the game it was read from
+and none of its bytes.
+
+| Part | Read from | Shapes | That drive the part |
+|:--|:--|--:|--:|
+| DSP-1 | Super Mario Kart | 13 | 8 |
+| DSP-2 | Dungeon Master | 13 | 1 |
+| DSP-3 | SD Gundam GX | 17 | 8 |
+| DSP-4 | Top Gear 3000 | 38 | 29 |
+
+All four parts answer every exchange their own game makes.
 
 ```bash
-python3 conformance/against_cartridges.py dsp3
+python3 conformance/against_cartridges.py dsp1
 ```
 
 ## Project structure
@@ -213,12 +272,13 @@ snesdsp/
   __init__.py     the package, and the part chosen at construction
   models.py       which parts exist, what they answer to, which image each runs
   silicon.py      loading an image and driving the part it belongs to
+  timing.py       the two oscillators, and how long the console leaves the part
   version.py      rewritten by the release job and by nothing else
 conformance/
   against_cartridges.py  drives a part with the exchanges a real cartridge makes
   shapes.py       reads and replays those exchanges
   cartridges.py   finds and confirms the cartridges they were read from
-processor/        the NEC uPD7725, as a submodule
+nec-upd7725-python/  the processor all of these are, as a submodule at the root
 ```
 
 Each module has its tests beside it as `<module>.test.py`, so a module and the
@@ -233,7 +293,8 @@ for f in snesdsp/*.test.py conformance/*.test.py; do python3 "$f"; done
 | Area | File | What it pins |
 |:--|:--|:--|
 | The catalogue | [`snesdsp/models.test.py`](snesdsp/models.test.py) | Every part, its names, its image, and that the image is declared with a digest |
-| The part | [`snesdsp/silicon.test.py`](snesdsp/silicon.test.py) | Loading, the handshake, the pacing, reading, refusing |
+| The part | [`snesdsp/silicon.test.py`](snesdsp/silicon.test.py) | Loading, the handshake, the pacing, the bus decode, reading, refusing |
+| Timing | [`snesdsp/timing.test.py`](snesdsp/timing.test.py) | The clocks, the conversion, and that the gap is derived rather than chosen |
 | Cartridge exchanges | [`conformance/shapes.test.py`](conformance/shapes.test.py) | Reading a driver's accesses, replaying them, the payloads they are filled with |
 | Driving a part | [`conformance/against_cartridges.test.py`](conformance/against_cartridges.test.py) | Playing every recorded exchange, and what silence means |
 
@@ -249,7 +310,7 @@ build rather than quietly lowering the number.
 | `ruff check .` | Lint |
 | `python3 -m coverage run -a <file>` | Run one test file under coverage |
 | `python3 -m coverage report` | Coverage, which fails below 100% |
-| `python3 conformance/against_cartridges.py dsp3` | Drive a part with real cartridge exchanges |
+| `python3 conformance/against_cartridges.py <part>` | Drive a part with real cartridge exchanges |
 | `pnpm install` | Install the JSON formatter |
 | `pnpm run format:check` | Check that every JSON file is formatted, which CI also does |
 

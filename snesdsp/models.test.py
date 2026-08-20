@@ -80,7 +80,11 @@ class DeclaredImageTest(unittest.TestCase):
     def _manifest(self):
         import json
 
-        where = Path(__file__).resolve().parent.parent / "processor" / "artifacts.manifest.json"
+        where = (
+            Path(__file__).resolve().parent.parent
+            / "nec-upd7725-python"
+            / "artifacts.manifest.json"
+        )
         return json.loads(where.read_text())
 
     def test_every_part_runs_an_image_the_processor_declares(self):
