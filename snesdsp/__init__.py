@@ -26,7 +26,6 @@ project, or of the project this one sits inside, or in any directory named by
 back to a guess.
 """
 
-from .doctor import examine, report
 from .models import MODELS, SHARES_MICROCODE, UnknownModelError, describe
 from .silicon import NeverReady, NoFirmware, Silicon, available, why_not
 from .timing import DSP_CLOCK, GAP, MASTER_CLOCK, clock_of, steps_for
@@ -61,8 +60,6 @@ __all__ = [
     "available",
     "clock_of",
     "describe",
-    "examine",
-    "report",
     "steps_for",
     "why_not",
 ]

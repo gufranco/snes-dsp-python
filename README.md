@@ -150,17 +150,25 @@ them at. Nothing is inferred and nothing is hidden. A check that fails says what
 it saw, and a check that itself throws is reported as what it threw rather than
 taking the report down with it.
 
+It then asks the same of the project underneath, and reports what comes back
+under that project's name. This package can be entirely well while the processor
+it runs on is missing, stale, or holding a different file, and a report that
+looked only here would come back clean on exactly the machine where it is not.
+
 ```text
-snesdsp 2.1.0 on 3.13.0, Linux
+snesdsp 3.0.0 on 3.13.0, Linux
 
   ok    python: 3.13.0 on Linux x86_64
   ok    processor: nec-upd7725-python is checked out
+  ok    timing: part 7600000 Hz, console 21477273 Hz, 14 instructions between accesses
      !  dsp2: no image for dsp2
          put a copy you own in snes-dsp-python/firmware, in the firmware
          directory of the project this one sits inside, or anywhere
          UPD7725_FIRMWARE_DIR names
+  ok    nec-upd7725-python / upd7725: version 1.1.0
+  ok    nec-upd7725-python / image dsp1: upd7725, dsp1.bin, sha256 5f2e5ed0...
 
-  1 of 11 checks did not pass
+  1 of 23 checks did not pass
 ```
 
 Paste all of it into an issue. Most of what gets reported here is one of three

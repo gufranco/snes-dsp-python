@@ -154,6 +154,87 @@ class DigestTest(unittest.TestCase):
         self.assertEqual(doctor._digest_of("dsp1", None), "")
 
 
+class BeneathTest(unittest.TestCase):
+    """That what this is built on is examined too, and under its own name.
+
+    A package can be entirely well while the thing underneath it is missing,
+    stale, or holding a different file. A doctor that looks only at its own
+    project reports that everything is fine on exactly the machine where it is
+    not, which is the failure this is here to prevent.
+    """
+
+    def test_the_processor_underneath_is_examined_as_well(self):
+        names = [one.name for one in doctor.examine()]
+
+        self.assertTrue(any(name.startswith(doctor.PROCESSOR_NAME) for name in names))
+
+    def test_its_findings_are_named_after_the_project_they_came_from(self):
+        def beneath():
+            return [doctor.Finding("python", True, "some version")]
+
+        for one in doctor.examine(beneath=beneath):
+            if one.name.startswith(doctor.PROCESSOR_NAME):
+                self.assertIn("/", one.name)
+
+    def test_a_stale_project_underneath_is_reported_like_an_absent_one(self):
+        def beneath():
+            raise ImportError("cannot import name 'doctor'")
+
+        found = doctor.examine(beneath=beneath)
+
+        for one in found:
+            if not one.ok and one.name == doctor.PROCESSOR_NAME:
+                self.assertIn("older than this package expects", one.report)
+
+    def test_an_unwell_finding_beneath_makes_this_run_unwell_too(self):
+        def beneath():
+            return [doctor.Finding("something", False, "not well", "go and look")]
+
+        found = doctor.examine(beneath=beneath)
+
+        self.assertTrue(any(not one.ok for one in found))
+
+    def test_a_project_underneath_that_cannot_be_asked_says_so(self):
+        def beneath():
+            raise Complaint("no doctor down there")
+
+        found = doctor.examine(beneath=beneath)
+
+        text = "\n".join(one.report for one in found)
+        self.assertIn("no doctor down there", text)
+        self.assertIn("Complaint", text)
+
+    def test_what_comes_back_keeps_the_detail_it_was_given(self):
+        def beneath():
+            return [doctor.Finding("image dsp1", True, "sha256 abc")]
+
+        found = doctor.examine(beneath=beneath)
+
+        self.assertIn("sha256 abc", "\n".join(one.detail for one in found))
+
+    def test_nothing_underneath_at_all_is_not_a_failure(self):
+        found = doctor.examine(beneath=list)
+
+        self.assertTrue(all(one.ok for one in found if "/" in one.name))
+
+
+class ReachTest(unittest.TestCase):
+    """That the project underneath is made importable, and only once."""
+
+    def test_a_path_without_it_gains_it(self):
+        found = doctor._reach([])
+
+        self.assertEqual(found, [str(doctor.silicon.PROCESSOR)])
+
+    def test_a_path_that_already_has_it_is_left_alone(self):
+        found = doctor._reach([str(doctor.silicon.PROCESSOR), "somewhere else"])
+
+        self.assertEqual(len(found), 2)
+
+    def test_by_default_it_works_on_the_real_one(self):
+        self.assertIn(str(doctor.silicon.PROCESSOR), doctor._reach())
+
+
 class ReportTest(unittest.TestCase):
     def test_the_report_has_a_line_for_every_finding(self):
         found = doctor.examine()

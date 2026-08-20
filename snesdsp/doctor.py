@@ -36,6 +36,9 @@ EXCHANGES = ROOT / "conformance"
 
 OLDEST_PYTHON = (3, 12)
 
+PROCESSOR_NAME = "nec-upd7725-python"
+"""What the project underneath is called, which is what its findings are filed under."""
+
 
 class Finding:
     """One thing that was looked at, and what was there."""
@@ -144,6 +147,57 @@ def _digest_of(wanted, images):
     return f", sha256 {hashlib.sha256(raw).hexdigest()}"
 
 
+def _default_beneath():
+    """The doctor of the project this one is built on, asked in its own terms.
+
+    Recursive by construction: whatever that project examines, including anything
+    it is built on in turn, comes back with it. A package can be entirely well
+    while the thing underneath it is missing, stale, or holding a different file,
+    and a doctor that looked only at its own project would report a clean machine
+    in exactly that case.
+    """
+    _reach()
+    from upd7725 import doctor as underneath
+
+    return underneath.examine()
+
+
+def _reach(path=None):
+    """Put the project underneath where it can be imported from, once.
+
+    It sits beside this package rather than inside it, so nothing has taught the
+    interpreter where it is. Adding it twice would be harmless and would still be
+    wrong: a path list that grows every time somebody asks for a report is a
+    small leak, and this is the file that exists to notice small things.
+    """
+    path = sys.path if path is None else path
+    where = str(silicon.PROCESSOR)
+    if where not in path:
+        path.insert(0, where)
+    return path
+
+
+def _beneath(beneath):
+    """Everything the project underneath found, filed under its name."""
+    try:
+        found = list(beneath())
+    except Exception as trouble:
+        return [
+            Finding(
+                PROCESSOR_NAME,
+                False,
+                f"{type(trouble).__name__}: {trouble}",
+                "the project underneath could not be examined. It is either not"
+                " checked out or it is older than this package expects, and both"
+                " are fixed the same way: run"
+                " git submodule update --init --recursive",
+            )
+        ]
+    return [
+        Finding(f"{PROCESSOR_NAME} / {one.name}", one.ok, one.detail, one.advice) for one in found
+    ]
+
+
 def _exchanges():
     found = sorted(one.stem.replace("shapes", "") for one in EXCHANGES.glob("*shapes.json"))
     return Finding(
@@ -154,12 +208,18 @@ def _exchanges():
     )
 
 
-def examine(images=None, build=_default_build):
-    """Everything worth looking at on this machine, in the order a reader wants it."""
+def examine(images=None, build=_default_build, beneath=_default_beneath):
+    """Everything worth looking at on this machine, in the order a reader wants it.
+
+    This package first, then what it is built on. A reader scanning the output
+    sees their own project's state before the state of the thing underneath it,
+    and both are here because either can be the reason nothing works.
+    """
     held = silicon.available() if images is None else images
     found = [_python(), _package(), _processor(), _clocks()]
     found.extend(_part(name, held, build) for name in sorted(models.MODELS))
     found.append(_exchanges())
+    found.extend(_beneath(beneath))
     return found
 
 
