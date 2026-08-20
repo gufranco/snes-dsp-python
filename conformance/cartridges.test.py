@@ -184,8 +184,82 @@ class DirectoryTest(unittest.TestCase):
         self.assertEqual(list(cartridges.found(where, {"cartridges": []})), [])
 
 
+class OnDiskAnywhereTest(unittest.TestCase):
+    """Walking a directory, using files this test makes and a catalogue to match.
+
+    None of this needs a cartridge, which is the point. The reading of a real
+    directory used to be outside the coverage gate because it ran one way on a
+    machine holding games and another way on a machine holding none, and no build
+    could exercise both. A directory the test fills and a catalogue the test
+    writes exercises both, on any machine.
+    """
+
+    def _dir(self, *files: tuple[str, bytes]) -> Path:
+        where = Path(tempfile.mkdtemp())
+        for name, held in files:
+            (where / name).write_bytes(held)
+        return where
+
+    def test_a_directory_of_one_known_cartridge_yields_it(self) -> None:
+        image = a_cartridge()
+        where = self._dir(("made-up.sfc", image))
+
+        found = cartridges.present(where, a_catalogue(image))
+
+        self.assertEqual(len(found), 1)
+
+    def test_and_hands_back_the_file_it_came_from(self) -> None:
+        image = a_cartridge()
+        where = self._dir(("made-up.sfc", image))
+
+        found = cartridges.present(where, a_catalogue(image))
+
+        self.assertEqual(found[0][1].name, "made-up.sfc")
+
+    def test_a_file_the_catalogue_does_not_know_is_passed_over(self) -> None:
+        image = a_cartridge()
+        where = self._dir(("made-up.sfc", image), ("stranger.sfc", a_cartridge(filler=0x01)))
+
+        found = cartridges.present(where, a_catalogue(image))
+
+        self.assertEqual(len(found), 1)
+
+    def test_a_file_with_a_suffix_nobody_reads_is_passed_over(self) -> None:
+        image = a_cartridge()
+        where = self._dir(("made-up.txt", image))
+
+        self.assertEqual(cartridges.present(where, a_catalogue(image)), ())
+
+    def test_a_directory_that_is_not_there_yields_nothing(self) -> None:
+        image = a_cartridge()
+
+        found = cartridges.present(Path("/nowhere/at/all"), a_catalogue(image))
+
+        self.assertEqual(found, ())
+
+    def test_a_directory_holding_nothing_yields_nothing(self) -> None:
+        image = a_cartridge()
+
+        self.assertEqual(cartridges.present(self._dir(), a_catalogue(image)), ())
+
+    def test_a_subdirectory_is_not_mistaken_for_a_cartridge(self) -> None:
+        image = a_cartridge()
+        where = self._dir(("made-up.sfc", image))
+        (where / "inner.sfc").mkdir()
+
+        self.assertEqual(len(cartridges.present(where, a_catalogue(image))), 1)
+
+
 @unittest.skipUnless(PRESENT, cartridges.WHY_NOT)
-class OnDiskTest(unittest.TestCase):
+class OnDiskTest(unittest.TestCase):  # pragma: no cover
+    """The cartridges this machine actually holds, if it holds any.
+
+    Outside the coverage gate. A test whose subject is a file nobody can
+    distribute runs on one machine and not another, so counting it would make the
+    number mean something different depending on who ran it. The directory walk
+    itself is covered above, on any machine, by a directory the test fills.
+    """
+
     def test_every_cartridge_on_disk_matches_all_four_of_its_digests(self) -> None:
         for identity, path in PRESENT:
             self.assertTrue(identity.sha256, path)

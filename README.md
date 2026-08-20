@@ -383,9 +383,12 @@ wrong, because the part-specific knowledge is no longer in the code.
 | Identity | That every part names an image with a deciding digest, so a supplied file is confirmed rather than trusted | No |
 | The catalogue | Every part, every name it answers to, and which image each runs | No |
 | Every annotation | `mypy` at strict, plus every optional error class the version has | No |
+| The documented widths | Every width, size and depth against the manufacturer's own datasheet, in the processor's [`conformance/hardware.json`](https://github.com/gufranco/nec-upd7725-python/blob/main/conformance/hardware.json) | No |
 | The parts | Driven through the exchanges a real cartridge makes with them | Yes |
 | What each part answers | Re-derived and compared against what it answered when the corpus was taken | Yes |
 | The DSP-1B correction | The pinned divergences between the two masks, re-derived | Yes |
+| The return stack | That no shipped microcode drives it past the depth NEC gives the part | Yes |
+| Recorded divergences | That where this and a behavioural model disagree, this still answers what was recorded | Yes |
 
 That last one is the only check that needs an image, and it reports as skipped
 rather than as passed when there is none.
@@ -409,12 +412,18 @@ one. A part settled against one of those is settled against one driver rather
 than against the part, so every cartridge present is read and the shapes are
 pooled.
 
-| Part | Cartridges read | Shapes | That drive the part | Sites |
-|:--|--:|--:|--:|--:|
-| DSP-1 | 29 | 44 | 21 | 1,404 |
-| DSP-2 | 3 | 13 | 1 | 273 |
-| DSP-3 | 1 | 17 | 8 | 182 |
-| DSP-4 | 3 | 38 | 29 | 919 |
+| Part | Cartridges read | Shapes | That drive the part | Sites | How strong that is |
+|:--|--:|--:|--:|--:|:--|
+| DSP-1 | 29 | 44 | 21 | 1,404 | Strong. Twenty-nine drivers, so a shape most of them share is the protocol rather than one studio's habit |
+| DSP-2 | 3 | 13 | 1 | 273 | Weak. Three regional releases of one game, and one exchange that drives the part |
+| DSP-3 | 1 | 17 | 8 | 182 | Weak, and cannot improve. One cartridge carries a DSP-3 and that is all there ever was |
+| DSP-4 | 3 | 38 | 29 | 919 | Moderate. Two games across three releases, but twenty-nine exchanges between them |
+
+The last column is the point of the table. A single total across the four would
+read as though the DSP-1 and the DSP-3 were checked alike, and they are not: one
+is corroborated by twenty-nine independent drivers and the other by one, with no
+second cartridge in existence to add. Both are driven by what a real game sends,
+which is the claim being made. Only one of them is corroborated.
 
 Each shape records how many cartridges used it. A shape two dozen games agree on
 is the part's protocol; a shape one game uses is that game's corner, which is
@@ -487,6 +496,28 @@ differs at all, which is what a corrected fault should look like rather than a
 different program. A case that quietly becomes agreement fails as loudly as one
 that changes value: two images agreeing everywhere are one image under two names.
 
+## What each piece of evidence is worth
+
+Not all of it is worth the same, and a project that lists its checks without
+saying so invites a reader to assume the strongest applies to everything.
+
+| Evidence | Rung | What it settles | What it cannot |
+|:--|:--|:--|:--|
+| The manufacturer's datasheet, pinned fact by fact with the sentence it came from | Highest | Widths, memory sizes, stack depth, clocks per instruction. Anything NEC printed | Anything NEC did not print, which includes almost all behaviour |
+| The microcode itself, run on a model of the documented processor | Second | What a command does, because the program is what decides | Whether the surrounding layers hand it the right bytes at the right moment |
+| Exchanges read out of real cartridges | Second | That the part answers what a shipped game actually asks | Anything no game asks. Coverage is uneven per part, as the table above says |
+| Measurements of the real microcode, such as how deep it drives the stack | Second | What the shipped programs need | What the silicon does beyond what they need |
+| Recordings from an independent implementation, in the processor's corpus | Third | Instruction-level behaviour nobody documented | Nothing about silicon. It is a reimplementation, however careful |
+| Agreement between the two implementations in the processor repository | Third | That neither has drifted | Nothing about silicon: one author wrote both |
+
+Where a rung disagrees with a lower one, the higher wins. That is not a
+preference. It is why the return stack in this family is four deep here and
+sixteen deep almost everywhere else: NEC printed four, and an implementation
+carrying sixteen is a widely copied mistake rather than a second opinion.
+
+The short form: the manufacturer decides what the part is, the part's own program
+decides what it does, and an emulator decides neither.
+
 ## Project structure
 
 ```text
@@ -505,6 +536,8 @@ conformance/
   record.py       re-reads every cartridge on this machine and pools the shapes
   answers.py      what each part answered, and whether it still answers that
   masks.py        where the three masks of the DSP-1 disagree
+  stack.py        how deep the shipped microcode drives the return stack
+  divergences.json where this and a behavioural model answer differently
   driven.py       what these runs need a part to be, which is less than a part is
 nec-upd7725-python/  the processor all of these are, as a submodule at the root
 ```
@@ -529,6 +562,8 @@ for f in snesdsp/*.test.py conformance/*.test.py; do python3 "$f"; done
 | Recording exchanges | [`conformance/record.test.py`](conformance/record.test.py) | Reading every cartridge present, pooling per part, confirming digests before disassembly |
 | Recorded answers | [`conformance/answers.test.py`](conformance/answers.test.py) | Taking a corpus, comparing one, and refusing when the image differs |
 | The mask divergence | [`conformance/masks.test.py`](conformance/masks.test.py) | Sweeping for disagreement, pinning it, and failing when it converges |
+| The return stack | [`conformance/stack.test.py`](conformance/stack.test.py) | Following the pointer while a part is driven, and whether what it reaches fits the documented depth |
+| Recorded divergences | [`conformance/divergences.test.py`](conformance/divergences.test.py) | That a recorded disagreement still says enough to check, and still holds |
 | What a part must be | [`conformance/driven.test.py`](conformance/driven.test.py) | The contract these runs hold a part to, and the stand-ins that satisfy it |
 | This document | [`conformance/documented.test.py`](conformance/documented.test.py) | That every example printed above still gives the answer printed beside it |
 
@@ -551,6 +586,7 @@ build rather than quietly lowering the number.
 | `python3 conformance/record.py` | Re-read every cartridge on this machine |
 | `python3 conformance/answers.py` | Check every part still answers what it answered |
 | `python3 conformance/masks.py` | Re-derive where the DSP-1 masks disagree |
+| `python3 conformance/stack.py` | Measure how deep the microcode drives the stack, about twenty minutes |
 | `pnpm install` | Install the JSON formatter |
 | `pnpm run format:check` | Check that every JSON file is formatted, which CI also does |
 

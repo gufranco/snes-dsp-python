@@ -1,0 +1,37 @@
+{
+  "note": "Inputs where this project and a widely used behavioural model of the same part answer differently. Recorded because a finding that lives only in a conversation is a finding that is lost, and because the direction of the disagreement is the interesting part: these parts have no framing, so a sequence nobody documented is answered by the program masked into the silicon, and a reimplementation of that program is a reimplementation of somebody's reading of it.",
+  "howToRead": {
+    "authority": "The microcode is the part. This project runs the program a user supplies on a model of the documented processor, so what it answers is what that program answers. A behavioural model answers what its author understood the program to do. Where the two differ, the program is the part and the reimplementation is a description of it.",
+    "whatThisIsNot": "Not a bug report against anybody. A behavioural model only has to be right about what the software it runs actually asks. None of the entries below establishes that any game sends the input in question, and where that is unknown it says so.",
+    "reproducing": "Every entry carries the exact byte sequence and the reads that follow it. Run it against your own copy of the microcode with the command given."
+  },
+  "divergences": [
+    {
+      "part": "dsp3",
+      "command": "0x1c",
+      "observedOn": "2026-08-20",
+      "thisProject": {
+        "sends": ["0x1c", "0x00", "0x34", "0x12", "0x78", "0x56"],
+        "reads": 32,
+        "answers": "78 56 repeated for as many reads as are taken, which is the second argument word echoed back without end",
+        "andWithOtherArguments": "Sending 0x1c 0x00 0xaa 0xbb 0xcc 0xdd answers cc dd repeated, so what comes back is the last word written rather than a constant",
+        "howToReproduce": "python3 -c \"import snesdsp; c=snesdsp.Dsp('dsp3'); [c.write(b) for b in (0x1c,0x00,0x34,0x12,0x78,0x56)]; print([hex(c.read()) for _ in range(8)])\"",
+        "evidence": "The part's own program, run on a model of the processor NEC documents. Pinned as a README example and re-run by conformance/documented.py on every machine that holds the microcode."
+      },
+      "otherImplementation": {
+        "name": "snes9x",
+        "url": "https://github.com/snes9xgit/snes9x",
+        "commit": "2971061cf07fdc6fc7d18883edf4e648eb16a6d2",
+        "file": "dsp3.cpp",
+        "readOn": "2026-08-20",
+        "answers": "Two zero words, then the command handler resets",
+        "quote": "DSP3_OP1C absorbs two bytes, DSP3_OP1C_A absorbs two more, then DSP3_OP1C_B sets DSP3.DR = 0 and DSP3_OP1C_C sets DSP3.DR = 0 and returns to DSP3_Reset",
+        "note": "Read to establish what the disagreement is, not to decide anything. The values here come from that file; the values above come from the silicon's own program."
+      },
+      "whatIsNotEstablished": [
+        "Whether SD Gundam GX, the only cartridge that carries a DSP-3, ever sends this command. A recorded shape carries the accesses a driver makes and none of the bytes it sends, so the shapes cannot answer it, and nothing here has disassembled the driver far enough to say.",
+        "Whether a real DSP-3 keeps echoing past the reads taken here. Thirty-two reads were taken and none of them changed; that is a long way short of forever."
+      ]
+    }
+  ]
+}

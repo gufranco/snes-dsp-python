@@ -4,8 +4,17 @@ A part is only half of an exchange. The other half is when the console next
 speaks to it, and that is not a number anybody here gets to choose: it follows
 from two oscillators and from what a cartridge access costs the console.
 
-The part runs one instruction per clock. So counting instructions is counting
-cycles, and the only thing that was missing was the rate to count them at.
+The part runs one instruction per clock, which is the manufacturer's figure and
+not an assumption: "Since the 77C25 executes an instruction in one external clock
+cycle (versus two cycles of the same 8.192 MHz clock for 77C20A)", and "All
+instructions execute in one instruction cycle". Both are quoted with their source
+in the processor's conformance/hardware.json, where a test holds the model to
+them. So counting instructions is counting cycles, this part needs no
+per-instruction cycle table, and the only thing missing was the rate to count at.
+
+A reader who finds a 250 ns instruction cycle quoted for this family has found the
+earlier part, the uPD7720 or 77C20A, which takes two clocks per instruction.
+Taking that figure for this one halves the rate at which it runs.
 
 Three numbers decide everything below, and each is a property of the hardware:
 
@@ -45,6 +54,14 @@ SLOW_ACCESS = 8
 
 FAST_ACCESS = 6
 """The same on a board wired for it, in the half of the address space that allows it."""
+
+RATED_CLOCK = 8_300_000
+"""The fastest the silicon is rated for, which is a property of the chip.
+
+"The external clock frequency (8.3 MHz maximum)". Recorded to keep it apart from
+the number below, which belongs to a cartridge rather than to a part. Conflating
+the two is how a model ends up running at a rate no board ever clocked.
+"""
 
 DSP_CLOCK = 7_600_000
 """The oscillator every part in this family runs from.
@@ -86,4 +103,12 @@ One store, five cycles, each costing a cartridge access, converted at the two
 oscillators above. It comes out at fourteen instructions. Derived rather than
 chosen, and a floor rather than a guess: a caller who knows how long their
 console actually spent passes that instead.
+
+It is a floor and not a count, and the difference is a property of the hardware
+rather than a shortcut here. The part has its own crystal and the console has
+another, and two independent oscillators have no fixed phase relationship, so the
+number of instructions a part gets between two accesses is not a fixed quantity on
+real silicon either. It drifts with temperature and it starts somewhere different
+at every power-on. A single number in this position is therefore always a floor,
+an average, or a fiction, and this one is the floor.
 """

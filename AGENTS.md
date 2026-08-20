@@ -12,6 +12,26 @@ it on a model of the processor, which lives in
 submodule at the root of this repository. Nothing here describes what a command
 does, because the microcode is what a command does.
 
+## The authority ladder
+
+Every factual question is answered by the highest rung that has an answer, and a
+lower rung never overrules a higher one.
+
+1. **The manufacturer's document.** Anything NEC printed: widths, memory sizes,
+   stack depth, clocks per instruction. Pinned fact by fact, with the sentence it
+   came from, in the processor's `conformance/hardware.json`.
+2. **The part's own program**, run on a model of that documented processor, and
+   measurements of what the shipped programs actually do.
+3. **A recording from an independent implementation**, for instruction-level
+   behaviour nobody documented.
+4. **Nothing else.** An emulator, an FPGA core, a wiki and a forum post are rung 3
+   at best and rung 4 for anything the manufacturer printed. Widely used is not
+   the same as correct: every implementation of this family in the field gives the
+   part a sixteen-level stack, and NEC prints four.
+
+When a lower rung disagrees with a higher one, the higher wins and the lower is
+corrected. Say so loudly when it happens.
+
 ## The one rule that decides most questions
 
 **The microcode is the behaviour. Nothing here describes it.**
@@ -51,7 +71,11 @@ python3 conformance/against_cartridges.py dsp1   # real cartridge exchanges
 python3 conformance/answers.py                   # what each part answered, still
 python3 conformance/masks.py                     # where the DSP-1 masks disagree
 python3 conformance/record.py                    # re-read every cartridge present
+python3 conformance/stack.py                     # stack depth against the documented one
 ```
+
+The stack measurement takes about twenty minutes, which is why the schedule runs
+it rather than every push.
 
 Exit 2 from any of those means the machine had nothing to run. That is not a
 failure and must never be reported as one, in CI or anywhere else.

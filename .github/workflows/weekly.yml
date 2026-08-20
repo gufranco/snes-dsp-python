@@ -88,6 +88,23 @@ jobs:
       - name: Coverage must still be total
         run: python -m coverage report
 
+      # How deep the shipped microcode drives the return stack, against the depth
+      # the manufacturer gives. This is the evidence that correcting the depth was
+      # safe rather than reckless, and it is re-derived rather than remembered. It
+      # takes about twenty minutes, which is why it lives here.
+      - name: No microcode reaches past the stack the part has
+        run: |
+          set +e
+          python conformance/stack.py
+          status=$?
+          set -e
+          if [ "${status}" -eq 2 ]; then
+            echo "::notice title=No microcode present::The stack measurement did not run. It is not a failure; it had nothing to run."
+            exit 0
+          fi
+          exit "${status}"
+        shell: bash
+
       # Every README example, run against the parts. A machine with no microcode
       # cannot run them, and says so rather than reporting a pass; that is exit 2
       # and it is not a failure of this build.
