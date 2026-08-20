@@ -127,6 +127,14 @@ class EntryTest(unittest.TestCase):
         self.assertEqual(found, 2)
         self.assertFalse(where.exists())
 
+    def test_a_run_says_the_file_still_needs_formatting(self):
+        where = Path(tempfile.mkdtemp()) / "made-up.json"
+        said = []
+
+        record_parts.main([str(where), "1"], why_not=lambda: None, build=build, say=said.append)
+
+        self.assertTrue(any("format" in line for line in said))
+
     def test_a_run_with_one_writes_the_corpus(self):
         where = Path(tempfile.mkdtemp()) / "made-up.json"
 

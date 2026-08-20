@@ -96,6 +96,7 @@ def main(argv, why_not=silicon.why_not, build=against_part._silicon, say=print):
 
     held = write_out(Path(where), range(int(count)), build=build, say=say)
     say(f"  {len(held['cases'])} scripts recorded, {len(held['knownGaps'])} gaps written down")
+    say("  run `pnpm run format` before committing it, which is what CI checks")
     return 0
 
 

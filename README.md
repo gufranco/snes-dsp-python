@@ -19,13 +19,14 @@
   <a href="#models">The family</a> &nbsp;|&nbsp;
   <a href="#the-dsp-2-commands">Commands</a> &nbsp;|&nbsp;
   <a href="#how-this-is-proved">How this is proved</a> &nbsp;|&nbsp;
+  <a href="#against-the-part-itself">Against the parts</a> &nbsp;|&nbsp;
   <a href="#the-corpus-and-why-it-can-ship">Why the corpus is legal</a> &nbsp;|&nbsp;
   <a href="#the-rescale-reads-past-its-own-data">The rescale</a> &nbsp;|&nbsp;
   <a href="#models">The DSP-4</a> &nbsp;|&nbsp;
   <a href="https://github.com/gufranco/snes-dsp-python/issues">Issues</a>
 </p>
 
-**4** microcodes · **5** models, counting both masks of the DSP-1 · **65** commands · **7** renderers that suspend and resume · **1** exhaustively proved bit permutation · shapes from **1,804,133** real cartridge commands · **851,132** bytes agreeing with snes9x · **500** tests · **100%** statement and branch coverage
+**4** microcodes · **5** models, counting both masks of the DSP-1 · **65** commands · **7** renderers that suspend and resume · **810** scripts answered by the parts themselves · **4,715** bytes compared against real hardware · **851,132** bytes agreeing with snes9x · **735** tests · **100%** statement and branch coverage
 
 ```python
 from snesdsp import Dsp
@@ -187,29 +188,50 @@ The walk is bounded by the **output** length, not by the data it was given. With
 
 The differential is the one that ties this to real hardware, and it found a real bug. The chip latches per command whether a length has already been given, and decides whether data follows by looking at the length byte itself. A length of zero therefore does not cancel a command; it arms one, and the next byte on the port is read as a new command. A tidier model that resets on a zero length passes every ordinary test and answers differently here.
 
-### Against the microcode itself
+### Against the part itself
 
 Everything above holds a model to a recording or to a rule. This holds it to the
-part. [`conformance/against_firmware.py`](conformance/against_firmware.py) puts
-the same command and the same arguments through the model and through the part's
-own program, and prints where they part company. It needs an image, so it reports
-every case as skipped on a machine without one rather than as passed.
+part. Each of the five is asked the same fixed set of questions once, on a
+machine that has an image of its microcode, and what it answered is recorded in
+[`conformance/against_part.json`](conformance/against_part.json) beside the
+questions. Everywhere else the models are replayed against that record, so a
+machine that will never hold an image still checks against what the hardware
+said.
 
-Where it stands today, and this is the honest state rather than a target:
+That is what makes the two backends one promise rather than two. The microcode is
+used wherever an image is present and is right by construction. The model is what
+ships, and this says how far it is from the part.
 
-| Part | Answers compared | Agreed | What is open |
-|:-----|-----------------:|-------:|:-------------|
-| DSP-1 | 56 | 55 | Command `0x34`, off by 2 and by 12 in two of its three words |
-| DSP-1B | 56 | 55 | The same command, the same amounts |
-| DSP-2 | 22 | 13 | Command `0x09`, wrong in the third and fourth bytes of nine cases |
-| DSP-3 | not swept | | It is clocked rather than commanded, so a sweep that picks commands has nothing to pick |
-| DSP-4 | not swept | | It draws rather than answers, and a sweep that reads a fixed number of words back does not describe it |
+| Part | Bytes compared | Matching the part | Where the rest is |
+|:-----|---------------:|------------------:|:------------------|
+| DSP-1 | 1,820 | 1,819 | Command `0x34` |
+| DSP-1B | 1,820 | 1,819 | The same command |
+| DSP-2 | 260 | 228 | Command `0x09`, the multiply |
+| DSP-3 | 365 | 259 | Commands `0x02`, `0x1e` and `0x38` |
+| DSP-4 | 450 | 300 | Eight of its fifteen commands |
 
-None of these is a defect in the part. The microcode is the definition, so every
-row is a place where the model is wrong or where the sweep cannot yet ask the
-question. Both remaining sweeps need the exchange the cartridge actually has with
-the part, which is what [`snes-driver-python`](https://github.com/gufranco/snes-driver-python)
-reads out of a real cartridge.
+None of those is a defect in the part. The microcode is the definition, so every
+one of them is a place the model is wrong, and each is written down in the corpus
+as a line naming the part, the command, the input and the byte. That list is a
+gate rather than a footnote: fixing one removes a line, breaking one adds a line,
+and either way [`conformance/against_part.py`](conformance/against_part.py) fails
+until the change is written down. A number in a README drifts; this cannot.
+
+The commands that read a part's own table back out are asked too, and compared
+differently. What they answer is content rather than behaviour, so the answer is
+never written down: one digest over the whole of it is. A digest settles whether
+two parts said the same thing and reconstructs nothing, and taking one over the
+whole answer means it cannot be walked back a word at a time the way a digest per
+word could. On a machine with no image those scripts report as skipped, out loud,
+rather than as passed.
+
+The questions come from the parts as well. What each command takes was found by
+feeding it one word at a time and watching for the first answer that was not an
+echo of what had just been written, because a part still waiting hands back the
+last thing it was given. And for the DSP-3, the shape of a real exchange was read
+out of the only retail cartridge that carries one, with
+[`snes-driver-python`](https://github.com/gufranco/snes-driver-python), which
+disassembles the routine that drives it rather than running the game.
 
 ### The corpus, and why it can ship
 
@@ -413,11 +435,17 @@ commands would prove nothing; each case here is a whole session.
 
 Three things the comparison settled. One command is accepted without the chip
 also saying it is busy, so the byte after it arrives on its own rather than as
-half of a word, and nothing about the command says so. Another takes four steps
-to swallow two words and answer two zeroes, and a model that zeroes its answer a
-step early hands back the second word instead of the first zero. And the ring
-walk hands the caller a cell, takes two single-byte answers about it, and hands
-over the next, which is a protocol nothing in the command names.
+half of a word, and nothing about the command says so. The tile conversion takes
+its eight bytes of bitmap one at a time and says so in its status register while
+they arrive, where feeding the same bytes as words looks identical and is never
+confirmed. And the ring walk hands the caller a cell, takes two single-byte
+answers about it, and hands over the next, which is a protocol nothing in the
+command names.
+
+One thing the part settled against the comparison. Command `0x1c` was written
+here, and in the reference the recording came from, as two words in and two
+zeroes out. Asked on its own microcode it answers the last word it was written,
+over and over, for as long as it is asked, given one word or eight.
 
 All four are in the catalogue now, because all four have a corpus behind them. A
 model with nothing behind it would make its fidelity a claim rather than a
@@ -513,11 +541,15 @@ snesdsp/
   models.py       what each part is
   version.py      rewritten by the release job and by nothing else
 conformance/
+  against_part.py   every model against its own part, byte by byte
+  record_parts.py   asks the parts those questions once, where an image is present
+  against_firmware.py runs the microcode and reports where a model parts from it
+  shapes.py       replays the exchanges a real cartridge has with a part
   corpus.py       replays a DSP-2 recording you captured yourself
   capture.py      turns a recording into shapes, and never into payload
   dsp1corpus.py   whole sessions generated from seeds, answered by the reference
-  dsp3corpus.py   whole sessions generated from seeds, answered by the reference
   dsp4corpus.py   roads generated from seeds, answered by the reference
+  cartridges.py   finds and confirms the cartridges those exchanges are read from
 ```
 
 Each module has its tests beside it as `<module>.test.py`, so a module and the cases that pin its behaviour are read together.
@@ -540,7 +572,9 @@ for f in snesdsp/*.test.py conformance/*.test.py; do python3 "$f"; done
 | DSP-4 | [`snesdsp/dsp4.test.py`](snesdsp/dsp4.test.py) | The port, the eight single-shot commands, all seven renderers, the sprite packer, the reciprocal table |
 | Corpus harness | [`conformance/corpus.test.py`](conformance/corpus.test.py) | Replay, comparison, reporting, the command line |
 | DSP-1 corpus | [`conformance/dsp1corpus.test.py`](conformance/dsp1corpus.test.py) | Session generation, recording, replay against 80 recorded sessions |
-| DSP-3 corpus | [`conformance/dsp3corpus.test.py`](conformance/dsp3corpus.test.py) | Session generation, the table-overrun exclusion, recording, replay against 60 recorded sessions |
+| Against the parts | [`conformance/against_part.test.py`](conformance/against_part.test.py) | Profiles, script generation, replay, the digest path, the recorded gaps, the report |
+| Recorder | [`conformance/record_parts.test.py`](conformance/record_parts.test.py) | Asking every part, measuring the gaps, writing the corpus, the command line |
+| Cartridge exchanges | [`conformance/shapes.test.py`](conformance/shapes.test.py) | Parsing what a driver does, replaying it, the payloads it is filled with |
 | DSP-4 corpus | [`conformance/dsp4corpus.test.py`](conformance/dsp4corpus.test.py) | Case generation, the buffer-overrun exclusion, recording, replay against 140 recorded roads |
 
 Coverage is enforced at 100% of statements and branches by [`pyproject.toml`](pyproject.toml), so a new branch without a test fails the build rather than quietly lowering the number.
@@ -555,7 +589,9 @@ Coverage is enforced at 100% of statements and branches by [`pyproject.toml`](py
 | `python3 -m coverage report` | Coverage, which fails below 100% |
 | `python3 conformance/corpus.py <file>` | Replay a DSP-2 recording |
 | `python3 conformance/dsp1corpus.py` | Replay the 80 recorded DSP-1 sessions |
-| `python3 conformance/dsp3corpus.py` | Replay the 60 recorded DSP-3 sessions |
+| `python3 conformance/against_part.py` | Replay every part's own answers against the models |
+| `python3 conformance/against_firmware.py` | Run the microcode, where an image is present |
+| `python3 conformance/record_parts.py <file>` | Ask the parts again, which needs an image |
 | `python3 conformance/dsp4corpus.py` | Replay the 140 recorded roads |
 | `pnpm install` | Install the JSON formatter |
 | `pnpm run format` | Format every JSON file |
