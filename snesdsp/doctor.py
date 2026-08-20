@@ -22,6 +22,8 @@ whether the part actually started. A doctor that reports what ought to be true i
 a doctor nobody can use.
 """
 
+from __future__ import annotations
+
 import hashlib
 import json
 import platform
@@ -107,11 +109,11 @@ def _clocks() -> Finding:
     )
 
 
-def _default_build(part: str, images: "Images") -> silicon.Silicon:
+def _default_build(part: str, images: Images) -> silicon.Silicon:
     return silicon.Silicon(part, images=images)
 
 
-def _part(name: str, images: "Images", build: "Build") -> Finding:
+def _part(name: str, images: Images, build: Build) -> Finding:
     """Whether that part is here and starts, saying exactly what stopped it."""
     wanted = silicon.SHARES_IMAGE.get(name, name)
     if wanted not in images:
@@ -139,7 +141,7 @@ def _part(name: str, images: "Images", build: "Build") -> Finding:
     return Finding(name, True, f"runs the {running} image{digest}")
 
 
-def _digest_of(wanted: str, images: "Images | None") -> str:
+def _digest_of(wanted: str, images: Images | None) -> str:
     """The digest of the file that is actually here, which is what settles a report.
 
     Two people with the same part and different answers almost always have
@@ -156,7 +158,7 @@ def _digest_of(wanted: str, images: "Images | None") -> str:
     return f", sha256 {hashlib.sha256(raw).hexdigest()}"
 
 
-def _default_beneath() -> "list[Finding]":
+def _default_beneath() -> list[Finding]:
     """The doctor of the project this one is built on, asked in its own terms.
 
     Recursive by construction: whatever that project examines, including anything
@@ -172,7 +174,7 @@ def _default_beneath() -> "list[Finding]":
     return found
 
 
-def _reach(path: "list[str] | None" = None) -> "list[str]":
+def _reach(path: list[str] | None = None) -> list[str]:
     """Put the project underneath where it can be imported from, once.
 
     It sits beside this package rather than inside it, so nothing has taught the
@@ -187,7 +189,7 @@ def _reach(path: "list[str] | None" = None) -> "list[str]":
     return path
 
 
-def _beneath(beneath: "Callable[[], Iterable[Finding]]") -> list[Finding]:
+def _beneath(beneath: Callable[[], Iterable[Finding]]) -> list[Finding]:
     """Everything the project underneath found, filed under its name."""
     try:
         found = list(beneath())
@@ -270,9 +272,9 @@ def _masks(where: Path | str = EXCHANGES) -> Finding:
 
 
 def examine(
-    images: "Images | None" = None,
-    build: "Build" = _default_build,
-    beneath: "Callable[[], Iterable[Finding]]" = _default_beneath,
+    images: Images | None = None,
+    build: Build = _default_build,
+    beneath: Callable[[], Iterable[Finding]] = _default_beneath,
 ) -> list[Finding]:
     """Everything worth looking at on this machine, in the order a reader wants it.
 
@@ -290,7 +292,7 @@ def examine(
     return found
 
 
-def report(found: "Sequence[Finding]") -> list[str]:
+def report(found: Sequence[Finding]) -> list[str]:
     """The lines a person pastes into an issue."""
     unwell = [one for one in found if not one.ok]
     lines = [f"snesdsp {VERSION} on {platform.python_version()}, {platform.system()}", ""]
@@ -304,9 +306,9 @@ def report(found: "Sequence[Finding]") -> list[str]:
 
 
 def main(
-    argv: "Sequence[str]" = (),
-    examine: "Callable[..., Sequence[Finding]]" = examine,
-    say: "Callable[[str], object]" = print,
+    argv: Sequence[str] = (),
+    examine: Callable[..., Sequence[Finding]] = examine,
+    say: Callable[[str], object] = print,
 ) -> int:
     found = examine()
     for line in report(found):

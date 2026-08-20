@@ -17,6 +17,8 @@ fault Pilotwings had come to depend on. Saying which shares which is more honest
 than collapsing the middle one into the first or refusing to name it at all.
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, override
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -44,7 +46,7 @@ class UnknownModelError(Exception):
 class Model:
     """One part: what it is, what it holds, and how to build it."""
 
-    def __init__(self, name: str, summary: str, aliases: "Iterable[str]" = ()) -> None:
+    def __init__(self, name: str, summary: str, aliases: Iterable[str] = ()) -> None:
         self.name = name
         self.summary = summary
         self.aliases = tuple(aliases)

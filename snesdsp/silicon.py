@@ -20,6 +20,8 @@ whether the part wants attention. A table of answer lengths would be one more
 thing derived by hand, which is the very thing this exists to avoid.
 """
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, override
@@ -95,7 +97,7 @@ class NeverReady(Exception):
     pass
 
 
-def _processor() -> "tuple[ModuleType, ModuleType, ModuleType] | None":
+def _processor() -> tuple[ModuleType, ModuleType, ModuleType] | None:
     """The processor package, or nothing when the submodule is absent."""
     if str(PROCESSOR) not in sys.path:
         sys.path.insert(0, str(PROCESSOR))
@@ -106,7 +108,7 @@ def _processor() -> "tuple[ModuleType, ModuleType, ModuleType] | None":
     return firmware, models, ports
 
 
-def available(held: "dict[str, tuple[Any, Path]] | None" = None) -> "dict[str, tuple[Any, Path]]":
+def available(held: dict[str, tuple[Any, Path]] | None = None) -> dict[str, tuple[Any, Path]]:
     """Every part there is an image for, by the name the part is known as.
 
     `held` is what was found on disk, passed in so the sharing below can be
@@ -124,7 +126,7 @@ def available(held: "dict[str, tuple[Any, Path]] | None" = None) -> "dict[str, t
     return held
 
 
-def why_not(held: "dict[str, tuple[Any, Path]] | None" = None) -> str | None:
+def why_not(held: dict[str, tuple[Any, Path]] | None = None) -> str | None:
     """Why this backend cannot run, or nothing when it can.
 
     `held` is passed through to `available` for the same reason it exists there:
@@ -161,8 +163,8 @@ class Silicon:
         boot: int = BOOT_STEPS,
         gap: int = GAP,
         image: bytes | None = None,
-        identity: "Any | None" = None,
-        images: "dict[str, tuple[Any, Path]] | None" = None,
+        identity: Any | None = None,
+        images: dict[str, tuple[Any, Path]] | None = None,
     ) -> None:
         found = _processor()
         if found is None:
@@ -213,7 +215,7 @@ class Silicon:
         for _ in range(self.gap if count is None else count):
             self.chip.step()
 
-    def elapsed(self, master_clocks: int) -> "Silicon":
+    def elapsed(self, master_clocks: int) -> Silicon:
         """Run the part for as long as the console spent, in the console's clocks.
 
         What an emulator calls instead of guessing. The conversion is the two
@@ -229,7 +231,7 @@ class Silicon:
             return self.read_status()
         return self.read()
 
-    def write_bus(self, address: int, value: int) -> "Silicon":
+    def write_bus(self, address: int, value: int) -> Silicon:
         """One byte in, to whichever side of the part the address names."""
         if address >> STATUS_BIT & 1:
             self.console.write(self._ports.STATUS, value & 0xFF)
