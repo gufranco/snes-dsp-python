@@ -28,6 +28,7 @@ back to a guess.
 
 from .models import MODELS, SHARES_MICROCODE, UnknownModelError, describe
 from .silicon import NeverReady, NoFirmware, Silicon, available, why_not
+from .timing import DSP_CLOCK, GAP, MASTER_CLOCK, clock_of, steps_for
 from .version import VERSION
 
 __version__ = VERSION
@@ -45,6 +46,9 @@ def Dsp(model=DEFAULT_MODEL, **options):  # noqa: N802
 
 
 __all__ = [
+    "DSP_CLOCK",
+    "GAP",
+    "MASTER_CLOCK",
     "MODELS",
     "SHARES_MICROCODE",
     "Dsp",
@@ -54,6 +58,8 @@ __all__ = [
     "UnknownModelError",
     "__version__",
     "available",
+    "clock_of",
     "describe",
+    "steps_for",
     "why_not",
 ]

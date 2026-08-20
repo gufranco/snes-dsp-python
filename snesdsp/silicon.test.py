@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from snesdsp import silicon
+from snesdsp import silicon, timing
 
 PRESENT = silicon.available()
 
@@ -98,6 +98,108 @@ class AvailabilityTest(unittest.TestCase):
 
     def test_the_reason_is_the_same_one_the_refusal_carries(self):
         self.assertTrue(silicon.why_not() is None or isinstance(silicon.why_not(), str))
+
+
+class BusTest(unittest.TestCase):
+    """The console's side of the wire, which is an address rather than a call.
+
+    A console does not call a method on a coprocessor. It reads and writes an
+    address, and the part decides from the lowest bit of it whether that was the
+    data port or the status register. Leaving that decode to whoever calls this
+    means every caller reimplements it, and one of them gets it the wrong way
+    round.
+    """
+
+    def _built(self, **options):
+        import sys as system
+
+        system.path.insert(0, str(silicon.PROCESSOR))
+        from upd7725 import firmware
+
+        identity = firmware.Identity("made-up", "upd7725", "MADE UP", 2048, 1024)
+        image = bytes(2048 * 3 + 1024 * 2)
+        return silicon.Silicon("made-up", image=image, identity=identity, boot=64, **options)
+
+    def test_an_even_address_is_the_data_port(self):
+        chip = self._built()
+
+        self.assertEqual(chip.read_bus(0x00C000), chip.read())
+
+    def test_an_odd_address_is_the_status_register(self):
+        chip = self._built()
+
+        self.assertEqual(chip.read_bus(0x00C001), chip.read_status())
+
+    def test_only_the_lowest_bit_decides(self):
+        chip = self._built()
+
+        self.assertEqual(chip.read_bus(0x3F8000), chip.read_bus(0x008000))
+
+    def test_a_write_to_an_even_address_reaches_the_data_port(self):
+        chip = self._built()
+        before = chip.chip.registers.pc
+
+        chip.write_bus(0x00C000, 0x42)
+
+        self.assertNotEqual(chip.chip.registers.pc, before)
+
+    def test_a_write_to_an_odd_address_is_taken_as_a_status_write(self):
+        chip = self._built()
+
+        chip.write_bus(0x00C001, 0x00)
+
+        self.assertIsInstance(chip.read_status(), int)
+
+    def test_what_is_written_is_narrowed_to_a_byte(self):
+        chip = self._built()
+
+        chip.write_bus(0x00C000, 0x1FF)
+
+        self.assertIsInstance(chip.read_status(), int)
+
+
+class PacingTest(unittest.TestCase):
+    """That the part is left the time the console would have left it."""
+
+    def _built(self, **options):
+        import sys as system
+
+        system.path.insert(0, str(silicon.PROCESSOR))
+        from upd7725 import firmware
+
+        identity = firmware.Identity("made-up", "upd7725", "MADE UP", 2048, 1024)
+        image = bytes(2048 * 3 + 1024 * 2)
+        return silicon.Silicon("made-up", image=image, identity=identity, boot=64, **options)
+
+    def test_the_default_gap_is_the_one_the_console_clocks_imply(self):
+        self.assertEqual(silicon.GAP, timing.GAP)
+
+    def test_a_caller_can_say_how_long_their_console_actually_spent(self):
+        chip = self._built()
+        before = chip.chip.registers.pc
+
+        chip.elapsed(timing.MASTER_CLOCK // 1000)
+
+        self.assertNotEqual(chip.chip.registers.pc, before)
+
+    def test_more_console_time_runs_the_part_further(self):
+        one, two = self._built(), self._built()
+
+        one.elapsed(timing.SLOW_ACCESS)
+        two.elapsed(timing.SLOW_ACCESS * 100)
+
+        self.assertNotEqual(one.chip.registers.pc, two.chip.registers.pc)
+
+    def test_no_console_time_at_all_runs_it_nowhere(self):
+        chip = self._built()
+        before = chip.chip.registers.pc
+
+        chip.elapsed(0)
+
+        self.assertEqual(chip.chip.registers.pc, before)
+
+    def test_the_part_says_what_rate_it_runs_at(self):
+        self.assertEqual(self._built().clock, timing.DSP_CLOCK)
 
 
 class StatusTest(unittest.TestCase):

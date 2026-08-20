@@ -23,6 +23,8 @@ thing derived by hand, which is the very thing this exists to avoid.
 import sys
 from pathlib import Path
 
+from . import timing
+
 ROOT = Path(__file__).resolve().parent.parent
 
 PROCESSOR = ROOT / "processor"
@@ -35,13 +37,21 @@ first is speaking over the top of that, and the answers come back plausible and
 wrong rather than obviously broken.
 """
 
-GAP = 32
+GAP = timing.GAP
 """Instructions to run between one console access and the next.
 
-The console does not poll between writes, so the part has to be left room to act
-on each one. Eight is enough on every image measured; this is four times that,
-because the cost of being generous is time and the cost of being tight is an
-answer that is subtly wrong.
+Not a number chosen here. It is what the console's own clocks leave the part
+while it performs the narrowest access it can make, which is one store to a long
+address. A caller who knows how long their console actually spent says so with
+`elapsed` instead.
+"""
+
+STATUS_BIT = 0
+"""The address bit that decides whether an access is the port or the register.
+
+Even is the data port and odd is the status register. Nothing about the address
+above that bit matters, which is why a coprocessor answers across a whole window
+rather than at one address.
 """
 
 SETTLE_LIMIT = 400000
@@ -185,10 +195,44 @@ class Silicon:
         self.console = ports.Console(self.chip)
         self.step(boot)
 
+    @property
+    def clock(self):
+        """The rate this part's oscillator runs at.
+
+        One rate for the whole family, so a part built from an image that names
+        no catalogue entry still runs at the rate the cartridge crystal supplies.
+        """
+        return timing.DSP_CLOCK
+
     def step(self, count=None):
         """Run the part for a while, which is what the console's silence is."""
         for _ in range(self.gap if count is None else count):
             self.chip.step()
+
+    def elapsed(self, master_clocks):
+        """Run the part for as long as the console spent, in the console's clocks.
+
+        What an emulator calls instead of guessing. The conversion is the two
+        oscillators, so a caller who knows how many master clocks went by does
+        not have to know anything about how fast this part runs.
+        """
+        self.step(timing.steps_for(master_clocks, self.clock))
+        return self
+
+    def read_bus(self, address):
+        """One byte, from wherever on the bus the console reached for it."""
+        if address >> STATUS_BIT & 1:
+            return self.read_status()
+        return self.read()
+
+    def write_bus(self, address, value):
+        """One byte in, to whichever side of the part the address names."""
+        if address >> STATUS_BIT & 1:
+            self.console.write(self._ports.STATUS, value & 0xFF)
+            self.step()
+            return self
+        self.write(value)
+        return self
 
     @property
     def asking(self):
