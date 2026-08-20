@@ -438,6 +438,17 @@ class StarvedDecoderTest(unittest.TestCase):
         for value in answered(chip, 4):
             self.assertTrue(0 <= value <= 0xFF)
 
+    def test_a_symbol_step_that_runs_out_of_bits_stops_where_it_is(self):
+        chip = commanded(0x38, word(3) + word(3))
+        for value in (0x76, 0x10, 0x54, 0x5B, 0x6D, 0x8E):
+            chip.write(value)
+        for _ in range(2):
+            answered(chip, 2)
+            chip.write(0x76)
+            chip.write(0x10)
+
+        self.assertTrue(chip.idle)
+
     def test_a_table_that_ends_on_the_last_bit_does_not_run_into_the_tree(self):
         chip = commanded(0x38, word(3) + word(3))
         for value in (0x62, 0x88, 0xE3, 0x07):

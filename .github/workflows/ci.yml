@@ -106,6 +106,7 @@ jobs:
         run: |
           python conformance/against_firmware.py | tee report.txt
           python conformance/against_firmware.test.py -v 2>&1 | tee -a report.txt
+          python conformance/against_part.py 2>&1 | tee -a report.txt
         shell: bash
 
       - name: Say what ran and what could not
