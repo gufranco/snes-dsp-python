@@ -225,6 +225,12 @@ class SuppliedImageTest(unittest.TestCase):
 
         self.assertFalse(chip.waited())
 
+    def test_waiting_on_a_part_that_is_asking_returns_rather_than_refusing(self):
+        chip = self._built(patience=1)
+        chip.chip.registers.sr.rqm = True
+
+        self.assertIsNone(chip.settle())
+
     def test_writing_a_byte_runs_the_part_afterwards(self):
         chip = self._built()
 
