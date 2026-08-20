@@ -1,0 +1,126 @@
+{
+  "note": "What this part answered when driven through the exchanges real cartridges make. The payloads were generated from the seed named here, so nothing any cartridge carries is needed to reproduce this and none of it is stored. The digest is of the microcode that answered: a corpus taken against one image says nothing about another, so a check against a different image refuses rather than reporting a disagreement.",
+  "part": "dsp4",
+  "seed": 6109852,
+  "image": {
+    "sha256": "63ede17322541c191ed1fdf683872554a0a57306496afc43c59de7c01a6e764a"
+  },
+  "exchanges": [
+    {
+      "shape": "write1 write1 write1 read1 read1 write1 read1 read1 write1 read1 write1",
+      "said": ["00", "0b", "0b", "23", "23"]
+    },
+    {
+      "shape": "write1 write1 write1 read1 read1 write1 write1 read1 read1",
+      "said": ["ff", "ff", "ff", "00"]
+    },
+    {
+      "shape": "write1 write1 write1 read1 read1 write1 write1 write1 read1",
+      "said": ["04", "ff", "00"]
+    },
+    {
+      "shape": "write1 read1 read1 write2 write2 write2 read2 read2",
+      "said": ["ff", "00", "ffff", "ffff"]
+    },
+    {
+      "shape": "write1 write1 write1 write1 read1 write1 write1 read1",
+      "said": ["ff", "ff"]
+    },
+    {
+      "shape": "write1 read1 read1 write1 write1 read1 read1",
+      "said": ["ff", "ff", "ff", "ff"]
+    },
+    {
+      "shape": "write1 write1 write1 read1 read1 write1 write1",
+      "said": ["ff", "ff"]
+    },
+    {
+      "shape": "write1 write1 read1 read1 write1 read1 read1",
+      "said": ["ff", "ff", "ff", "ff"]
+    },
+    {
+      "shape": "write1 write1 read1 read1 write1 read1 write1",
+      "said": ["ff", "ff", "ff"]
+    },
+    {
+      "shape": "write1 write1 read1 read1 write1 write1 read1",
+      "said": ["00", "00", "00"]
+    },
+    {
+      "shape": "write1 write1 read1 write1 write1 read1 read1",
+      "said": ["ff", "ff", "ff"]
+    },
+    {
+      "shape": "write1 write1 write1 read1 read1 read1 read1",
+      "said": ["ff", "00", "00", "ff"]
+    },
+    {
+      "shape": "write1 read1 read1 write1 read1 read1",
+      "said": ["ff", "ff", "ff", "ff"]
+    },
+    {
+      "shape": "write1 read1 write1 write1 read1 write1",
+      "said": ["ff", "00"]
+    },
+    {
+      "shape": "write1 read1 read1 write1 write1 read1",
+      "said": ["ff", "ff", "ff"]
+    },
+    {
+      "shape": "write1 read1 write1 write1 read1 read1",
+      "said": ["ff", "ff", "ff"]
+    },
+    {
+      "shape": "write1 write1 write1 read1 read1",
+      "said": ["ff", "00"]
+    },
+    {
+      "shape": "write1 write1 read1 read1 write1",
+      "said": ["00", "00"]
+    },
+    {
+      "shape": "write1 write1 write1 write1 read1",
+      "said": ["00"]
+    },
+    {
+      "shape": "read1 write1 write1 read1 read1",
+      "said": ["ff", "ff", "ff"]
+    },
+    {
+      "shape": "write1 write1 write1 read1 write1",
+      "said": ["ff"]
+    },
+    {
+      "shape": "write1 write1 read1 read1",
+      "said": ["00", "00"]
+    },
+    {
+      "shape": "write1 read1 read1 write1",
+      "said": ["ff", "00"]
+    },
+    {
+      "shape": "write1 write1 read1 write1",
+      "said": ["ff"]
+    },
+    {
+      "shape": "write1 write1 write1 read1",
+      "said": ["00"]
+    },
+    {
+      "shape": "write1 read1 read1",
+      "said": ["ff", "00"]
+    },
+    {
+      "shape": "write1 write1 read1",
+      "said": ["ff"]
+    },
+    {
+      "shape": "write1 read1 write1",
+      "said": ["ff"]
+    },
+    {
+      "shape": "write1 read1",
+      "said": ["ff"]
+    }
+  ]
+}

@@ -124,23 +124,25 @@ class EntryTest(unittest.TestCase):
         for part in ("dsp1", "dsp2", "dsp3", "dsp4"):
             self.assertTrue(recorded.interesting(recorded.recorded(part)), part)
 
-    def test_each_recording_names_the_cartridge_it_came_from(self):
+    def test_each_recording_names_every_cartridge_it_came_from(self):
         import json
 
         for part in ("dsp1", "dsp2", "dsp3", "dsp4"):
             where = Path(__file__).resolve().parent / f"{part}shapes.json"
             held = json.loads(where.read_text())
 
-            for digest in ("crc32", "md5", "sha1", "sha256"):
-                self.assertIn(digest, held["readFrom"], part)
+            self.assertTrue(held["readFrom"], part)
+            for source in held["readFrom"]:
+                for digest in ("name", "crc32", "md5", "sha1", "sha256"):
+                    self.assertIn(digest, source, part)
 
-    def test_and_carries_no_byte_of_it(self):
+    def test_and_carries_no_byte_of_any_of_them(self):
         import json
 
         for part in ("dsp1", "dsp2", "dsp3", "dsp4"):
             where = Path(__file__).resolve().parent / f"{part}shapes.json"
             for one in json.loads(where.read_text())["shapes"]:
-                self.assertEqual(set(one) - {"shape", "seen"}, set(), part)
+                self.assertEqual(set(one) - {"shape", "seen", "cartridges"}, set(), part)
 
     def test_a_part_that_says_nothing_at_all_is_a_failure(self):
         found = against_cartridges.main(

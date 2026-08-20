@@ -1,0 +1,42 @@
+{
+  "note": "What this part answered when driven through the exchanges real cartridges make. The payloads were generated from the seed named here, so nothing any cartridge carries is needed to reproduce this and none of it is stored. The digest is of the microcode that answered: a corpus taken against one image says nothing about another, so a check against a different image refuses rather than reporting a disagreement.",
+  "part": "dsp3",
+  "seed": 6109852,
+  "image": {
+    "sha256": "2e635f72e4d4681148bc35429421c9b946e4f407590e74e31b93b8987b63ba90"
+  },
+  "exchanges": [
+    {
+      "shape": "write1 write1 write1 write1 write1 write1 write1 write1 write1 read2 read2 read2 read2",
+      "said": ["b479", "b479", "b479", "b479"]
+    },
+    {
+      "shape": "write1 read1 read1 write1 write2 write2 read2 read2",
+      "said": ["b9", "b9", "2df6", "1d00"]
+    },
+    {
+      "shape": "write1 write2 write2 write2 poll2 read2 read2",
+      "said": ["8484", "e5e5", "e5e5"]
+    },
+    {
+      "shape": "write1 write2 write2 write2 read2 read2",
+      "said": ["33d5", "0080"]
+    },
+    {
+      "shape": "write1 write2 poll2 read2 poll2 read2",
+      "said": ["8484", "6767", "8484", "6767"]
+    },
+    {
+      "shape": "write1 write1 write2 read2 read2",
+      "said": ["9898", "9898"]
+    },
+    {
+      "shape": "write1 write2 read2",
+      "said": ["80f8"]
+    },
+    {
+      "shape": "read1 read1 write1",
+      "said": ["80", "80"]
+    }
+  ]
+}

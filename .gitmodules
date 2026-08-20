@@ -1,3 +1,6 @@
 [submodule "nec-upd7725-python"]
 	path = nec-upd7725-python
 	url = https://github.com/gufranco/nec-upd7725-python.git
+[submodule "snes-driver-python"]
+	path = snes-driver-python
+	url = https://github.com/gufranco/snes-driver-python.git

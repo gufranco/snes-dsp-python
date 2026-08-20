@@ -23,6 +23,7 @@ a doctor nobody can use.
 """
 
 import hashlib
+import json
 import platform
 import sys
 from pathlib import Path
@@ -198,13 +199,64 @@ def _beneath(beneath):
     ]
 
 
-def _exchanges():
-    found = sorted(one.stem.replace("shapes", "") for one in EXCHANGES.glob("*shapes.json"))
+def _exchanges(where=EXCHANGES):
+    """The shapes real cartridges use, and how many games each part was read from."""
+    found = []
+    for path in sorted(Path(where).glob("*shapes.json")):
+        part = path.stem.replace("shapes", "")
+        try:
+            held = json.loads(path.read_text())
+        except ValueError as trouble:
+            found.append(f"{part} is damaged: {trouble}")
+            continue
+        sources = held.get("readFrom", [])
+        cartridges = len(sources) if isinstance(sources, list) else 1
+        found.append(f"{part} from {cartridges} cartridge{'' if cartridges == 1 else 's'}")
     return Finding(
         "exchanges",
         bool(found),
-        f"recorded for {', '.join(found)}" if found else "none recorded",
+        ", ".join(found) if found else "none recorded",
         "the files that hold what a real cartridge sends are missing from conformance/",
+    )
+
+
+def _answers(where=EXCHANGES):
+    """Whether what each part answers has been written down and can be compared.
+
+    A part whose answers are not pinned is a part where the pacing, the port
+    decode or the read semantics can change what comes back and nothing notices.
+    """
+    found = sorted(one.stem.replace("answers", "") for one in Path(where).glob("*answers.json"))
+    return Finding(
+        "recorded answers",
+        bool(found),
+        f"pinned for {', '.join(found)}" if found else "none pinned",
+        "take them with python3 conformance/answers.py --take",
+    )
+
+
+def _masks(where=EXCHANGES):
+    """Whether the DSP-1B's correction is demonstrated rather than described."""
+    path = Path(where) / "dsp1masks.json"
+    if not path.exists():
+        return Finding(
+            "mask divergence",
+            False,
+            "not swept",
+            "sweep for it with python3 conformance/masks.py --sweep",
+        )
+    try:
+        held = json.loads(path.read_text())
+    except ValueError as trouble:
+        return Finding("mask divergence", False, f"is damaged: {trouble}", "sweep it again")
+    divergences = held.get("divergences", [])
+    swept = held.get("swept", {})
+    return Finding(
+        "mask divergence",
+        bool(divergences),
+        f"{len(divergences)} inputs where the DSP-1 and DSP-1B differ, found across"
+        f" {swept.get('commands', '?')} commands x {swept.get('argumentSets', '?')} argument sets",
+        "two images that agree everywhere are one image under two names",
     )
 
 
@@ -219,6 +271,8 @@ def examine(images=None, build=_default_build, beneath=_default_beneath):
     found = [_python(), _package(), _processor(), _clocks()]
     found.extend(_part(name, held, build) for name in sorted(models.MODELS))
     found.append(_exchanges())
+    found.append(_answers())
+    found.append(_masks())
     found.extend(_beneath(beneath))
     return found
 

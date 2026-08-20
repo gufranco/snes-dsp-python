@@ -105,17 +105,32 @@ class RecordedTest(unittest.TestCase):
 
         self.assertEqual(len(shapes.recorded("dsp3", where)), 1)
 
-    def test_the_cartridge_the_shapes_were_read_from_is_named_with_its_digests(self):
-        held = json.loads((shapes.ROOT / "dsp3shapes.json").read_text())
+    def test_every_cartridge_the_shapes_came_from_is_named_with_its_digests(self):
+        held = json.loads((shapes.ROOT / "dsp1shapes.json").read_text())
 
-        for name in ("crc32", "md5", "sha1", "sha256"):
-            self.assertIn(name, held["readFrom"], name)
+        self.assertTrue(held["readFrom"])
+        for source in held["readFrom"]:
+            for name in ("name", "crc32", "md5", "sha1", "sha256"):
+                self.assertIn(name, source, name)
 
-    def test_and_no_byte_of_that_cartridge_is_in_the_file(self):
-        held = json.loads((shapes.ROOT / "dsp3shapes.json").read_text())
+    def test_no_byte_of_any_cartridge_is_in_the_file(self):
+        held = json.loads((shapes.ROOT / "dsp1shapes.json").read_text())
 
         for one in held["shapes"]:
-            self.assertEqual(set(one) - {"shape", "seen"}, set())
+            self.assertEqual(set(one) - {"shape", "seen", "cartridges"}, set())
+
+    def test_a_shape_says_how_many_of_those_cartridges_use_it(self):
+        held = json.loads((shapes.ROOT / "dsp1shapes.json").read_text())
+        sources = len(held["readFrom"])
+
+        for one in held["shapes"]:
+            self.assertGreaterEqual(one["cartridges"], 1)
+            self.assertLessEqual(one["cartridges"], sources)
+
+    def test_the_dsp1_shapes_come_from_more_than_one_game(self):
+        held = json.loads((shapes.ROOT / "dsp1shapes.json").read_text())
+
+        self.assertGreater(len(held["readFrom"]), 1)
 
 
 class InterestingTest(unittest.TestCase):

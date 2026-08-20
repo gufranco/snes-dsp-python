@@ -297,6 +297,75 @@ class ReachTest(unittest.TestCase):
         self.assertIn(str(doctor.silicon.PROCESSOR), doctor._reach())
 
 
+class CorpusTest(unittest.TestCase):
+    """The three corpora this package is settled against, reported as what is here."""
+
+    def _empty(self):
+        import tempfile
+
+        return Path(tempfile.mkdtemp())
+
+    def _damaged(self, name):
+        where = self._empty()
+        (where / name).write_text("{ not json at all")
+        return where
+
+    def test_the_shapes_say_how_many_cartridges_each_part_was_read_from(self):
+        for one in doctor.examine():
+            if one.name == "exchanges":
+                self.assertIn("cartridge", one.detail)
+
+    def test_a_shapes_file_that_is_damaged_is_reported_as_damaged(self):
+        found = doctor._exchanges(self._damaged("dsp1shapes.json"))
+
+        self.assertIn("damaged", found.detail)
+
+    def test_no_shapes_at_all_is_a_failure_that_says_where_they_go(self):
+        found = doctor._exchanges(self._empty())
+
+        self.assertFalse(found.ok)
+        self.assertIn("conformance", found.advice)
+
+    def test_the_recorded_answers_are_named_by_part(self):
+        for one in doctor.examine():
+            if one.name == "recorded answers":
+                self.assertIn("dsp1", one.detail)
+
+    def test_no_recorded_answers_says_how_to_take_them(self):
+        found = doctor._answers(self._empty())
+
+        self.assertFalse(found.ok)
+        self.assertIn("--take", found.advice)
+
+    def test_the_mask_divergence_says_how_wide_the_sweep_was(self):
+        for one in doctor.examine():
+            if one.name == "mask divergence":
+                self.assertIn("commands", one.detail)
+
+    def test_a_sweep_that_was_never_run_says_how_to_run_it(self):
+        found = doctor._masks(self._empty())
+
+        self.assertFalse(found.ok)
+        self.assertIn("--sweep", found.advice)
+
+    def test_a_swept_file_that_is_damaged_is_reported_as_damaged(self):
+        found = doctor._masks(self._damaged("dsp1masks.json"))
+
+        self.assertFalse(found.ok)
+        self.assertIn("damaged", found.detail)
+
+    def test_a_sweep_that_found_no_divergence_is_a_failure(self):
+        import json
+
+        where = self._empty()
+        (where / "dsp1masks.json").write_text(json.dumps({"divergences": [], "swept": {}}))
+
+        found = doctor._masks(where)
+
+        self.assertFalse(found.ok)
+        self.assertIn("one image under two names", found.advice)
+
+
 class ReportTest(unittest.TestCase):
     def test_the_report_has_a_line_for_every_finding(self):
         found = doctor.examine()

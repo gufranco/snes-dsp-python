@@ -1,0 +1,70 @@
+{
+  "note": "Every input found where two masks of the DSP-1 answer differently. Each case names the command, the argument words that produced it, what each mask said, and where the two answers first part company. The images that answered are named by digest: a case pinned against one pair of images says nothing about another pair.",
+  "compared": ["dsp1", "dsp1b"],
+  "images": {
+    "dsp1": "5f2e5ed06b362be023b978b5978813ecb9a07c76592454b45c2a1ed17a0de349",
+    "dsp1b": "4d42db0f36faef263d6b93f508e8c1c4ae8fc2605fd35e3390ecc02905cd420c"
+  },
+  "swept": {
+    "commands": 256,
+    "argumentSets": 16,
+    "words": 6,
+    "seed": 27
+  },
+  "divergences": [
+    {
+      "command": 4,
+      "arguments": [32484, 31434, 64378, 9350, 10319, 55733],
+      "answers": {
+        "dsp1": "b5d9b5d966408080",
+        "dsp1b": "b5d9b5d950428080"
+      },
+      "firstDifferingByte": 4
+    },
+    {
+      "command": 11,
+      "arguments": [32484, 31434, 64378, 9350, 10319, 55733],
+      "answers": {
+        "dsp1": "b5d9b5d966408080",
+        "dsp1b": "b5d9b5d950428080"
+      },
+      "firstDifferingByte": 4
+    },
+    {
+      "command": 27,
+      "arguments": [32484, 31434, 64378, 9350, 10319, 55733],
+      "answers": {
+        "dsp1": "b5d9b5d966408080",
+        "dsp1b": "b5d9b5d950428080"
+      },
+      "firstDifferingByte": 4
+    },
+    {
+      "command": 36,
+      "arguments": [32484, 31434, 64378, 9350, 10319, 55733],
+      "answers": {
+        "dsp1": "b5d9b5d966408080",
+        "dsp1b": "b5d9b5d950428080"
+      },
+      "firstDifferingByte": 4
+    },
+    {
+      "command": 43,
+      "arguments": [32484, 31434, 64378, 9350, 10319, 55733],
+      "answers": {
+        "dsp1": "b5d9b5d966408080",
+        "dsp1b": "b5d9b5d950428080"
+      },
+      "firstDifferingByte": 4
+    },
+    {
+      "command": 59,
+      "arguments": [32484, 31434, 64378, 9350, 10319, 55733],
+      "answers": {
+        "dsp1": "b5d9b5d966408080",
+        "dsp1b": "b5d9b5d950428080"
+      },
+      "firstDifferingByte": 4
+    }
+  ]
+}

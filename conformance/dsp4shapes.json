@@ -1,170 +1,235 @@
 {
-  "note": "The shapes a real cartridge uses to drive this part: which accesses it makes, in what order, and how wide each one was. No byte the cartridge carries is recorded here, and none can be recovered from this. Read out of the game named below with snes-driver-python, which disassembles the routine rather than running it.",
+  "note": "The shapes real cartridges use to drive this part: which accesses each routine makes, in what order, and how wide each one was. No byte any cartridge carries is recorded here and none can be recovered from this. Read out of the games named below, every one of them confirmed against all four of its digests first.",
   "part": "dsp4",
-  "readFrom": {
-    "name": "Top Gear 3000 (USA).sfc",
-    "title": "TOP GEAR 3000",
-    "why": "the only retail cartridge that carries a DSP-4",
-    "bytes": 1048576,
-    "layout": "lorom",
-    "crc32": "a20be998",
-    "md5": "23eaa07e3f3315fa43f4b4d94ec97a7b",
-    "sha1": "058aadf1ee719cb9e0c7333e665797f990a6381d",
-    "sha256": "6be49983976564f1fd9eff2f14f5bb41d3a0ff48573e39318088ecce286aca62"
-  },
   "producedBy": "https://github.com/gufranco/snes-driver-python",
+  "readFrom": [
+    {
+      "name": "Planet's Champ TG 3000, The (Japan).sfc",
+      "title": "PLANETS CHAMP TG3000",
+      "why": "the only game that carries the DSP-4; the Japanese release is titled The Planet's Champ TG 3000",
+      "bytes": 1048576,
+      "layout": "lorom",
+      "shapes": 38,
+      "crc32": "b9b9df06",
+      "md5": "6ae194d9f8022c9a2962a423ffbc40cc",
+      "sha1": "3e7f10e13065424a28c93871b4a1e458817d754c",
+      "sha256": "7611e662666a33a9fca7569f26f85faeb687470b0d64ae853de411c0885000f7"
+    },
+    {
+      "name": "Top Gear 3000 (Europe).sfc",
+      "title": "TOP GEAR 3000",
+      "why": "the only game that carries the DSP-4; the Japanese release is titled The Planet's Champ TG 3000",
+      "bytes": 1048576,
+      "layout": "lorom",
+      "shapes": 38,
+      "crc32": "493fdb13",
+      "md5": "462e15c018c653335ba634d3c1cd06c9",
+      "sha1": "777d8732023a300a2c566f2d48bc354e0aa1da7e",
+      "sha256": "4d7c81b0bad57a4c1c410fae4e58cd95fe25c29d7fb922778530cd457b5502e7"
+    },
+    {
+      "name": "Top Gear 3000 (USA).sfc",
+      "title": "TOP GEAR 3000",
+      "why": "the only game that carries the DSP-4; the Japanese release is titled The Planet's Champ TG 3000",
+      "bytes": 1048576,
+      "layout": "lorom",
+      "shapes": 38,
+      "crc32": "a20be998",
+      "md5": "23eaa07e3f3315fa43f4b4d94ec97a7b",
+      "sha1": "058aadf1ee719cb9e0c7333e665797f990a6381d",
+      "sha256": "6be49983976564f1fd9eff2f14f5bb41d3a0ff48573e39318088ecce286aca62"
+    }
+  ],
   "shapes": [
     {
-      "shape": "read1",
-      "seen": 42
-    },
-    {
-      "shape": "write1",
-      "seen": 35
-    },
-    {
-      "shape": "write1 read1 read1",
-      "seen": 35
-    },
-    {
-      "shape": "write1 write1 write1 read1 read1",
-      "seen": 33
-    },
-    {
-      "shape": "poll1",
-      "seen": 30
-    },
-    {
-      "shape": "write1 write1 read1 read1",
-      "seen": 22
-    },
-    {
-      "shape": "write1 read1",
-      "seen": 18
-    },
-    {
-      "shape": "write1 write1",
-      "seen": 15
+      "shape": "write1 write1 write1 read1 read1 write1 read1 read1 write1 read1 write1",
+      "seen": 3,
+      "cartridges": 3
     },
     {
       "shape": "write1 write1 write1 read1 read1 write1 write1 read1 read1",
-      "seen": 7
-    },
-    {
-      "shape": "write1 read1 read1 write1 write1 read1 read1",
-      "seen": 6
-    },
-    {
-      "shape": "write1 write1 read1",
-      "seen": 6
-    },
-    {
-      "shape": "read1 read1",
-      "seen": 5
-    },
-    {
-      "shape": "write1 read1 read1 write1 read1 read1",
-      "seen": 5
-    },
-    {
-      "shape": "read1 read1 read1 read1",
-      "seen": 4
-    },
-    {
-      "shape": "write1 read1 read1 write2 write2 write2 read2 read2",
-      "seen": 4
-    },
-    {
-      "shape": "write1 read1 write1",
-      "seen": 4
-    },
-    {
-      "shape": "write1 read1 read1 write1",
-      "seen": 3
-    },
-    {
-      "shape": "write1 read1 write1 write1 read1 write1",
-      "seen": 3
-    },
-    {
-      "shape": "write1 write1 read1 read1 write1",
-      "seen": 3
-    },
-    {
-      "shape": "write1 write1 write1 write1 read1",
-      "seen": 3
-    },
-    {
-      "shape": "read1 poll1 read1",
-      "seen": 2
-    },
-    {
-      "shape": "write1 write1 read1 write1",
-      "seen": 2
-    },
-    {
-      "shape": "write1 write1 write1 read1 read1 write1 write1",
-      "seen": 2
+      "seen": 21,
+      "cartridges": 3
     },
     {
       "shape": "write1 write1 write1 read1 read1 write1 write1 write1 read1",
-      "seen": 2
+      "seen": 6,
+      "cartridges": 3
     },
     {
-      "shape": "poll1 poll1",
-      "seen": 1
-    },
-    {
-      "shape": "read1 write1 write1 read1 read1",
-      "seen": 1
-    },
-    {
-      "shape": "write1 read1 read1 write1 write1 read1",
-      "seen": 1
-    },
-    {
-      "shape": "write1 read1 write1 write1 read1 read1",
-      "seen": 1
-    },
-    {
-      "shape": "write1 write1 read1 read1 write1 read1 read1",
-      "seen": 1
-    },
-    {
-      "shape": "write1 write1 read1 read1 write1 read1 write1",
-      "seen": 1
-    },
-    {
-      "shape": "write1 write1 read1 read1 write1 write1 read1",
-      "seen": 1
-    },
-    {
-      "shape": "write1 write1 read1 write1 write1 read1 read1",
-      "seen": 1
-    },
-    {
-      "shape": "write1 write1 write1 read1",
-      "seen": 1
-    },
-    {
-      "shape": "write1 write1 write1 read1 read1 read1 read1",
-      "seen": 1
-    },
-    {
-      "shape": "write1 write1 write1 read1 read1 write1 read1 read1 write1 read1 write1",
-      "seen": 1
-    },
-    {
-      "shape": "write1 write1 write1 read1 write1",
-      "seen": 1
+      "shape": "write1 read1 read1 write2 write2 write2 read2 read2",
+      "seen": 12,
+      "cartridges": 3
     },
     {
       "shape": "write1 write1 write1 write1 read1 write1 write1 read1",
-      "seen": 1
+      "seen": 3,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 read1 read1 write1 write1 read1 read1",
+      "seen": 18,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 write1 write1 read1 read1 write1 write1",
+      "seen": 6,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 write1 read1 read1 write1 read1 read1",
+      "seen": 3,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 write1 read1 read1 write1 read1 write1",
+      "seen": 3,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 write1 read1 read1 write1 write1 read1",
+      "seen": 3,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 write1 read1 write1 write1 read1 read1",
+      "seen": 3,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 write1 write1 read1 read1 read1 read1",
+      "seen": 3,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 read1 read1 write1 read1 read1",
+      "seen": 15,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 read1 write1 write1 read1 write1",
+      "seen": 9,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 read1 read1 write1 write1 read1",
+      "seen": 3,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 read1 write1 write1 read1 read1",
+      "seen": 3,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 write1 write1 read1 read1",
+      "seen": 99,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 write1 read1 read1 write1",
+      "seen": 9,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 write1 write1 write1 read1",
+      "seen": 9,
+      "cartridges": 3
+    },
+    {
+      "shape": "read1 write1 write1 read1 read1",
+      "seen": 3,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 write1 write1 read1 write1",
+      "seen": 3,
+      "cartridges": 3
     },
     {
       "shape": "write1 write1 write1 write1 write1",
-      "seen": 1
+      "seen": 3,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 write1 read1 read1",
+      "seen": 66,
+      "cartridges": 3
+    },
+    {
+      "shape": "read1 read1 read1 read1",
+      "seen": 12,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 read1 read1 write1",
+      "seen": 9,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 write1 read1 write1",
+      "seen": 6,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 write1 write1 read1",
+      "seen": 3,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 read1 read1",
+      "seen": 106,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 write1 read1",
+      "seen": 18,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 read1 write1",
+      "seen": 12,
+      "cartridges": 3
+    },
+    {
+      "shape": "read1 poll1 read1",
+      "seen": 6,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 read1",
+      "seen": 54,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1 write1",
+      "seen": 45,
+      "cartridges": 3
+    },
+    {
+      "shape": "read1 read1",
+      "seen": 15,
+      "cartridges": 3
+    },
+    {
+      "shape": "poll1 poll1",
+      "seen": 3,
+      "cartridges": 3
+    },
+    {
+      "shape": "read1",
+      "seen": 127,
+      "cartridges": 3
+    },
+    {
+      "shape": "write1",
+      "seen": 107,
+      "cartridges": 3
+    },
+    {
+      "shape": "poll1",
+      "seen": 90,
+      "cartridges": 3
     }
   ]
 }

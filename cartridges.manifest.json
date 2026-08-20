@@ -3,12 +3,15 @@
   "canonical": {
     "digest": "sha256 decides. crc32, md5 and sha1 are published beside it so a copy can be cross-checked against a database that keys on one of those, and none of them decides anything alone: crc32 is a 32-bit error code, and md5 and sha1 are both collision-broken.",
     "why": "A cartridge is read here for one thing: the routine inside it that drives the part. That routine states how many bytes go each way and how wide each transfer is, which is written down nowhere else.",
-    "retailOnly": "Only retail releases are listed. A hack or a translation can carry altered code, so a driver routine read out of one would describe that edit rather than the part."
+    "retailOnly": "Only retail releases are listed. A hack or a translation can carry altered code, so a driver routine read out of one would describe that edit rather than the part.",
+    "part": "Which part a cartridge drives, so shapes read out of it are grouped with the part they describe. A cartridge declaring the wrong part would be driven through a protocol its game never used, so every claim here is checked by driving that part with those shapes rather than left as a note."
   },
   "cartridges": [
     {
       "name": "3-jigen Kakutou Ballz (Japan).sfc",
       "title": "Ballz",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 1048576,
       "chipset": "0x03",
       "crc32": "f0810694",
@@ -19,6 +22,8 @@
     {
       "name": "Ace o Nerae! (Japan).sfc",
       "title": "\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd!",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 1048576,
       "chipset": "0x03",
       "crc32": "6c5f1a18",
@@ -29,6 +34,8 @@
     {
       "name": "Ballz 3D - Fighting at Its Ballziest (USA).sfc",
       "title": "Ballz",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 1048576,
       "chipset": "0x03",
       "crc32": "1c058b7d",
@@ -39,6 +46,8 @@
     {
       "name": "Battle Racers (Japan).sfc",
       "title": "\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 1048576,
       "chipset": "0x05",
       "crc32": "64b76ceb",
@@ -49,6 +58,8 @@
     {
       "name": "Bike Daisuki! Hashiriya Tamashii (Japan).sfc",
       "title": "HASHIRIYA",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 524288,
       "chipset": "0x05",
       "crc32": "b363fc99",
@@ -59,6 +70,8 @@
     {
       "name": "Campus Challenge '92 - Pilotwings (USA).sfc",
       "title": "PILOTWINGS",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 524288,
       "chipset": "0x03",
       "crc32": "9bfe8684",
@@ -69,6 +82,8 @@
     {
       "name": "Drift King Shutokou Battle '94 - Tsuchiya Keiichi & Bandou Masaaki (Japan).sfc",
       "title": "SYUTOKO BATTLE 94",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 1572864,
       "chipset": "0x05",
       "crc32": "33ce298f",
@@ -79,6 +94,8 @@
     {
       "name": "Drift King Shutokou Battle 2 - Tsuchiya Keiichi & Bandou Masaaki (Japan).sfc",
       "title": "SYUTOKO BATTLE 2",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 1572864,
       "chipset": "0x05",
       "crc32": "87aab79a",
@@ -89,6 +106,8 @@
     {
       "name": "Dungeon Master (Europe).sfc",
       "title": "DUNGEON MASTER",
+      "part": "dsp2",
+      "why": "the only game that carries the DSP-2, in its three regional releases",
       "bytes": 1048576,
       "chipset": "0x05",
       "crc32": "89a67adf",
@@ -99,6 +118,8 @@
     {
       "name": "Dungeon Master (Japan) (Rev 1).sfc",
       "title": "DUNGEON MASTER",
+      "part": "dsp2",
+      "why": "the only game that carries the DSP-2, in its three regional releases",
       "bytes": 1048576,
       "chipset": "0x05",
       "crc32": "aa79fa33",
@@ -109,6 +130,8 @@
     {
       "name": "Dungeon Master (USA).sfc",
       "title": "DUNGEON MASTER",
+      "part": "dsp2",
+      "why": "the only game that carries the DSP-2, in its three regional releases",
       "bytes": 1048576,
       "chipset": "0x05",
       "crc32": "0dfd9ceb",
@@ -119,6 +142,8 @@
     {
       "name": "Final Stretch (Japan).sfc",
       "title": "FINAL STRETCH",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 1572864,
       "chipset": "0x05",
       "crc32": "8d29f41f",
@@ -129,6 +154,8 @@
     {
       "name": "Hanguk Pro Yagu (Korea).sfc",
       "title": "KOREAN LEAGUE",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 1572864,
       "chipset": "0x05",
       "crc32": "a21fb1d5",
@@ -139,6 +166,8 @@
     {
       "name": "Lock On (USA).sfc",
       "title": "Lock On",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 524288,
       "chipset": "0x03",
       "crc32": "84f7e078",
@@ -149,6 +178,8 @@
     {
       "name": "Michael Andretti's Indy Car Challenge (Japan).sfc",
       "title": "INDY CAR CHALLENGE",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 1048576,
       "chipset": "0x03",
       "crc32": "1128572b",
@@ -159,6 +190,8 @@
     {
       "name": "Michael Andretti's Indy Car Challenge (USA).sfc",
       "title": "INDY CAR CHALLENGE",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 1048576,
       "chipset": "0x03",
       "crc32": "0fdb210e",
@@ -169,6 +202,8 @@
     {
       "name": "Pilotwings (Europe).sfc",
       "title": "PILOTWINGS",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 524288,
       "chipset": "0x03",
       "crc32": "def45776",
@@ -179,6 +214,8 @@
     {
       "name": "Pilotwings (Japan).sfc",
       "title": "PILOTWINGS",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 524288,
       "chipset": "0x03",
       "crc32": "77871727",
@@ -189,6 +226,8 @@
     {
       "name": "Pilotwings (USA).sfc",
       "title": "PILOTWINGS",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 524288,
       "chipset": "0x03",
       "crc32": "266c44ed",
@@ -199,6 +238,8 @@
     {
       "name": "Planet's Champ TG 3000, The (Japan).sfc",
       "title": "PLANETS CHAMP TG3000",
+      "part": "dsp4",
+      "why": "the only game that carries the DSP-4; the Japanese release is titled The Planet's Champ TG 3000",
       "bytes": 1048576,
       "chipset": "0x03",
       "crc32": "b9b9df06",
@@ -209,6 +250,8 @@
     {
       "name": "PowerFest 94 - Super Mario Kart (USA).sfc",
       "title": "SUPER MARIO KART",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 524288,
       "chipset": "0x05",
       "crc32": "9974b593",
@@ -219,6 +262,8 @@
     {
       "name": "SD Gundam GX (Japan).sfc",
       "title": "SD\ufffd\ufffd\ufffd\ufffd\ufffd\ufffdGX",
+      "part": "dsp3",
+      "why": "the only game that carries the DSP-3",
       "bytes": 1048576,
       "chipset": "0x05",
       "crc32": "4dc3d903",
@@ -229,6 +274,8 @@
     {
       "name": "Soukou Kihei Votoms - The Battling Road (Japan).sfc",
       "title": "\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd \ufffd\ufffd\ufffd\ufffd\ufffd\ufffd",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 1048576,
       "chipset": "0x03",
       "crc32": "c00f0bc9",
@@ -239,6 +286,8 @@
     {
       "name": "Super 3D Baseball (Japan).sfc",
       "title": "SUPER 3D BASEBALL",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 1572864,
       "chipset": "0x05",
       "crc32": "304123c2",
@@ -249,6 +298,8 @@
     {
       "name": "Super Air Diver (Europe).sfc",
       "title": "SUPER AIR DIVER",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 524288,
       "chipset": "0x03",
       "crc32": "0b57c764",
@@ -259,6 +310,8 @@
     {
       "name": "Super Air Diver (Japan).sfc",
       "title": "SUPER AIR DIVER",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 524288,
       "chipset": "0x03",
       "crc32": "971e74ba",
@@ -269,6 +322,8 @@
     {
       "name": "Super Air Diver 2 (Japan) (En).sfc",
       "title": "SUPER AIRDIVER2",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 1310720,
       "chipset": "0x03",
       "crc32": "a6ad6b0f",
@@ -279,6 +334,8 @@
     {
       "name": "Super Bases Loaded 2 (USA).sfc",
       "title": "SUPER BASES LOADED 2",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 1572864,
       "chipset": "0x05",
       "crc32": "e14128ca",
@@ -289,6 +346,8 @@
     {
       "name": "Super F1 Circus Gaiden (Japan).sfc",
       "title": "SUPERF1CIRCUS\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 1310720,
       "chipset": "0x05",
       "crc32": "6b8ac3b3",
@@ -299,6 +358,8 @@
     {
       "name": "Super Mario Kart (Europe).sfc",
       "title": "SUPER MARIO KART",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 524288,
       "chipset": "0x05",
       "crc32": "56410e5e",
@@ -309,6 +370,8 @@
     {
       "name": "Super Mario Kart (Japan).sfc",
       "title": "SUPER MARIO KART",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 524288,
       "chipset": "0x05",
       "crc32": "c8002453",
@@ -319,6 +382,8 @@
     {
       "name": "Super Mario Kart (USA).sfc",
       "title": "SUPER MARIO KART",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 524288,
       "chipset": "0x05",
       "crc32": "cd80db86",
@@ -329,6 +394,8 @@
     {
       "name": "Suzuka 8 Hours (Japan) (En).sfc",
       "title": "SUZUKA 8Hours",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 1048576,
       "chipset": "0x05",
       "crc32": "b846b00d",
@@ -339,6 +406,8 @@
     {
       "name": "Suzuka 8 Hours (USA).sfc",
       "title": "SUZUKA 8Hours",
+      "part": "dsp1",
+      "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 1048576,
       "chipset": "0x03",
       "crc32": "54740b9b",
@@ -349,6 +418,8 @@
     {
       "name": "Top Gear 3000 (Europe).sfc",
       "title": "TOP GEAR 3000",
+      "part": "dsp4",
+      "why": "the only game that carries the DSP-4; the Japanese release is titled The Planet's Champ TG 3000",
       "bytes": 1048576,
       "chipset": "0x03",
       "crc32": "493fdb13",
@@ -359,6 +430,8 @@
     {
       "name": "Top Gear 3000 (USA).sfc",
       "title": "TOP GEAR 3000",
+      "part": "dsp4",
+      "why": "the only game that carries the DSP-4; the Japanese release is titled The Planet's Champ TG 3000",
       "bytes": 1048576,
       "chipset": "0x03",
       "crc32": "a20be998",

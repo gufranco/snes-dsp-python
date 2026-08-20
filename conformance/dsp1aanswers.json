@@ -1,0 +1,9 @@
+{
+  "note": "What this part answered when driven through the exchanges real cartridges make. The payloads were generated from the seed named here, so nothing any cartridge carries is needed to reproduce this and none of it is stored. The digest is of the microcode that answered: a corpus taken against one image says nothing about another, so a check against a different image refuses rather than reporting a disagreement.",
+  "part": "dsp1a",
+  "seed": 6109852,
+  "image": {
+    "sha256": "5f2e5ed06b362be023b978b5978813ecb9a07c76592454b45c2a1ed17a0de349"
+  },
+  "exchanges": []
+}

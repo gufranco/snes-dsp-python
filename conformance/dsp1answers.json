@@ -1,0 +1,94 @@
+{
+  "note": "What this part answered when driven through the exchanges real cartridges make. The payloads were generated from the seed named here, so nothing any cartridge carries is needed to reproduce this and none of it is stored. The digest is of the microcode that answered: a corpus taken against one image says nothing about another, so a check against a different image refuses rather than reporting a disagreement.",
+  "part": "dsp1",
+  "seed": 6109852,
+  "image": {
+    "sha256": "5f2e5ed06b362be023b978b5978813ecb9a07c76592454b45c2a1ed17a0de349"
+  },
+  "exchanges": [
+    {
+      "shape": "poll1 write1 write2 write2 write2 write2 write2 write2 write2 poll2 read2 read2 read2 read2 write1 write2 read2 read2 read2 read2 poll2 write2 write2 write2 write2",
+      "said": ["84", "1010", "4bbb", "a260", "de80", "8080", "a734", "a734", "59fd", "041f", "8080"]
+    },
+    {
+      "shape": "write1 write2 write2 write2 write2 write2 write2 write2 poll2 read2 read2 read2 read2",
+      "said": ["9090", "0000", "0000", "0000", "0000"]
+    },
+    {
+      "shape": "poll1 write1 write2 write2 write2 read2 read2 write1 write2 write2 write2 read2",
+      "said": ["84", "2208", "2280", "b58f"]
+    },
+    {
+      "shape": "write1 write2 poll2 read2 read2 read2 read2 poll2 write2 write2 write2 write2",
+      "said": ["8080", "78ef", "78ef", "78ef", "78ef", "8080"]
+    },
+    {
+      "shape": "write1 write2 write2 write2 write2 write2 write2 write2 poll2 read2 read2",
+      "said": ["9090", "1abf", "1abf"]
+    },
+    {
+      "shape": "write1 write2 read2 read2 read2 read2 poll2 write2 write2 write2 write2",
+      "said": ["6c19", "6c19", "0000", "0000", "8080"]
+    },
+    {
+      "shape": "poll1 read1 read1 read1 write1 write2 write2 write2",
+      "said": ["84", "80", "80", "80"]
+    },
+    {
+      "shape": "poll1 write1 write2 write2 write2 read2 read2 read2",
+      "said": ["84", "9f2e", "9f2e", "9f2e"]
+    },
+    {
+      "shape": "write1 write2 write2 write2 poll1 read2 read2",
+      "said": ["80", "ca4f", "d3fd"]
+    },
+    {
+      "shape": "write1 write2 write2 write2 poll2 read2 read2",
+      "said": ["0000", "0000", "0000"]
+    },
+    {
+      "shape": "poll1 write1 write2 write2 write2 read2",
+      "said": ["84", "043f"]
+    },
+    {
+      "shape": "write1 write2 write2 write2 write2 read2",
+      "said": ["7c7c"]
+    },
+    {
+      "shape": "write1 write2 write2 poll2 read2 read2",
+      "said": ["8080", "f3e2", "f3e2"]
+    },
+    {
+      "shape": "write1 write2 write2 write2 poll2 read2",
+      "said": ["8080", "7fa4"]
+    },
+    {
+      "shape": "write1 write2 write2 read2 read2",
+      "said": ["5353", "5353"]
+    },
+    {
+      "shape": "write1 write2 write2 read2",
+      "said": ["3600"]
+    },
+    {
+      "shape": "write1 poll1 read1 read1",
+      "said": ["84", "81", "81"]
+    },
+    {
+      "shape": "write1 write1 poll1 read1",
+      "said": ["84", "af"]
+    },
+    {
+      "shape": "write1 write1 read1",
+      "said": ["00"]
+    },
+    {
+      "shape": "write1 read1 read1",
+      "said": ["fb", "fb"]
+    },
+    {
+      "shape": "write1 read1",
+      "said": ["55"]
+    }
+  ]
+}

@@ -1,0 +1,481 @@
+import json
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import answers
+
+
+class Complaint(Exception):
+    pass
+
+
+class Puppet:
+    """A part that answers by counting, so a corpus can be checked without one."""
+
+    def __init__(self, first=0x10):
+        self.next = first
+        self.written = []
+
+    def write(self, value):
+        self.written.append(value)
+
+    def read(self):
+        self.next = (self.next + 1) & 0xFF
+        return self.next
+
+    def read_status(self):
+        return 0x80
+
+
+def puppets(first=0x10):
+    def build(_part):
+        return Puppet(first)
+
+    return build
+
+
+def a_shape(shape="write1 read1", seen=3, cartridges=1):
+    return {"shape": shape, "seen": seen, "cartridges": cartridges}
+
+
+def some_shapes(*held):
+    return list(held) or [a_shape()]
+
+
+class TakingTest(unittest.TestCase):
+    """What a part said, taken in a form that can be written down and compared."""
+
+    def test_every_exchange_is_recorded_under_its_shape(self):
+        found = answers.take("dsp1", puppets(), shapes=some_shapes())
+
+        self.assertEqual(found["exchanges"][0]["shape"], "write1 read1")
+
+    def test_and_what_came_back_is_recorded_as_hex(self):
+        found = answers.take("dsp1", puppets(), shapes=some_shapes())
+
+        self.assertEqual(found["exchanges"][0]["said"], ["11"])
+
+    def test_a_two_byte_read_is_one_run_of_two_bytes(self):
+        found = answers.take("dsp1", puppets(), shapes=some_shapes(a_shape("write1 read2")))
+
+        self.assertEqual(found["exchanges"][0]["said"], ["1112"])
+
+    def test_a_poll_is_recorded_beside_the_reads(self):
+        found = answers.take("dsp1", puppets(), shapes=some_shapes(a_shape("write1 poll1 read1")))
+
+        self.assertEqual(found["exchanges"][0]["said"], ["80", "11"])
+
+    def test_the_seed_the_payloads_came_from_is_recorded(self):
+        found = answers.take("dsp1", puppets(), shapes=some_shapes(), seed=1234)
+
+        self.assertEqual(found["seed"], 1234)
+
+    def test_and_the_part_it_was_taken_from(self):
+        self.assertEqual(answers.take("dsp2", puppets(), shapes=some_shapes())["part"], "dsp2")
+
+    def test_the_digest_of_the_image_that_answered_is_recorded(self):
+        found = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _part: "abc123")
+
+        self.assertEqual(found["image"]["sha256"], "abc123")
+
+    def test_a_shape_that_reads_nothing_is_left_out(self):
+        found = answers.take("dsp1", puppets(), shapes=some_shapes(a_shape("write1 write1")))
+
+        self.assertEqual(found["exchanges"], [])
+
+    def test_and_so_is_one_that_writes_nothing(self):
+        found = answers.take("dsp1", puppets(), shapes=some_shapes(a_shape("read1 read1")))
+
+        self.assertEqual(found["exchanges"], [])
+
+    def test_the_same_seed_takes_the_same_answers_twice(self):
+        first = answers.take("dsp1", puppets(), shapes=some_shapes())
+        second = answers.take("dsp1", puppets(), shapes=some_shapes())
+
+        self.assertEqual(first, second)
+
+    def test_and_a_part_that_answers_differently_is_recorded_differently(self):
+        first = answers.take("dsp1", puppets(first=0x10), shapes=some_shapes())
+        second = answers.take("dsp1", puppets(first=0x20), shapes=some_shapes())
+
+        self.assertNotEqual(first["exchanges"], second["exchanges"])
+
+
+class FamilyTest(unittest.TestCase):
+    """Which part's shapes drive another, and why that is what finds a divergence."""
+
+    def test_a_part_with_its_own_shapes_uses_them(self):
+        self.assertEqual(answers.shapes_named("dsp2"), "dsp2")
+
+    def test_the_die_shrink_is_driven_by_the_part_it_shrank(self):
+        self.assertEqual(answers.shapes_named("dsp1a"), "dsp1")
+
+    def test_and_so_is_the_later_mask(self):
+        self.assertEqual(answers.shapes_named("dsp1b"), "dsp1")
+
+    def test_every_part_that_shares_shapes_is_a_part_this_covers(self):
+        from snesdsp import models
+
+        for part, like in answers.DRIVEN_LIKE.items():
+            self.assertIn(part, models.MODELS)
+            self.assertIn(like, models.MODELS)
+
+    def test_a_part_reads_the_shapes_of_whoever_drives_it(self):
+        found = answers._default_shapes("dsp1a")
+        wanted = answers._default_shapes("dsp1")
+
+        self.assertEqual(found, wanted)
+
+    def test_and_a_part_with_no_shapes_recorded_reads_none(self):
+        original = answers.ROOT
+        answers.ROOT = Path(tempfile.mkdtemp())
+        self.addCleanup(setattr, answers, "ROOT", original)
+
+        self.assertEqual(answers._default_shapes("dsp1"), [])
+
+
+class CheckingTest(unittest.TestCase):
+    """A corpus against the part on this machine, which is the whole point."""
+
+    def _corpus(self, **held):
+        found = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _part: "abc123")
+        found.update(held)
+        return found
+
+    def test_a_part_that_answers_what_was_recorded_agrees(self):
+        found = answers.check(
+            self._corpus(), puppets(), shapes=some_shapes(), digest=lambda _part: "abc123"
+        )
+
+        self.assertEqual(found.disagreements, ())
+        self.assertTrue(found.agrees)
+
+    def test_a_part_that_answers_otherwise_disagrees(self):
+        found = answers.check(
+            self._corpus(),
+            puppets(first=0x20),
+            shapes=some_shapes(),
+            digest=lambda _part: "abc123",
+        )
+
+        self.assertFalse(found.agrees)
+        self.assertEqual(len(found.disagreements), 1)
+
+    def test_and_the_disagreement_carries_both_answers(self):
+        found = answers.check(
+            self._corpus(),
+            puppets(first=0x20),
+            shapes=some_shapes(),
+            digest=lambda _part: "abc123",
+        )
+
+        shape, wanted, got = found.disagreements[0]
+        self.assertEqual(shape, "write1 read1")
+        self.assertEqual(wanted, ["11"])
+        self.assertEqual(got, ["21"])
+
+    def test_a_corpus_taken_from_another_image_is_refused_rather_than_compared(self):
+        with self.assertRaises(answers.WrongImage) as raised:
+            answers.check(
+                self._corpus(),
+                puppets(),
+                shapes=some_shapes(),
+                digest=lambda _part: "something else",
+            )
+
+        self.assertIn("abc123", str(raised.exception))
+
+    def test_and_the_refusal_says_what_this_machine_holds(self):
+        with self.assertRaises(answers.WrongImage) as raised:
+            answers.check(
+                self._corpus(),
+                puppets(),
+                shapes=some_shapes(),
+                digest=lambda _part: "something else",
+            )
+
+        self.assertIn("something else", str(raised.exception))
+
+    def test_a_shape_the_corpus_does_not_carry_is_reported_as_unrecorded(self):
+        found = answers.check(
+            self._corpus(),
+            puppets(),
+            shapes=some_shapes(a_shape(), a_shape("write1 write1 read1")),
+            digest=lambda _part: "abc123",
+        )
+
+        self.assertEqual(found.unrecorded, ("write1 write1 read1",))
+
+    def test_and_a_shape_the_corpus_carries_that_is_gone_is_reported_too(self):
+        corpus = self._corpus()
+        corpus["exchanges"].append({"shape": "write1 read2", "said": ["1112"]})
+
+        found = answers.check(
+            corpus, puppets(), shapes=some_shapes(), digest=lambda _part: "abc123"
+        )
+
+        self.assertEqual(found.vanished, ("write1 read2",))
+
+    def test_an_unrecorded_shape_is_not_a_disagreement(self):
+        found = answers.check(
+            self._corpus(),
+            puppets(),
+            shapes=some_shapes(a_shape(), a_shape("write1 write1 read1")),
+            digest=lambda _part: "abc123",
+        )
+
+        self.assertTrue(found.agrees)
+
+    def test_but_a_vanished_one_is_not_agreement_either(self):
+        corpus = self._corpus()
+        corpus["exchanges"].append({"shape": "write1 read2", "said": ["1112"]})
+
+        found = answers.check(
+            corpus, puppets(), shapes=some_shapes(), digest=lambda _part: "abc123"
+        )
+
+        self.assertFalse(found.agrees)
+
+    def test_the_seed_the_corpus_names_is_the_seed_the_check_uses(self):
+        corpus = answers.take(
+            "dsp1", puppets(), shapes=some_shapes(), seed=99, digest=lambda _part: "abc123"
+        )
+        asked = []
+
+        answers.check(
+            corpus,
+            puppets(),
+            shapes=some_shapes(),
+            digest=lambda _part: "abc123",
+            rolls=lambda seed: asked.append(seed) or __import__("random").Random(seed),
+        )
+
+        self.assertEqual(asked, [99])
+
+
+class StoringTest(unittest.TestCase):
+    def test_a_corpus_is_written_where_the_part_names(self):
+        where = Path(tempfile.mkdtemp())
+
+        answers.store(
+            answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _p: "abc"), where
+        )
+
+        self.assertTrue((where / "dsp1answers.json").exists())
+
+    def test_and_reads_back_as_what_was_written(self):
+        where = Path(tempfile.mkdtemp())
+        taken = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _p: "abc")
+
+        answers.store(taken, where)
+
+        self.assertEqual(answers.load("dsp1", where), taken)
+
+    def test_a_part_with_no_corpus_reads_back_as_nothing(self):
+        self.assertIsNone(answers.load("dsp1", Path(tempfile.mkdtemp())))
+
+    def test_a_corpus_holding_another_part_is_refused(self):
+        where = Path(tempfile.mkdtemp())
+        (where / "dsp1answers.json").write_text(json.dumps({"part": "dsp2", "exchanges": []}))
+
+        with self.assertRaises(answers.Malformed):
+            answers.load("dsp1", where)
+
+    def test_an_exchange_carries_the_shape_and_the_answer_and_nothing_else(self):
+        taken = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _p: "abc")
+
+        self.assertEqual(sorted(taken["exchanges"][0]), ["said", "shape"])
+
+    def test_so_the_payload_that_was_sent_is_not_stored(self):
+        taken = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _p: "abc")
+
+        self.assertNotIn("payload", json.dumps(taken["exchanges"]))
+        self.assertNotIn("wrote", json.dumps(taken["exchanges"]))
+
+    def test_and_the_seed_is_enough_to_send_it_again(self):
+        first = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _p: "abc")
+        second = answers.take(
+            "dsp1", puppets(), shapes=some_shapes(), seed=first["seed"], digest=lambda _p: "abc"
+        )
+
+        self.assertEqual(first["exchanges"], second["exchanges"])
+
+
+class ReportTest(unittest.TestCase):
+    def _found(self, **held):
+        return answers.Checked(
+            **{
+                "part": "dsp1",
+                "disagreements": (),
+                "unrecorded": (),
+                "vanished": (),
+                "checked": 3,
+                **held,
+            }
+        )
+
+    def test_a_run_that_agrees_says_how_much_it_checked(self):
+        self.assertIn("3", " ".join(answers.lines_for(self._found())))
+
+    def test_a_disagreement_names_the_shape_and_both_answers(self):
+        lines = answers.lines_for(self._found(disagreements=(("write1 read1", ["11"], ["21"]),)))
+
+        text = " ".join(lines)
+        self.assertIn("write1 read1", text)
+        self.assertIn("11", text)
+        self.assertIn("21", text)
+
+    def test_an_unrecorded_shape_is_named_as_something_to_take(self):
+        lines = answers.lines_for(self._found(unrecorded=("write1 read2",)))
+
+        self.assertIn("write1 read2", " ".join(lines))
+
+    def test_and_a_vanished_one_as_something_that_used_to_be_there(self):
+        lines = answers.lines_for(self._found(vanished=("write1 read2",)))
+
+        self.assertIn("no longer", " ".join(lines))
+
+
+class PrintingTest(unittest.TestCase):
+    def test_a_comparison_prints_as_what_it_found(self):
+        found = answers.Checked(
+            part="dsp1", disagreements=(("x", ["a"], ["b"]),), unrecorded=(), vanished=(), checked=4
+        )
+
+        self.assertIn("dsp1", repr(found))
+        self.assertIn("4 exchanges", repr(found))
+        self.assertIn("1 wrong", repr(found))
+
+
+class EntryTest(unittest.TestCase):
+    def test_a_machine_with_no_microcode_says_so_rather_than_passing(self):
+        said = []
+
+        code = answers.main([], why_not=lambda: "no image is here", say=said.append)
+
+        self.assertEqual(code, 2)
+        self.assertIn("nothing to run", " ".join(said))
+
+    def test_taking_a_corpus_writes_one_and_reports_it(self):
+        where = Path(tempfile.mkdtemp())
+        said = []
+
+        code = answers.main(
+            ["--take", "dsp1"],
+            why_not=lambda: None,
+            build=puppets(),
+            shapes_for=lambda _part: some_shapes(),
+            digest=lambda _part: "abc",
+            where=where,
+            say=said.append,
+        )
+
+        self.assertEqual(code, 0)
+        self.assertTrue((where / "dsp1answers.json").exists())
+        self.assertIn("wrote", " ".join(said))
+
+    def test_a_part_with_no_corpus_yet_is_reported_rather_than_passed(self):
+        said = []
+
+        code = answers.main(
+            ["dsp1"],
+            why_not=lambda: None,
+            build=puppets(),
+            shapes_for=lambda _part: some_shapes(),
+            digest=lambda _part: "abc",
+            where=Path(tempfile.mkdtemp()),
+            say=said.append,
+        )
+
+        self.assertEqual(code, 1)
+        self.assertIn("no answers are recorded", " ".join(said))
+
+    def test_a_run_that_agrees_passes(self):
+        where = Path(tempfile.mkdtemp())
+        answers.store(
+            answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _p: "abc"), where
+        )
+
+        code = answers.main(
+            ["dsp1"],
+            why_not=lambda: None,
+            build=puppets(),
+            shapes_for=lambda _part: some_shapes(),
+            digest=lambda _part: "abc",
+            where=where,
+            say=lambda _l: None,
+        )
+
+        self.assertEqual(code, 0)
+
+    def test_and_one_that_disagrees_fails(self):
+        where = Path(tempfile.mkdtemp())
+        answers.store(
+            answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _p: "abc"), where
+        )
+        said = []
+
+        code = answers.main(
+            ["dsp1"],
+            why_not=lambda: None,
+            build=puppets(first=0x30),
+            shapes_for=lambda _part: some_shapes(),
+            digest=lambda _part: "abc",
+            where=where,
+            say=said.append,
+        )
+
+        self.assertEqual(code, 1)
+        self.assertIn("write1 read1", " ".join(said))
+
+    def test_a_corpus_from_another_image_stops_the_run_rather_than_failing_it(self):
+        where = Path(tempfile.mkdtemp())
+        answers.store(
+            answers.take("dsp1", puppets(), shapes=some_shapes(), digest=lambda _p: "abc"), where
+        )
+        said = []
+
+        code = answers.main(
+            ["dsp1"],
+            why_not=lambda: None,
+            build=puppets(),
+            shapes_for=lambda _part: some_shapes(),
+            digest=lambda _part: "something else",
+            where=where,
+            say=said.append,
+        )
+
+        self.assertEqual(code, 2)
+        self.assertIn("image", " ".join(said))
+
+    def test_with_no_part_named_every_part_is_checked(self):
+        where = Path(tempfile.mkdtemp())
+        for part in ("dsp1", "dsp2"):
+            answers.store(
+                answers.take(part, puppets(), shapes=some_shapes(), digest=lambda _p: "abc"), where
+            )
+        said = []
+
+        answers.main(
+            [],
+            why_not=lambda: None,
+            build=puppets(),
+            shapes_for=lambda _part: some_shapes(),
+            digest=lambda _part: "abc",
+            where=where,
+            parts=("dsp1", "dsp2"),
+            say=said.append,
+        )
+
+        text = " ".join(said)
+        self.assertIn("dsp1", text)
+        self.assertIn("dsp2", text)
+
+
+if __name__ == "__main__":
+    unittest.main()

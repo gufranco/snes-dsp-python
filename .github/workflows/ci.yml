@@ -143,6 +143,38 @@ jobs:
           exit "${status}"
         shell: bash
 
+      # What each part answers, re-derived and compared against what it answered
+      # when the corpus was taken. The microcode makes the values right; this
+      # catches the layers around it changing them, which nothing else would.
+      - name: Every part still answers what it answered
+        run: |
+          set +e
+          python conformance/answers.py
+          status=$?
+          set -e
+          if [ "${status}" -eq 2 ]; then
+            echo "::notice title=No microcode present::The recorded answers were not re-derived. They are not failures; there was nothing to run."
+            exit 0
+          fi
+          exit "${status}"
+        shell: bash
+
+      # The DSP-1B corrected an arithmetic fault in the DSP-1. That is a claim
+      # with a consequence, and this re-derives the inputs where the two masks
+      # actually part company rather than taking the claim on trust.
+      - name: The DSP-1B correction is still where it was
+        run: |
+          set +e
+          python conformance/masks.py
+          status=$?
+          set -e
+          if [ "${status}" -eq 2 ]; then
+            echo "::notice title=Both DSP-1 masks not present::The mask comparison needs an image for the DSP-1 and the DSP-1B. It did not run."
+            exit 0
+          fi
+          exit "${status}"
+        shell: bash
+
       # Every snippet the README prints, run against the parts it names. A
       # number in a document is a claim about the code, and this is what keeps
       # the two from drifting apart. Same exit 2 rule as above.
