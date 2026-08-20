@@ -1,0 +1,105 @@
+# Nothing here is new work. It is the same gate the pipeline runs, run again on a
+# schedule against whatever the ecosystem looks like that week.
+#
+# A model of a fixed piece of silicon does not change, so a green build today is
+# usually a green build next year. What moves underneath it is everything else: a
+# new Python release changes integer or annotation behaviour, a linter release
+# adds a rule, a checker release finds something the old one did not, a runner
+# image swaps a default, the processor this reaches through moves in its own
+# repository. Each of those turns a passing project into a failing one without a
+# commit here, and the difference between hearing about it on a Monday and hearing
+# about it from the next person to open a pull request is this file.
+#
+# It runs on the newest Python available rather than the pinned one, because the
+# point is to find out what the next version breaks before it is the only version
+# anybody has.
+name: Weekly
+
+on:
+  schedule:
+    # Early Monday, UTC. Late enough that a release landing over the weekend is
+    # already published, early enough to be read before the week starts.
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weekly-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ahead:
+    name: On Python ${{ matrix.python }}, newest tools
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The oldest version supported and the newest that exists. A break in the
+        # first is a regression; a break in the second is a warning about the
+        # release everyone is about to be on.
+        python: ["3.12", "3.14"]
+    steps:
+      # The processor arrives through a submodule and is tracked at a branch, so
+      # this deliberately takes whatever is newest there rather than what the
+      # last commit here recorded. A change in the processor that breaks a part
+      # of this package should be found by this job, not by a user.
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Take the newest processor rather than the pinned one
+        run: git submodule update --remote --recursive
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+          allow-prereleases: true
+
+      # Unpinned on purpose, which is the whole point of this file and the one
+      # place in the project where that is true. Every other workflow pins.
+      - name: Install the newest tools
+        run: |
+          python -m pip install --disable-pip-version-check \
+            --upgrade ruff mypy coverage
+
+      - name: Formatting, as the newest formatter sees it
+        run: ruff format --check .
+
+      - name: Lint, with whatever rules were added since
+        run: ruff check --output-format=github .
+
+      - name: Types, as the newest checker sees them
+        run: mypy
+
+      - name: Every test file, under coverage
+        run: |
+          python -m coverage erase
+          status=0
+          while IFS= read -r file; do
+            echo "::group::${file}"
+            python -m coverage run -a "${file}" || status=1
+            echo "::endgroup::"
+          done < <(find snesdsp conformance -name '*.test.py' | sort)
+          exit "${status}"
+        shell: bash
+
+      - name: Coverage must still be total
+        run: python -m coverage report
+
+      # Every README example, run against the parts. A machine with no microcode
+      # cannot run them, and says so rather than reporting a pass; that is exit 2
+      # and it is not a failure of this build.
+      - name: The documented examples still give what they say
+        run: |
+          set +e
+          python conformance/documented.py
+          status=$?
+          set -e
+          if [ "${status}" -eq 2 ]; then
+            echo "::notice title=No microcode present::The documented examples did not run. They are not failures; they had nothing to run."
+            exit 0
+          fi
+          exit "${status}"
+        shell: bash
