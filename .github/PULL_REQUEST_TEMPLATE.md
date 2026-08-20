@@ -14,6 +14,7 @@ evidence that they did.
 - [ ] Every test file runs, and coverage is 100% of statements and branches
 - [ ] `python3 -m snesdsp.doctor` reports nothing on this machine
 - [ ] Where an image is present, `conformance/against_cartridges.py` was run for every part it touches
+- [ ] `conformance/documented.py` agrees, if any example in the README changed
 
 ## If this changes what a part answers
 

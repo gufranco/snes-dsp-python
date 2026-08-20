@@ -246,6 +246,114 @@ window rather than at a single address. The decode lives here rather than in
 whoever calls this, because every caller that reimplements it is a caller that
 can get it the wrong way round.
 
+## Driving every part
+
+Six parts, two ways of being spoken to, and one example each. Every output below
+was taken from a run against the part's own microcode rather than written down
+from a document.
+
+### DSP-1
+
+A command byte, then its arguments as little endian words, then the answer the
+same way. This is the multiply, and it is the one command whose result can be
+checked without knowing anything about the part.
+
+```python
+from snesdsp import Dsp
+
+chip = Dsp("dsp1")
+chip.write(0x00)
+for value in (0x4000, 0x2000):
+    chip.write(value & 0xFF)
+    chip.write(value >> 8)
+low, high = chip.read(), chip.read()
+hex(low | (high << 8))
+```
+
+Gives `'0x1000'`, which is `0x4000 * 0x2000 >> 15`.
+
+### DSP-1A
+
+The same part on a smaller die, carrying the same program. Ask for it by name and
+it runs the DSP-1's image, which is the only image there is.
+
+```python
+chip = Dsp("dsp1a")
+chip.identity.part
+```
+
+Gives `'dsp1'`. The same multiply gives the same `0x1000`, because it is the same
+program.
+
+### DSP-1B
+
+The last mask, which corrected an arithmetic fault. It carries its own image, and
+this one really is a different file.
+
+```python
+chip = Dsp("dsp1b")
+chip.identity.part
+```
+
+Gives `'dsp1b'`. The multiply above still gives `0x1000`: the correction is not in
+that command, and a package that answered differently here would be inventing a
+difference rather than running one.
+
+### DSP-2
+
+Same shape of exchange, a different program. Command `0x09` multiplies, and this
+one is plain integer rather than fixed point.
+
+```python
+chip = Dsp("dsp2")
+chip.write(0x09)
+for value in (0x0002, 0x0003):
+    chip.write(value & 0xFF)
+    chip.write(value >> 8)
+[hex(chip.read()) for _ in range(4)]
+```
+
+Gives `['0x6', '0x0', '0x0', '0x0']`. Two times three, in the first word.
+
+### DSP-3
+
+Driven a word at a time rather than a command and a burst, and it keeps its
+attention bit raised between words. Command `0x001c` is worth showing on its own:
+having been given a word, the part answers with it, and goes on answering with it
+for as long as anybody keeps reading.
+
+```python
+chip = Dsp("dsp3")
+for byte in (0x1C, 0x00):
+    chip.write(byte)
+for byte in (0x34, 0x12, 0x78, 0x56):
+    chip.write(byte)
+" ".join(f"{chip.read():02x}" for _ in range(8))
+```
+
+Gives `'78 56 78 56 78 56 78 56'`, the last word echoed without end. Emulators
+that model this command by hand answer zeroes instead. Neither of those numbers
+was chosen here; the program decides, and the program is what runs.
+
+### DSP-4
+
+A road renderer, driven as a stream: a command word, then parameters, then it
+answers a batch at a time rather than once.
+
+```python
+chip = Dsp("dsp4")
+chip.write(0x01)
+chip.write(0x00)
+for value in (0x0001, 0x0002, 0x0003, 0x0004):
+    chip.write(value & 0xFF)
+    chip.write(value >> 8)
+[hex(chip.read()) for _ in range(6)]
+```
+
+Gives `['0x4', '0x0', '0x4', '0x0', '0x4', '0x0']`. Read it for longer and it
+keeps answering, which is what a part that draws one scanline batch after another
+does.
+
 ## The family
 
 | Part | What it does | Image it runs |
@@ -315,6 +423,7 @@ snesdsp/
   version.py      rewritten by the release job and by nothing else
 conformance/
   against_cartridges.py  drives a part with the exchanges a real cartridge makes
+  documented.py   every example this README prints, run against the parts
   shapes.py       reads and replays those exchanges
   cartridges.py   finds and confirms the cartridges they were read from
 nec-upd7725-python/  the processor all of these are, as a submodule at the root
@@ -337,6 +446,7 @@ for f in snesdsp/*.test.py conformance/*.test.py; do python3 "$f"; done
 | The doctor | [`snesdsp/doctor.test.py`](snesdsp/doctor.test.py) | Every check it makes, and that a check which throws is reported rather than swallowed |
 | Cartridge exchanges | [`conformance/shapes.test.py`](conformance/shapes.test.py) | Reading a driver's accesses, replaying them, the payloads they are filled with |
 | Driving a part | [`conformance/against_cartridges.test.py`](conformance/against_cartridges.test.py) | Playing every recorded exchange, and what silence means |
+| This document | [`conformance/documented.test.py`](conformance/documented.test.py) | That every example printed above still gives the answer printed beside it |
 
 Coverage is enforced at 100% of statements and branches by
 [`pyproject.toml`](pyproject.toml), so a new branch without a test fails the
@@ -352,6 +462,7 @@ build rather than quietly lowering the number.
 | `python3 -m coverage report` | Coverage, which fails below 100% |
 | `python3 -m snesdsp.doctor` | Say what is on this machine, for a bug report |
 | `python3 conformance/against_cartridges.py <part>` | Drive a part with real cartridge exchanges |
+| `python3 conformance/documented.py` | Run every example in this README against the parts |
 | `pnpm install` | Install the JSON formatter |
 | `pnpm run format:check` | Check that every JSON file is formatted, which CI also does |
 

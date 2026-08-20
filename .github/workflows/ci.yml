@@ -142,3 +142,19 @@ jobs:
           fi
           exit "${status}"
         shell: bash
+
+      # Every snippet the README prints, run against the parts it names. A
+      # number in a document is a claim about the code, and this is what keeps
+      # the two from drifting apart. Same exit 2 rule as above.
+      - name: Every example in the README still gives what it says
+        run: |
+          set +e
+          python conformance/documented.py
+          status=$?
+          set -e
+          if [ "${status}" -eq 2 ]; then
+            echo "::notice title=No microcode present::The README examples were not run. They are not failures; they had nothing to run."
+            exit 0
+          fi
+          exit "${status}"
+        shell: bash

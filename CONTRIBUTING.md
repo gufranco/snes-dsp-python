@@ -20,6 +20,10 @@ done
 python3 -m coverage report
 ```
 
+Every example the README prints is run against the parts by
+`conformance/documented.py`, so a snippet edited in one place and not the other
+fails rather than drifts.
+
 Coverage is a hard gate at 100% statement and branch. A branch with no test
 fails the build rather than lowering the number.
 
