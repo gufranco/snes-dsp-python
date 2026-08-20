@@ -1,0 +1,70 @@
+{
+  "note": "The shapes a real cartridge uses to drive this part: which accesses it makes, in what order, and how wide each one was. No byte the cartridge carries is recorded here, and none can be recovered from this. Read out of the game named below with snes-driver-python, which disassembles the routine rather than running it.",
+  "part": "dsp1",
+  "readFrom": {
+    "name": "Super Mario Kart (USA).sfc",
+    "title": "SUPER MARIO KART",
+    "why": "the DSP-1 cartridge most people have",
+    "bytes": 524288,
+    "layout": "hirom",
+    "crc32": "cd80db86",
+    "md5": "7f25ce5a283d902694c52fb1152fa61a",
+    "sha1": "47e103d8398cf5b7cbb42b95df3a3c270691163b",
+    "sha256": "2ada8919688087be60a6a48cace8f877add60c45d2e5d09e2442faa55be62a49"
+  },
+  "producedBy": "https://github.com/gufranco/snes-driver-python",
+  "shapes": [
+    {
+      "shape": "poll1",
+      "seen": 31
+    },
+    {
+      "shape": "write1",
+      "seen": 6
+    },
+    {
+      "shape": "read1",
+      "seen": 5
+    },
+    {
+      "shape": "write1 write2 write2 poll2 read2 read2",
+      "seen": 2
+    },
+    {
+      "shape": "write1 write2 write2 write2 poll2 read2",
+      "seen": 2
+    },
+    {
+      "shape": "write1 write2 write2 write2 write2 write2 write2 write2 poll2 read2 read2",
+      "seen": 2
+    },
+    {
+      "shape": "poll1 read1 read1 read1 read1 poll1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 poll1 read1 read1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 write1 poll1 read1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 write2",
+      "seen": 1
+    },
+    {
+      "shape": "write1 write2 poll2 read2 read2 read2 read2 poll2 write2 write2 write2 write2",
+      "seen": 1
+    },
+    {
+      "shape": "write1 write2 read2 read2 read2 read2 poll2 write2 write2 write2 write2",
+      "seen": 1
+    },
+    {
+      "shape": "write1 write2 write2 read2",
+      "seen": 1
+    }
+  ]
+}

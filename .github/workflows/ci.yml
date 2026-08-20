@@ -110,8 +110,14 @@ jobs:
       - name: Drive the parts with the exchanges real cartridges make
         run: |
           set +e
-          python conformance/against_cartridges.py dsp3 | tee report.txt
-          status=${PIPESTATUS[0]}
+          status=0
+          for part in dsp1 dsp2 dsp3 dsp4; do
+            echo "::group::${part}"
+            python conformance/against_cartridges.py "${part}" | tee -a report.txt
+            here=${PIPESTATUS[0]}
+            echo "::endgroup::"
+            [ "${here}" -eq 0 ] || status="${here}"
+          done
           set -e
           if [ "${status}" -eq 2 ]; then
             echo "::notice title=No microcode present::The checks that run a part's own program did not run. They are not failures; they had nothing to run."

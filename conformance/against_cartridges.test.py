@@ -114,7 +114,33 @@ class EntryTest(unittest.TestCase):
 
     def test_a_part_with_no_recorded_shapes_is_refused(self):
         with self.assertRaises(against_cartridges.Usage):
-            against_cartridges.main(["dsp2"], why_not=lambda: None, build=build, say=lambda _: None)
+            against_cartridges.main(
+                ["dsp1a"], why_not=lambda: None, build=build, say=lambda _: None
+            )
+
+    def test_every_part_with_its_own_image_has_exchanges_recorded(self):
+        import shapes as recorded
+
+        for part in ("dsp1", "dsp2", "dsp3", "dsp4"):
+            self.assertTrue(recorded.interesting(recorded.recorded(part)), part)
+
+    def test_each_recording_names_the_cartridge_it_came_from(self):
+        import json
+
+        for part in ("dsp1", "dsp2", "dsp3", "dsp4"):
+            where = Path(__file__).resolve().parent / f"{part}shapes.json"
+            held = json.loads(where.read_text())
+
+            for digest in ("crc32", "md5", "sha1", "sha256"):
+                self.assertIn(digest, held["readFrom"], part)
+
+    def test_and_carries_no_byte_of_it(self):
+        import json
+
+        for part in ("dsp1", "dsp2", "dsp3", "dsp4"):
+            where = Path(__file__).resolve().parent / f"{part}shapes.json"
+            for one in json.loads(where.read_text())["shapes"]:
+                self.assertEqual(set(one) - {"shape", "seen"}, set(), part)
 
     def test_a_part_that_says_nothing_at_all_is_a_failure(self):
         found = against_cartridges.main(

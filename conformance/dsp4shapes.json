@@ -1,0 +1,170 @@
+{
+  "note": "The shapes a real cartridge uses to drive this part: which accesses it makes, in what order, and how wide each one was. No byte the cartridge carries is recorded here, and none can be recovered from this. Read out of the game named below with snes-driver-python, which disassembles the routine rather than running it.",
+  "part": "dsp4",
+  "readFrom": {
+    "name": "Top Gear 3000 (USA).sfc",
+    "title": "TOP GEAR 3000",
+    "why": "the only retail cartridge that carries a DSP-4",
+    "bytes": 1048576,
+    "layout": "lorom",
+    "crc32": "a20be998",
+    "md5": "23eaa07e3f3315fa43f4b4d94ec97a7b",
+    "sha1": "058aadf1ee719cb9e0c7333e665797f990a6381d",
+    "sha256": "6be49983976564f1fd9eff2f14f5bb41d3a0ff48573e39318088ecce286aca62"
+  },
+  "producedBy": "https://github.com/gufranco/snes-driver-python",
+  "shapes": [
+    {
+      "shape": "read1",
+      "seen": 42
+    },
+    {
+      "shape": "write1",
+      "seen": 35
+    },
+    {
+      "shape": "write1 read1 read1",
+      "seen": 35
+    },
+    {
+      "shape": "write1 write1 write1 read1 read1",
+      "seen": 33
+    },
+    {
+      "shape": "poll1",
+      "seen": 30
+    },
+    {
+      "shape": "write1 write1 read1 read1",
+      "seen": 22
+    },
+    {
+      "shape": "write1 read1",
+      "seen": 18
+    },
+    {
+      "shape": "write1 write1",
+      "seen": 15
+    },
+    {
+      "shape": "write1 write1 write1 read1 read1 write1 write1 read1 read1",
+      "seen": 7
+    },
+    {
+      "shape": "write1 read1 read1 write1 write1 read1 read1",
+      "seen": 6
+    },
+    {
+      "shape": "write1 write1 read1",
+      "seen": 6
+    },
+    {
+      "shape": "read1 read1",
+      "seen": 5
+    },
+    {
+      "shape": "write1 read1 read1 write1 read1 read1",
+      "seen": 5
+    },
+    {
+      "shape": "read1 read1 read1 read1",
+      "seen": 4
+    },
+    {
+      "shape": "write1 read1 read1 write2 write2 write2 read2 read2",
+      "seen": 4
+    },
+    {
+      "shape": "write1 read1 write1",
+      "seen": 4
+    },
+    {
+      "shape": "write1 read1 read1 write1",
+      "seen": 3
+    },
+    {
+      "shape": "write1 read1 write1 write1 read1 write1",
+      "seen": 3
+    },
+    {
+      "shape": "write1 write1 read1 read1 write1",
+      "seen": 3
+    },
+    {
+      "shape": "write1 write1 write1 write1 read1",
+      "seen": 3
+    },
+    {
+      "shape": "read1 poll1 read1",
+      "seen": 2
+    },
+    {
+      "shape": "write1 write1 read1 write1",
+      "seen": 2
+    },
+    {
+      "shape": "write1 write1 write1 read1 read1 write1 write1",
+      "seen": 2
+    },
+    {
+      "shape": "write1 write1 write1 read1 read1 write1 write1 write1 read1",
+      "seen": 2
+    },
+    {
+      "shape": "poll1 poll1",
+      "seen": 1
+    },
+    {
+      "shape": "read1 write1 write1 read1 read1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 read1 read1 write1 write1 read1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 read1 write1 write1 read1 read1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 write1 read1 read1 write1 read1 read1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 write1 read1 read1 write1 read1 write1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 write1 read1 read1 write1 write1 read1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 write1 read1 write1 write1 read1 read1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 write1 write1 read1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 write1 write1 read1 read1 read1 read1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 write1 write1 read1 read1 write1 read1 read1 write1 read1 write1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 write1 write1 read1 write1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 write1 write1 write1 read1 write1 write1 read1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 write1 write1 write1 write1",
+      "seen": 1
+    }
+  ]
+}

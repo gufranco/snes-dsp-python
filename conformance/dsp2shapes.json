@@ -1,0 +1,70 @@
+{
+  "note": "The shapes a real cartridge uses to drive this part: which accesses it makes, in what order, and how wide each one was. No byte the cartridge carries is recorded here, and none can be recovered from this. Read out of the game named below with snes-driver-python, which disassembles the routine rather than running it.",
+  "part": "dsp2",
+  "readFrom": {
+    "name": "Dungeon Master (USA).sfc",
+    "title": "DUNGEON MASTER",
+    "why": "the only retail cartridge that carries a DSP-2",
+    "bytes": 1048576,
+    "layout": "lorom",
+    "crc32": "0dfd9ceb",
+    "md5": "3d1b171d7486438af2d9ec3d98b155cd",
+    "sha1": "e65ae62ec9a1c48a3512db66f929c7b0055ae2c3",
+    "sha256": "2dfc2e037679a62a960dab9682bca6d1b2737f603edd336c8b2fdf05db10cc07"
+  },
+  "producedBy": "https://github.com/gufranco/snes-driver-python",
+  "shapes": [
+    {
+      "shape": "write1",
+      "seen": 36
+    },
+    {
+      "shape": "poll1",
+      "seen": 24
+    },
+    {
+      "shape": "read1",
+      "seen": 11
+    },
+    {
+      "shape": "write1 write1",
+      "seen": 5
+    },
+    {
+      "shape": "write1 write1 write1 write1 write1",
+      "seen": 2
+    },
+    {
+      "shape": "write1 write1 write1 write1 write1 write1",
+      "seen": 2
+    },
+    {
+      "shape": "poll1 read1",
+      "seen": 1
+    },
+    {
+      "shape": "read1 read1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 poll1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 poll2",
+      "seen": 1
+    },
+    {
+      "shape": "write1 write1 write1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 write1 write1 write1 write1 read1 read1 read1 read1",
+      "seen": 1
+    },
+    {
+      "shape": "write1 write1 write1 write1 write1 write1 write1 poll1",
+      "seen": 1
+    }
+  ]
+}
