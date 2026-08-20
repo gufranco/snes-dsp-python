@@ -10,6 +10,7 @@
 [![CI](https://github.com/gufranco/snes-dsp-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/snes-dsp-python/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-100%25%20statement%20%2B%20branch-brightgreen)](#tests)
 [![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)](pyproject.toml)
+[![Types](https://img.shields.io/badge/mypy-strict-blue)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 </div>
@@ -24,7 +25,7 @@
   <a href="https://github.com/gufranco/snes-dsp-python/issues">Issues</a>
 </p>
 
-**6** parts across **5** microcodes · **1** processor underneath them all · **0** commands described by hand · paced at **7.6 MHz** against the console's own clock · **46** exchanges read out of four real cartridges · **209** tests · **100%** statement and branch coverage · every image confirmed by **SHA-256** before a byte of it runs
+**6** parts across **5** microcodes · **1** processor underneath them all · **0** commands described by hand · paced at **7.6 MHz** against the console's own clock · **112** exchanges read out of **36** real cartridges · **375** tests · **100%** statement and branch coverage · **strict** types throughout · every image confirmed by **SHA-256** before a byte of it runs
 
 ```python
 from snesdsp import Dsp
@@ -381,7 +382,10 @@ wrong, because the part-specific knowledge is no longer in the code.
 | Timing | That the pacing follows from the two oscillators rather than from a chosen number | No |
 | Identity | That every part names an image with a deciding digest, so a supplied file is confirmed rather than trusted | No |
 | The catalogue | Every part, every name it answers to, and which image each runs | No |
+| Every annotation | `mypy` at strict, plus every optional error class the version has | No |
 | The parts | Driven through the exchanges a real cartridge makes with them | Yes |
+| What each part answers | Re-derived and compared against what it answered when the corpus was taken | Yes |
+| The DSP-1B correction | The pinned divergences between the two masks, re-derived | Yes |
 
 That last one is the only check that needs an image, and it reports as skipped
 rather than as passed when there is none.
@@ -398,18 +402,90 @@ What comes back is a shape, the accesses a routine makes with the width of each
 and no payload attached. Each file holds the digests of the game it was read from
 and none of its bytes.
 
-| Part | Read from | Shapes | That drive the part |
-|:--|:--|--:|--:|
-| DSP-1 | Super Mario Kart | 13 | 8 |
-| DSP-2 | Dungeon Master | 13 | 1 |
-| DSP-3 | SD Gundam GX | 17 | 8 |
-| DSP-4 | Top Gear 3000 | 38 | 29 |
+One cartridge per part is not enough, and the DSP-1 is why. It shipped in more
+than twenty games and each one drives it differently: one takes a command and a
+burst, another polls between words, a third writes three words before it reads
+one. A part settled against one of those is settled against one driver rather
+than against the part, so every cartridge present is read and the shapes are
+pooled.
 
-All four parts answer every exchange their own game makes.
+| Part | Cartridges read | Shapes | That drive the part | Sites |
+|:--|--:|--:|--:|--:|
+| DSP-1 | 29 | 44 | 21 | 1,404 |
+| DSP-2 | 3 | 13 | 1 | 273 |
+| DSP-3 | 1 | 17 | 8 | 182 |
+| DSP-4 | 3 | 38 | 29 | 919 |
+
+Each shape records how many cartridges used it. A shape two dozen games agree on
+is the part's protocol; a shape one game uses is that game's corner, which is
+exactly where a model is likely to be wrong.
+
+A shape carries no payload, so the bytes filling it are generated, and the first
+of them is a command the part may not have. Most of the 256 possible bytes are not
+commands on these parts, and a part answering nothing to one of those has not been
+shown to answer nothing: it has been asked a question it does not have. So a shape
+that says nothing is asked again under every command byte in turn, and is reported
+as silent only when all 256 leave it silent.
+
+A shape whose first read comes before its first write is separate again. On a
+console that read follows an earlier exchange and is answered by what that
+exchange left behind; played on its own at a part that has just booted there is
+nothing behind it, and no command can change that because the read happens first.
+Three of the 112 shapes are like this, and they are reported as asked out of order
+rather than counted as silence.
+
+Every other exchange, on all four parts, gets an answer.
 
 ```bash
 python3 conformance/against_cartridges.py dsp1
+python3 conformance/record.py            # re-read every cartridge on this machine
 ```
+
+### What each part answered, kept
+
+A run that drives a part proves it answers. It does not prove it answers the same
+thing it answered last month. So what each part says to each exchange is recorded,
+keyed to the digest of the image that said it and to the payload seed that
+produced it:
+
+```bash
+python3 conformance/answers.py --take    # record what every part answers now
+python3 conformance/answers.py           # check that it still answers that
+```
+
+| Part | Exchanges recorded |
+|:--|--:|
+| DSP-1 | 21 |
+| DSP-2 | 1 |
+| DSP-3 | 8 |
+| DSP-4 | 29 |
+
+A corpus is refused rather than failed when the image on this machine is not the
+one it was taken from. Two different images are entitled to answer differently, so
+there is nothing to compare and saying so is the honest answer.
+
+### The correction in the DSP-1B, found rather than described
+
+Nintendo shipped the same program on three parts. The DSP-1A is a die shrink and
+carries the DSP-1's image byte for byte, so it cannot answer differently. The
+DSP-1B is a later mask that corrected an arithmetic fault, and that is a claim
+with a consequence: somewhere there is an input where the two disagree, and if
+there is not, one of the two images is not what it says.
+
+Running both programs makes the values right without knowing where that is. So
+every command byte is swept across sixteen argument sets, six words each, and
+every case where the two part company is pinned:
+
+```bash
+python3 conformance/masks.py --sweep     # find them
+python3 conformance/masks.py             # re-derive the ones pinned
+```
+
+Across 256 commands and 16 argument sets it found one command, reached through six
+of its encodings, where the third word out differs. Nothing else in that space
+differs at all, which is what a corrected fault should look like rather than a
+different program. A case that quietly becomes agreement fails as loudly as one
+that changes value: two images agreeing everywhere are one image under two names.
 
 ## Project structure
 
@@ -426,6 +502,10 @@ conformance/
   documented.py   every example this README prints, run against the parts
   shapes.py       reads and replays those exchanges
   cartridges.py   finds and confirms the cartridges they were read from
+  record.py       re-reads every cartridge on this machine and pools the shapes
+  answers.py      what each part answered, and whether it still answers that
+  masks.py        where the three masks of the DSP-1 disagree
+  driven.py       what these runs need a part to be, which is less than a part is
 nec-upd7725-python/  the processor all of these are, as a submodule at the root
 ```
 
@@ -446,6 +526,10 @@ for f in snesdsp/*.test.py conformance/*.test.py; do python3 "$f"; done
 | The doctor | [`snesdsp/doctor.test.py`](snesdsp/doctor.test.py) | Every check it makes, and that a check which throws is reported rather than swallowed |
 | Cartridge exchanges | [`conformance/shapes.test.py`](conformance/shapes.test.py) | Reading a driver's accesses, replaying them, the payloads they are filled with |
 | Driving a part | [`conformance/against_cartridges.test.py`](conformance/against_cartridges.test.py) | Playing every recorded exchange, and what silence means |
+| Recording exchanges | [`conformance/record.test.py`](conformance/record.test.py) | Reading every cartridge present, pooling per part, confirming digests before disassembly |
+| Recorded answers | [`conformance/answers.test.py`](conformance/answers.test.py) | Taking a corpus, comparing one, and refusing when the image differs |
+| The mask divergence | [`conformance/masks.test.py`](conformance/masks.test.py) | Sweeping for disagreement, pinning it, and failing when it converges |
+| What a part must be | [`conformance/driven.test.py`](conformance/driven.test.py) | The contract these runs hold a part to, and the stand-ins that satisfy it |
 | This document | [`conformance/documented.test.py`](conformance/documented.test.py) | That every example printed above still gives the answer printed beside it |
 
 Coverage is enforced at 100% of statements and branches by
@@ -462,7 +546,11 @@ build rather than quietly lowering the number.
 | `python3 -m coverage report` | Coverage, which fails below 100% |
 | `python3 -m snesdsp.doctor` | Say what is on this machine, for a bug report |
 | `python3 conformance/against_cartridges.py <part>` | Drive a part with real cartridge exchanges |
+| `mypy` | Types, at strict, with every optional error class on |
 | `python3 conformance/documented.py` | Run every example in this README against the parts |
+| `python3 conformance/record.py` | Re-read every cartridge on this machine |
+| `python3 conformance/answers.py` | Check every part still answers what it answered |
+| `python3 conformance/masks.py` | Re-derive where the DSP-1 masks disagree |
 | `pnpm install` | Install the JSON formatter |
 | `pnpm run format:check` | Check that every JSON file is formatted, which CI also does |
 
@@ -474,6 +562,8 @@ build rather than quietly lowering the number.
 | Formatting and lint | [ruff](https://docs.astral.sh/ruff/), pinned in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
 | Versioning | [semantic-release](https://semantic-release.gitbook.io/), from the commit history |
 | Tests | Beside the module, named `<module>.test.py` |
+| Types | [mypy](https://mypy.readthedocs.io/) at strict, configured in [`pyproject.toml`](pyproject.toml) |
+| Agent instructions | [`AGENTS.md`](AGENTS.md) |
 
 ## Reporting something
 

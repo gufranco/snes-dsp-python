@@ -17,6 +17,15 @@ against anything written down, because there is nothing left to compare against:
 the part is the authority. What it catches is the part not answering at all,
 which is what a broken port layer, a wrong image or a mis-paced read looks like.
 
+A shape carries no payload, so the bytes that fill it are generated, and the
+first of them is a command the part may not have. Most of the 256 possible bytes
+are not commands on these parts, and a part answering nothing to one of those has
+not been shown to answer nothing: it has been asked a question it does not have.
+So a shape that says nothing is asked again under every command byte in turn, and
+is reported as silent only when all 256 leave it silent. Which command made it
+speak is printed, because a shape that answers under one byte and no other is
+worth knowing about even when it is not a fault.
+
 Needs an image, so on a machine without one it says so and stops rather than
 reporting a pass.
 
@@ -42,6 +51,9 @@ DEFAULT_PART = "dsp3"
 
 SHOWN = 8
 
+COMMANDS = range(0x100)
+"""Every byte the first write could carry, since the shape does not say which."""
+
 
 class Usage(Exception):
     pass
@@ -55,11 +67,33 @@ class Played:
     """
 
     def __init__(
-        self, shape: str, said: Sequence[Sequence[int]], kinds: Iterable[str] = ()
+        self,
+        shape: str,
+        said: Sequence[Sequence[int]],
+        kinds: Iterable[str] = (),
+        command: int | None = None,
     ) -> None:
         self.shape = shape
         self.said = said
         self.kinds = tuple(kinds)
+        self.command = command
+        self.kinds_in_order = tuple(one.what for one in shapes.parse(shape))
+
+    @property
+    def unprompted(self) -> bool:
+        """Whether this shape reads before it has written anything.
+
+        On a console such a read follows an earlier exchange and is answered by
+        what that exchange left behind. Played on its own at a part that has just
+        booted there is nothing behind it, and no command byte can change that:
+        the read happens before the command does.
+        """
+        for kind in self.kinds_in_order:
+            if kind == shapes.WRITE:
+                return False
+            if kind == shapes.READ:
+                return True
+        return False
 
     @property
     def answered(self) -> bool:
@@ -89,6 +123,42 @@ def _silicon(part: str) -> Watched:  # pragma: no cover
     return snesdsp.Dsp(part)
 
 
+class Spoke:
+    """A command byte that got an answer, and the answer it got."""
+
+    def __init__(self, command: int, said: Sequence[Sequence[int]]) -> None:
+        self.command = command
+        self.said = said
+
+    @override
+    def __repr__(self) -> str:
+        return f"<Spoke under {self.command:#04x}>"
+
+
+def speaking(
+    build: BuildWatched,
+    part: str,
+    steps: "Iterable[shapes.Step]",
+    payload: Sequence[Sequence[int]],
+    commands: Iterable[int] = COMMANDS,
+) -> "Spoke | None":
+    """The first command byte under which that shape gets an answer, if any.
+
+    Everything but the first byte is left as it was, so the only thing that
+    changes between attempts is the command. A shape with nothing to write cannot
+    carry a command and cannot be swept, which is not the same as being silent.
+    """
+    steps = tuple(steps)
+    kinds = [one.what for one in steps if one.what in (shapes.READ, shapes.POLL)]
+    if not payload:
+        return None
+    for command in commands:
+        said = shapes.drive(build(part), steps, shapes.commanded(payload, command))
+        if Played("", said, kinds).answered:
+            return Spoke(command, said)
+    return None
+
+
 def driven(
     part: str = DEFAULT_PART, build: BuildWatched = _silicon, seed: int | None = None
 ) -> "list[Played]":
@@ -102,21 +172,33 @@ def driven(
         payload = shapes.payload_for(steps, chance)
         said = shapes.drive(build(part), steps, payload)
         taken = [one.what for one in steps if one.what in (shapes.READ, shapes.POLL)]
-        found.append(Played(" ".join(f"{one.what}{one.width}" for one in steps), said, taken))
+        named = " ".join(f"{one.what}{one.width}" for one in steps)
+        played = Played(named, said, taken)
+        if not played.answered and not played.unprompted:
+            spoke = speaking(build, part, steps, payload)
+            if spoke is not None:
+                played = Played(named, spoke.said, taken, spoke.command)
+        found.append(played)
     return found
 
 
 def report(found: "Sequence[Played]") -> list[str]:
     """The lines a person reads, one exchange at a time."""
-    return [
-        f"    {one.shape}: {[[hex(byte) for byte in run] for run in one.said]}"
-        for one in found[:SHOWN]
-    ]
+    said = []
+    for one in found[:SHOWN]:
+        under = "" if one.command is None else f" (only under command {one.command:#04x})"
+        said.append(f"    {one.shape}{under}: {[[hex(byte) for byte in run] for run in one.said]}")
+    return said
 
 
 def silent(found: "Iterable[Played]") -> "list[Played]":
-    """Every exchange the part answered nothing to."""
-    return [one for one in found if not one.answered]
+    """Every exchange the part answered nothing to, having been asked in order."""
+    return [one for one in found if not one.answered and not one.unprompted]
+
+
+def unprompted(found: "Iterable[Played]") -> "list[Played]":
+    """Every exchange whose first read comes before its first write."""
+    return [one for one in found if one.unprompted]
 
 
 def lines_for(found: "Sequence[Played]", part: str) -> list[str]:
@@ -125,8 +207,19 @@ def lines_for(found: "Sequence[Played]", part: str) -> list[str]:
     lines = [f"  {part}: {len(found)} exchanges a real cartridge makes, played at the part"]
     lines.extend(report(found))
     if quiet:
-        lines.append(f"  {len(quiet)} of them got nothing back:")
+        lines.append(
+            f"  {len(quiet)} of them got nothing back under any of the"
+            f" {len(COMMANDS)} command bytes:"
+        )
         lines.extend(f"    {one.shape}" for one in quiet[:SHOWN])
+
+    early = unprompted(found)
+    if early:
+        lines.append(
+            f"  {len(early)} of them read before writing, so a part that has just"
+            " booted has nothing to answer them with. Not counted as silence:"
+        )
+        lines.extend(f"    {one.shape}" for one in early[:SHOWN])
     return lines
 
 
