@@ -25,6 +25,9 @@ Homepage = "https://github.com/gufranco/snes-dsp-python"
 Source = "https://github.com/gufranco/snes-dsp-python"
 Issues = "https://github.com/gufranco/snes-dsp-python/issues"
 
+[project.scripts]
+snesdsp-doctor = "snesdsp.doctor:main"
+
 [tool.setuptools]
 packages = ["snesdsp"]
 
@@ -70,6 +73,12 @@ ignore = [
 # statement left behind, and routing it through a logger would put a level and
 # a timestamp in front of a report meant to be read by a person.
 "conformance/*.py" = ["T201"]
+# The doctor exists so that nothing fails silently, which means it has to survive
+# whatever a check throws at it and report that rather than propagate it. A
+# narrower catch here would let an unforeseen failure escape as a traceback and
+# take the rest of the report with it, which is the one outcome it must avoid.
+# It prints for the same reason every tool here does: its output is the product.
+"snesdsp/doctor.py" = ["BLE001", "T201"]
 
 [tool.coverage.run]
 source = ["snesdsp", "conformance"]

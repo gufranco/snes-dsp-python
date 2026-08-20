@@ -1,0 +1,84 @@
+name: Something is wrong
+description: A part answers something it should not, or nothing works at all
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Most reports here turn out to be a missing submodule, an image that is
+        not the one the part expects, or a Python that is too old. All three look
+        identical from outside, so the first field asks you to run one command
+        that tells all of us which it is.
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: What the doctor says
+      description: |
+        Run `python3 -m snesdsp.doctor` from the repository and paste all of it,
+        including any line that did not pass. Do not trim it: the lines that
+        failed are the ones worth reading.
+      render: text
+      placeholder: |
+        snesdsp 2.1.0 on 3.13.0, Linux
+
+          ok    python: 3.13.0 on Linux x86_64
+             !  dsp2: no image for dsp2
+                 put a copy you own in ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: For a wrong answer, say which part, which command, and what the hardware gives.
+      placeholder: |
+        dsp1, command 0x28 with (0x15B9, 0x0AA7, 0x1A44), should be 8908
+    validations:
+      required: true
+
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened instead
+      description: |
+        The exact output or the whole traceback. Paste it rather than describing
+        it: a summary of an error loses the part that identifies it.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: The shortest thing that shows it
+      description: Python we can run as it stands, with no editing.
+      render: python
+      placeholder: |
+        from snesdsp import Dsp
+
+        chip = Dsp("dsp1")
+        chip.write(0x28)
+    validations:
+      required: true
+
+  - type: input
+    id: cartridge
+    attributes:
+      label: The game, if one is involved
+      description: |
+        Its name and its SHA-256. Never attach the file itself, and never link
+        to somewhere it can be downloaded: the digest is what identifies it and
+        it is all anybody needs.
+      placeholder: "Super Mario Kart (USA), sha256 ..."
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Before submitting
+      options:
+        - label: The doctor output above is complete rather than trimmed
+          required: true
+        - label: I own the microcode and the game I am naming, and I have attached neither
+          required: true

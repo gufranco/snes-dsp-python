@@ -24,7 +24,7 @@
   <a href="https://github.com/gufranco/snes-dsp-python/issues">Issues</a>
 </p>
 
-**6** parts across **5** microcodes · **1** processor underneath them all · **0** commands described by hand · paced at **7.6 MHz** against the console's own clock · **46** exchanges read out of four real cartridges · **176** tests · **100%** statement and branch coverage · every image confirmed by **SHA-256** before a byte of it runs
+**6** parts across **5** microcodes · **1** processor underneath them all · **0** commands described by hand · paced at **7.6 MHz** against the console's own clock · **46** exchanges read out of four real cartridges · **209** tests · **100%** statement and branch coverage · every image confirmed by **SHA-256** before a byte of it runs
 
 ```python
 from snesdsp import Dsp
@@ -136,6 +136,36 @@ python3 -c "import snesdsp; print(sorted(snesdsp.available()) or snesdsp.why_not
 ```
 
 Without an image that prints the reason instead, naming where to put one.
+
+### When something is wrong
+
+```bash
+python3 -m snesdsp.doctor
+```
+
+It looks at this machine and prints what is actually there: the Python it is
+running on, whether the processor is checked out, which images are present and
+the SHA-256 of each one, whether every part starts, and the clocks it is pacing
+them at. Nothing is inferred and nothing is hidden. A check that fails says what
+it saw, and a check that itself throws is reported as what it threw rather than
+taking the report down with it.
+
+```text
+snesdsp 2.1.0 on 3.13.0, Linux
+
+  ok    python: 3.13.0 on Linux x86_64
+  ok    processor: nec-upd7725-python is checked out
+     !  dsp2: no image for dsp2
+         put a copy you own in snes-dsp-python/firmware, in the firmware
+         directory of the project this one sits inside, or anywhere
+         UPD7725_FIRMWARE_DIR names
+
+  1 of 11 checks did not pass
+```
+
+Paste all of it into an issue. Most of what gets reported here is one of three
+things and they look identical from outside; that output is what tells everybody
+which.
 
 ## The microcode you supply
 
@@ -273,6 +303,7 @@ snesdsp/
   models.py       which parts exist, what they answer to, which image each runs
   silicon.py      loading an image and driving the part it belongs to
   timing.py       the two oscillators, and how long the console leaves the part
+  doctor.py       what is actually on this machine, printed for a bug report
   version.py      rewritten by the release job and by nothing else
 conformance/
   against_cartridges.py  drives a part with the exchanges a real cartridge makes
@@ -295,6 +326,7 @@ for f in snesdsp/*.test.py conformance/*.test.py; do python3 "$f"; done
 | The catalogue | [`snesdsp/models.test.py`](snesdsp/models.test.py) | Every part, its names, its image, and that the image is declared with a digest |
 | The part | [`snesdsp/silicon.test.py`](snesdsp/silicon.test.py) | Loading, the handshake, the pacing, the bus decode, reading, refusing |
 | Timing | [`snesdsp/timing.test.py`](snesdsp/timing.test.py) | The clocks, the conversion, and that the gap is derived rather than chosen |
+| The doctor | [`snesdsp/doctor.test.py`](snesdsp/doctor.test.py) | Every check it makes, and that a check which throws is reported rather than swallowed |
 | Cartridge exchanges | [`conformance/shapes.test.py`](conformance/shapes.test.py) | Reading a driver's accesses, replaying them, the payloads they are filled with |
 | Driving a part | [`conformance/against_cartridges.test.py`](conformance/against_cartridges.test.py) | Playing every recorded exchange, and what silence means |
 
@@ -310,6 +342,7 @@ build rather than quietly lowering the number.
 | `ruff check .` | Lint |
 | `python3 -m coverage run -a <file>` | Run one test file under coverage |
 | `python3 -m coverage report` | Coverage, which fails below 100% |
+| `python3 -m snesdsp.doctor` | Say what is on this machine, for a bug report |
 | `python3 conformance/against_cartridges.py <part>` | Drive a part with real cartridge exchanges |
 | `pnpm install` | Install the JSON formatter |
 | `pnpm run format:check` | Check that every JSON file is formatted, which CI also does |
@@ -322,6 +355,17 @@ build rather than quietly lowering the number.
 | Formatting and lint | [ruff](https://docs.astral.sh/ruff/), pinned in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
 | Versioning | [semantic-release](https://semantic-release.gitbook.io/), from the commit history |
 | Tests | Beside the module, named `<module>.test.py` |
+
+## Reporting something
+
+| Need | Where |
+|:--|:--|
+| Something is wrong | [Open an issue](https://github.com/gufranco/snes-dsp-python/issues/new/choose), with the doctor output |
+| A part answers the wrong thing | The same, using the fidelity template |
+| A change | [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) says what a change has to show |
+
+Never attach microcode or a cartridge to a report, and never link to somewhere
+either can be downloaded. A SHA-256 identifies both, and it is all anybody needs.
 
 ## Versioning
 

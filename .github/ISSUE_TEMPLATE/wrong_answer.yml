@@ -1,0 +1,71 @@
+name: A part answers the wrong thing
+description: The part runs, but what it gives back is not what the hardware gives
+labels: ["bug", "fidelity"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This package runs the part's own microcode, so an answer it gives is the
+        answer that program produces. A report that it is wrong is therefore a
+        report about how the part is being driven or clocked, and those are the
+        fields below.
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: What the doctor says
+      description: Run `python3 -m snesdsp.doctor` and paste all of it.
+      render: text
+    validations:
+      required: true
+
+  - type: input
+    id: part
+    attributes:
+      label: Which part
+      placeholder: dsp1b
+    validations:
+      required: true
+
+  - type: input
+    id: command
+    attributes:
+      label: Which command, and the exact bytes you sent it
+      placeholder: "0x28, then b9 15 a7 0a 44 1a"
+    validations:
+      required: true
+
+  - type: input
+    id: got
+    attributes:
+      label: What it answered
+      placeholder: "0x2384"
+    validations:
+      required: true
+
+  - type: input
+    id: wanted
+    attributes:
+      label: What the hardware answers, and how you know
+      description: |
+        Name what you compared against. Real hardware, another emulator, or a
+        game that behaves differently are all useful, and which one it was
+        changes what the answer means.
+      placeholder: "8908, measured on a Super Mario Kart cartridge"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: pacing
+    attributes:
+      label: How long did you leave the part between accesses?
+      description: |
+        This matters more than it sounds. The default is the least a console can
+        possibly leave it, and a part read sooner than the hardware could read it
+        has not finished computing.
+      options:
+        - The default
+        - I passed my own with elapsed()
+        - I do not know
+    validations:
+      required: true
