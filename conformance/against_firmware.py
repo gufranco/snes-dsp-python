@@ -251,7 +251,17 @@ class Clocked:
 class Microcode:
     """One model here, the commands it answers, and how its console drives it."""
 
-    def __init__(self, part, commands, arguments, argument_width, answer_width, polls, build=None):
+    def __init__(
+        self,
+        part,
+        commands,
+        arguments,
+        argument_width,
+        answer_width,
+        polls,
+        build=None,
+        command_width=1,
+    ):
         self.part = part
         self.commands = tuple(sorted(commands))
         self.arguments = arguments
@@ -259,6 +269,7 @@ class Microcode:
         self.answer_width = answer_width
         self.polls = polls
         self.build = build or {}
+        self.command_width = command_width
 
     def streams(self, chance, count):
         limit = 1 << (8 * self.argument_width)
@@ -275,7 +286,9 @@ class Microcode:
         # default wherever an image is present, taking it here would compare the
         # silicon against itself and report perfect agreement.
         chip = snesdsp.Dsp(model=self.part, backend=snesdsp.MODELLED, **options)
-        chip.write(command)
+        chip.write(command & 0xFF)
+        if self.command_width == 2:
+            chip.write(command >> 8 & 0xFF)
         for value in arguments:
             chip.write(value & 0xFF)
             if self.argument_width == 2:
@@ -288,7 +301,7 @@ class Microcode:
 
     def from_silicon(self, command, arguments, answers):
         console = Console(self.part)
-        console.put(command, 1)
+        console.put(command, self.command_width)
         for value in arguments:
             console.put(value, self.argument_width)
         found = []
@@ -336,6 +349,12 @@ MICROCODES = (
         answer_width=1,
         polls=False,
         build={"fill": 0},
+        # This part takes its command as a word rather than a byte. Writing one
+        # byte leaves the command half-written, so every parameter after it is
+        # read as the other half and nothing is ever executed: the sweep asked
+        # fifteen commands and got no answer from any of them, and read that as
+        # agreement on nothing rather than as a question never asked.
+        command_width=2,
     ),
 )
 
