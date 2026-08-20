@@ -208,6 +208,23 @@ class SuppliedImageTest(unittest.TestCase):
     def test_it_prints_as_the_part_and_how_it_is_run(self):
         self.assertIn("silicon", repr(self._built()))
 
+    def test_a_part_that_is_already_asking_is_read_without_waiting(self):
+        chip = self._built(patience=1)
+        chip.chip.registers.sr.rqm = True
+
+        self.assertLess(chip.read(), 0x100)
+
+    def test_and_waiting_on_one_that_is_asking_says_so_at_once(self):
+        chip = self._built(patience=1)
+        chip.chip.registers.sr.rqm = True
+
+        self.assertTrue(chip.waited())
+
+    def test_while_one_that_never_asks_says_it_never_did(self):
+        chip = self._built(patience=8)
+
+        self.assertFalse(chip.waited())
+
     def test_writing_a_byte_runs_the_part_afterwards(self):
         chip = self._built()
 
