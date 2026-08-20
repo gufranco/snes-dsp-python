@@ -1,5 +1,7 @@
 pnpm-lock.yaml
 node_modules/
+nec-upd7725-python/
+snes-driver-python/
 .coverage
 .mypy_cache/
 .ruff_cache/

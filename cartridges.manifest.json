@@ -17,7 +17,11 @@
       "crc32": "f0810694",
       "md5": "5403a00958bcb9a3d3fd714c48115e7e",
       "sha1": "0caca71401b96b3ab42ec89e9bcf7af82b1bd3d4",
-      "sha256": "1b59feccf5df19265b1885ea8e0ae85693a19650de338e898f4999f639695402"
+      "sha256": "1b59feccf5df19265b1885ea8e0ae85693a19650de338e898f4999f639695402",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Ace o Nerae! (Japan).sfc",
@@ -29,7 +33,11 @@
       "crc32": "6c5f1a18",
       "md5": "572cf198450d3424da503f93d4e6ac85",
       "sha1": "065bf1bbf4662383e2e42105ad76e0ed93213a57",
-      "sha256": "9c9373e2a078ae47469d835fb4750ad0e4a46156c73baf573d3fabd132f5c184"
+      "sha256": "9c9373e2a078ae47469d835fb4750ad0e4a46156c73baf573d3fabd132f5c184",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Ballz 3D - Fighting at Its Ballziest (USA).sfc",
@@ -41,7 +49,11 @@
       "crc32": "1c058b7d",
       "md5": "b61efd28676ea1f9ca650888753df2dc",
       "sha1": "236a466af4e05061b06d48bae637bb29f86672ad",
-      "sha256": "e25d052d25264a14c4904aebc383482577bb5d2bb135f3ece88b1b7b0456a6bc"
+      "sha256": "e25d052d25264a14c4904aebc383482577bb5d2bb135f3ece88b1b7b0456a6bc",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Battle Racers (Japan).sfc",
@@ -53,7 +65,11 @@
       "crc32": "64b76ceb",
       "md5": "3e49ef28a461a06435ae04c2e5341f78",
       "sha1": "02f3a5b09490987848e4b882122b19ff430ec7d7",
-      "sha256": "ac9233fb2cf241e3c540d29c5d34ae5c4a821b09d86ccf2015a586edc7842096"
+      "sha256": "ac9233fb2cf241e3c540d29c5d34ae5c4a821b09d86ccf2015a586edc7842096",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Bike Daisuki! Hashiriya Tamashii (Japan).sfc",
@@ -65,7 +81,11 @@
       "crc32": "b363fc99",
       "md5": "9bc21069d1c9eba86dad2ba0e994e5a1",
       "sha1": "d0457fc27adff1b0ad236535f60f91711b15f0db",
-      "sha256": "3fb25a3b30e897455de88e9e1d5ff2df81e56b89f3fe7b7d9e0248a19a146b4b"
+      "sha256": "3fb25a3b30e897455de88e9e1d5ff2df81e56b89f3fe7b7d9e0248a19a146b4b",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Campus Challenge '92 - Pilotwings (USA).sfc",
@@ -77,7 +97,11 @@
       "crc32": "9bfe8684",
       "md5": "775e305dd379a11a22a9035563b10a8b",
       "sha1": "76536914d2b058259f2297f76eaaafed7bb71e56",
-      "sha256": "82571a02ac565e079ea269c0d8efc253a1dd68146ee54029f8aeaa751d073772"
+      "sha256": "82571a02ac565e079ea269c0d8efc253a1dd68146ee54029f8aeaa751d073772",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Drift King Shutokou Battle '94 - Tsuchiya Keiichi & Bandou Masaaki (Japan).sfc",
@@ -89,7 +113,11 @@
       "crc32": "33ce298f",
       "md5": "4a5a8a88353aeecd55fb6c13204d5882",
       "sha1": "719599ce4acbc1b790cb09506183bc2a9121671f",
-      "sha256": "f6010bbaaad08c3427fa0273461399da15fb56a69be2144beeb688cbcddfe25d"
+      "sha256": "f6010bbaaad08c3427fa0273461399da15fb56a69be2144beeb688cbcddfe25d",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Drift King Shutokou Battle 2 - Tsuchiya Keiichi & Bandou Masaaki (Japan).sfc",
@@ -101,7 +129,11 @@
       "crc32": "87aab79a",
       "md5": "465f3757655a06741f7e2a7277ac4fca",
       "sha1": "8d510935b6bf3a1ac42ef3501dca3477cc4cab5c",
-      "sha256": "9fdd65a2921d9e2261734d764fcd87987c49b651c06adf60f6e5a9c754c2b7ca"
+      "sha256": "9fdd65a2921d9e2261734d764fcd87987c49b651c06adf60f6e5a9c754c2b7ca",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Dungeon Master (Europe).sfc",
@@ -113,7 +145,11 @@
       "crc32": "89a67adf",
       "md5": "1036e94c19d336069adde20d5a2ff15f",
       "sha1": "30fc660fb1e78d0533f424da750112dcd615050a",
-      "sha256": "e68eaed4eae2b1236264c0307b14bb2872e57471a166294e96ae56b7ba1a5e57"
+      "sha256": "e68eaed4eae2b1236264c0307b14bb2872e57471a166294e96ae56b7ba1a5e57",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Dungeon Master (Japan) (Rev 1).sfc",
@@ -125,7 +161,11 @@
       "crc32": "aa79fa33",
       "md5": "19d50794ff397278e11dbf3fbef58a58",
       "sha1": "e6d33ef74366333999ea11495c7a62d4ba07df0f",
-      "sha256": "35ff99319ecc7ce1216c5096f46fcc11659254d570614d683f0f8ef773ed75b8"
+      "sha256": "35ff99319ecc7ce1216c5096f46fcc11659254d570614d683f0f8ef773ed75b8",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Dungeon Master (USA).sfc",
@@ -137,7 +177,11 @@
       "crc32": "0dfd9ceb",
       "md5": "3d1b171d7486438af2d9ec3d98b155cd",
       "sha1": "e65ae62ec9a1c48a3512db66f929c7b0055ae2c3",
-      "sha256": "2dfc2e037679a62a960dab9682bca6d1b2737f603edd336c8b2fdf05db10cc07"
+      "sha256": "2dfc2e037679a62a960dab9682bca6d1b2737f603edd336c8b2fdf05db10cc07",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Final Stretch (Japan).sfc",
@@ -149,7 +193,11 @@
       "crc32": "8d29f41f",
       "md5": "750c39bc838483b569976cffadfbc7b6",
       "sha1": "3c8e37271d995d9507d733864ab79b43ab531e96",
-      "sha256": "4e22d625595dac0cf3c3053d9e715dc227d3bbe24adad826d5b3f2a035553617"
+      "sha256": "4e22d625595dac0cf3c3053d9e715dc227d3bbe24adad826d5b3f2a035553617",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Hanguk Pro Yagu (Korea).sfc",
@@ -161,7 +209,11 @@
       "crc32": "a21fb1d5",
       "md5": "920d26154da3da96820ad07a3a05844a",
       "sha1": "1e6b3ebdb5227626f4226ff9eef166294ffe063c",
-      "sha256": "ce770d366ef5d956c865b803f98775f19f0c3b1e996f4499ef665bcaf697c47d"
+      "sha256": "ce770d366ef5d956c865b803f98775f19f0c3b1e996f4499ef665bcaf697c47d",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Lock On (USA).sfc",
@@ -173,7 +225,11 @@
       "crc32": "84f7e078",
       "md5": "76a5cf0ba713446cbec55d072e20528b",
       "sha1": "1f5e53a0391a902de6ee9407ed10803c84e23cc3",
-      "sha256": "7e1d6242ae2ec2c23afb876becdcf778098edd4d853234222dc16471cb51df9e"
+      "sha256": "7e1d6242ae2ec2c23afb876becdcf778098edd4d853234222dc16471cb51df9e",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Michael Andretti's Indy Car Challenge (Japan).sfc",
@@ -185,7 +241,11 @@
       "crc32": "1128572b",
       "md5": "2484f41a03392dee2116afb9c7d7bdc6",
       "sha1": "ec07f7e81f13193805c3cd4b486118d218653da3",
-      "sha256": "126081caccc4bac5d616608c20a3adec9cd50e8f2133824e693921160e835725"
+      "sha256": "126081caccc4bac5d616608c20a3adec9cd50e8f2133824e693921160e835725",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Michael Andretti's Indy Car Challenge (USA).sfc",
@@ -197,7 +257,11 @@
       "crc32": "0fdb210e",
       "md5": "8874a87e4e0ccfa742e244017b6c544c",
       "sha1": "20b7fd6a8604fa36f75edf9ccb24380b13d8c905",
-      "sha256": "d3180e4c20b12e78e7a94a40d1f168d5a8198b21df9586ade0512720b415f67e"
+      "sha256": "d3180e4c20b12e78e7a94a40d1f168d5a8198b21df9586ade0512720b415f67e",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Pilotwings (Europe).sfc",
@@ -209,7 +273,11 @@
       "crc32": "def45776",
       "md5": "b1e59f8246f1ab07670e5f1015189b3a",
       "sha1": "d450d6d580d163fdfcc4f58d5bf8fafd7f510750",
-      "sha256": "f70a72f3d3a65497cdc4d849877a29cf4f7bd10439bb7f5cb8675cdfc0e706d4"
+      "sha256": "f70a72f3d3a65497cdc4d849877a29cf4f7bd10439bb7f5cb8675cdfc0e706d4",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Pilotwings (Japan).sfc",
@@ -221,7 +289,11 @@
       "crc32": "77871727",
       "md5": "55b2db1758dcfb0582ccafe6b0a763ec",
       "sha1": "76832034269723dc0aa7b9019faa5e8f39181e9d",
-      "sha256": "d1845de22c3c7f2606bda20e09c8f7a78f92f5cbbb6bfe01f96a1d1e84b30394"
+      "sha256": "d1845de22c3c7f2606bda20e09c8f7a78f92f5cbbb6bfe01f96a1d1e84b30394",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Pilotwings (USA).sfc",
@@ -233,7 +305,11 @@
       "crc32": "266c44ed",
       "md5": "8dcb216beed58c798b25df55f62218d0",
       "sha1": "fe941ba251acf329f028a1603a43562db2c75e51",
-      "sha256": "03d0127f5de3237e22ad00de0c20763274da7b71142dde693240ac96d10983a3"
+      "sha256": "03d0127f5de3237e22ad00de0c20763274da7b71142dde693240ac96d10983a3",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Planet's Champ TG 3000, The (Japan).sfc",
@@ -245,7 +321,11 @@
       "crc32": "b9b9df06",
       "md5": "6ae194d9f8022c9a2962a423ffbc40cc",
       "sha1": "3e7f10e13065424a28c93871b4a1e458817d754c",
-      "sha256": "7611e662666a33a9fca7569f26f85faeb687470b0d64ae853de411c0885000f7"
+      "sha256": "7611e662666a33a9fca7569f26f85faeb687470b0d64ae853de411c0885000f7",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "PowerFest 94 - Super Mario Kart (USA).sfc",
@@ -257,7 +337,11 @@
       "crc32": "9974b593",
       "md5": "2e8dc55d0241f01b2265dc6667932b9e",
       "sha1": "1c53c806d0dd5bad4b8b9337c0051ddaa0d3355f",
-      "sha256": "19eb77affbf8dd068f5d79a3cf80a2084fd73237cd1ae4e47192b4422449e64a"
+      "sha256": "19eb77affbf8dd068f5d79a3cf80a2084fd73237cd1ae4e47192b4422449e64a",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "SD Gundam GX (Japan).sfc",
@@ -269,7 +353,11 @@
       "crc32": "4dc3d903",
       "md5": "3c9e14d90815bfc9fd154a30c85763cf",
       "sha1": "a504b74d1e256f97bc05a7dd836a2457ae6f525e",
-      "sha256": "0cfea1ceee12d8276fedaf08f64e9413dccbd71ab83ae404b10276b893d46f6d"
+      "sha256": "0cfea1ceee12d8276fedaf08f64e9413dccbd71ab83ae404b10276b893d46f6d",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Soukou Kihei Votoms - The Battling Road (Japan).sfc",
@@ -281,7 +369,11 @@
       "crc32": "c00f0bc9",
       "md5": "026143f279d0936ce1372214450056a9",
       "sha1": "bf1f8c6abb074dc70b36cb2504a232e2e045bf34",
-      "sha256": "a0347898ee96b7729ad5781e0784ad2a34469dfdc6755a7c6957501e26398729"
+      "sha256": "a0347898ee96b7729ad5781e0784ad2a34469dfdc6755a7c6957501e26398729",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Super 3D Baseball (Japan).sfc",
@@ -293,7 +385,11 @@
       "crc32": "304123c2",
       "md5": "ab42576ac7efb809f701a6c08f1554f3",
       "sha1": "124ee1ee5bae9268095037abd7d51045de6ac55e",
-      "sha256": "0b6835fd11307d5e4adb8a8fc5e84fbbddeef8becddcceab65418da0618cf3f1"
+      "sha256": "0b6835fd11307d5e4adb8a8fc5e84fbbddeef8becddcceab65418da0618cf3f1",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Super Air Diver (Europe).sfc",
@@ -305,7 +401,11 @@
       "crc32": "0b57c764",
       "md5": "cfb45d39478ac7af79276b047de3aa87",
       "sha1": "f70567b9dc858bdb66d73d539390b7f74f00ff8a",
-      "sha256": "dc00b557e85b5f30e2a8cc269e12e55f71802c3024a6f8e9b299f0722a6f4a55"
+      "sha256": "dc00b557e85b5f30e2a8cc269e12e55f71802c3024a6f8e9b299f0722a6f4a55",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Super Air Diver (Japan).sfc",
@@ -317,7 +417,11 @@
       "crc32": "971e74ba",
       "md5": "15ad304a4884722502ec2bb062d2cf56",
       "sha1": "ffb81b82ea027673cbfc26f6ebd9f05c2d60d6c8",
-      "sha256": "abec092d53fa56dd97b72279fcbe1545762d874daf721c4f3a1f3402da643d9c"
+      "sha256": "abec092d53fa56dd97b72279fcbe1545762d874daf721c4f3a1f3402da643d9c",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Super Air Diver 2 (Japan) (En).sfc",
@@ -329,7 +433,11 @@
       "crc32": "a6ad6b0f",
       "md5": "83e721806dd5ffae336e8caf03c2fc11",
       "sha1": "acaec55441b7d894d33540d905e47e5fb0dacbcc",
-      "sha256": "e0a648561c54c6f44819dfd88d27590a15686a0fc5bb3a67aed94d99323a7c11"
+      "sha256": "e0a648561c54c6f44819dfd88d27590a15686a0fc5bb3a67aed94d99323a7c11",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Super Bases Loaded 2 (USA).sfc",
@@ -341,7 +449,11 @@
       "crc32": "e14128ca",
       "md5": "76951ba56bd1311b7a3bb3481a1a7920",
       "sha1": "d7d29e9a6a4820f2df03eeb80fdbc2b7df37f481",
-      "sha256": "ff75fd4b096d48ce4a677c3321266d67077d6c586c9ee6926c7716a34f6d5ce1"
+      "sha256": "ff75fd4b096d48ce4a677c3321266d67077d6c586c9ee6926c7716a34f6d5ce1",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Super F1 Circus Gaiden (Japan).sfc",
@@ -353,7 +465,11 @@
       "crc32": "6b8ac3b3",
       "md5": "aac1685a925cd0a5a6819c6fde8e4531",
       "sha1": "a4179b57cec282cee174432dac651b1df9b6eacc",
-      "sha256": "15a396dcc56cb40dc80733870d2d019cb59b80002ed05e746e4834ac07e22f13"
+      "sha256": "15a396dcc56cb40dc80733870d2d019cb59b80002ed05e746e4834ac07e22f13",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Super Mario Kart (Europe).sfc",
@@ -365,7 +481,11 @@
       "crc32": "56410e5e",
       "md5": "f9fe266e91632e68b558d6b43393eaba",
       "sha1": "27d9b4f30d39af75075691344b7bdeedbd32ac19",
-      "sha256": "1bdf422695a30e704e8abb7743b9c178d1ef2b200515a83cd41daef85e6b99e2"
+      "sha256": "1bdf422695a30e704e8abb7743b9c178d1ef2b200515a83cd41daef85e6b99e2",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Super Mario Kart (Japan).sfc",
@@ -377,7 +497,11 @@
       "crc32": "c8002453",
       "md5": "f7afa112d7ec1d532636703e4b02700a",
       "sha1": "cbb853bf911255c1d8eb27cd34fc7855a0dda218",
-      "sha256": "c04f517c2675d7a8f3498d958f097443dfaa0e66606c69c59b58a915b3454973"
+      "sha256": "c04f517c2675d7a8f3498d958f097443dfaa0e66606c69c59b58a915b3454973",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Super Mario Kart (USA).sfc",
@@ -389,7 +513,11 @@
       "crc32": "cd80db86",
       "md5": "7f25ce5a283d902694c52fb1152fa61a",
       "sha1": "47e103d8398cf5b7cbb42b95df3a3c270691163b",
-      "sha256": "2ada8919688087be60a6a48cace8f877add60c45d2e5d09e2442faa55be62a49"
+      "sha256": "2ada8919688087be60a6a48cace8f877add60c45d2e5d09e2442faa55be62a49",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Suzuka 8 Hours (Japan) (En).sfc",
@@ -401,7 +529,11 @@
       "crc32": "b846b00d",
       "md5": "81cee1957fa875efbedaff130848ba9e",
       "sha1": "d110e337a49f6a635236c9bf485759e48411cb69",
-      "sha256": "3aef80a3997b500a71ae76ac170c49b04f44dd8d9b60c0141d8aca0bb30567ac"
+      "sha256": "3aef80a3997b500a71ae76ac170c49b04f44dd8d9b60c0141d8aca0bb30567ac",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Suzuka 8 Hours (USA).sfc",
@@ -413,7 +545,11 @@
       "crc32": "54740b9b",
       "md5": "9f749083058a08a63cc026542dc3a904",
       "sha1": "90a418a1d0a65c32ea8945c6496602f0d11514a5",
-      "sha256": "ed8fa0dd7bb99957304e2de37f7dd79769d6534f9b01e290332b862f8ab43c4e"
+      "sha256": "ed8fa0dd7bb99957304e2de37f7dd79769d6534f9b01e290332b862f8ab43c4e",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Top Gear 3000 (Europe).sfc",
@@ -425,7 +561,11 @@
       "crc32": "493fdb13",
       "md5": "462e15c018c653335ba634d3c1cd06c9",
       "sha1": "777d8732023a300a2c566f2d48bc354e0aa1da7e",
-      "sha256": "4d7c81b0bad57a4c1c410fae4e58cd95fe25c29d7fb922778530cd457b5502e7"
+      "sha256": "4d7c81b0bad57a4c1c410fae4e58cd95fe25c29d7fb922778530cd457b5502e7",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     },
     {
       "name": "Top Gear 3000 (USA).sfc",
@@ -437,7 +577,23 @@
       "crc32": "a20be998",
       "md5": "23eaa07e3f3315fa43f4b4d94ec97a7b",
       "sha1": "058aadf1ee719cb9e0c7333e665797f990a6381d",
-      "sha256": "6be49983976564f1fd9eff2f14f5bb41d3a0ff48573e39318088ecce286aca62"
+      "sha256": "6be49983976564f1fd9eff2f14f5bb41d3a0ff48573e39318088ecce286aca62",
+      "provenance": {
+        "kind": "localCopy",
+        "verifiedOn": "2026-08-20"
+      }
     }
-  ]
+  ],
+  "provenance": {
+    "note": "Where each digest below came from, because a digest without that is a claim about one machine rather than about the artifact.",
+    "kinds": {
+      "localCopy": "Computed from a copy the author holds, on the date given. The weakest provenance this project accepts, and the one every entry has.",
+      "database": "Taken from a published catalogue, named with its version. No entry here has this yet."
+    },
+    "onlyRetailDumps": "Every entry is a retail release. A ROM hack is somebody's edit, and a protocol read out of one is not a protocol any hardware spoke."
+  },
+  "badDumps": {
+    "note": "Damaged dumps, declared per cartridge, so a damaged copy is told it is damaged rather than unrecognised.",
+    "recorded": 0
+  }
 }

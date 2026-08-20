@@ -82,6 +82,12 @@ failure and must never be reported as one, in CI or anywhere else.
 
 ## Things that will bite you
 
+**Prettier walks into submodules, and their files are not this project's to
+format.** A dependency records what its own recorder writes, in that recorder's
+format, and its ignore file exempts it. This project's ignore file has to exempt
+the whole submodule tree instead, or the gate fails on a file no change here
+touched and no change here may fix.
+
 **Run the suite on the oldest Python supported, not only the newest.** Annotations
 are evaluated eagerly before 3.14 and lazily from 3.14 on. A file that names a
 type imported only under `TYPE_CHECKING` will import fine on 3.14 and raise

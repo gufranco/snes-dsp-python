@@ -34,6 +34,27 @@ def a_catalogue(image: bytes, name: str = "made-up.sfc", **overrides: Any) -> di
     return {"cartridges": [entry]}
 
 
+class ProvenanceTest(unittest.TestCase):
+    """Where each published digest came from, which a digest alone does not say."""
+
+    def test_every_cartridge_says_where_its_digests_came_from(self) -> None:
+        for one in cartridges.manifest()["cartridges"]:
+            self.assertIn("provenance", one, one["name"])
+
+    def test_and_names_a_kind_the_manifest_explains(self) -> None:
+        held = cartridges.manifest()
+        kinds = held["provenance"]["kinds"]
+
+        for one in held["cartridges"]:
+            self.assertIn(one["provenance"]["kind"], kinds, one["name"])
+
+    def test_the_weakest_kind_says_that_it_is_the_weakest(self) -> None:
+        self.assertIn("weakest", cartridges.manifest()["provenance"]["kinds"]["localCopy"])
+
+    def test_the_manifest_says_only_retail_dumps_are_listed(self) -> None:
+        self.assertIn("retail", cartridges.manifest()["provenance"]["onlyRetailDumps"])
+
+
 class ManifestTest(unittest.TestCase):
     def test_the_manifest_describes_cartridges(self) -> None:
         self.assertTrue(cartridges.manifest()["cartridges"])
