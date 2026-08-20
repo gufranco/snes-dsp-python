@@ -431,8 +431,8 @@ A shape whose first read comes before its first write is separate again. On a
 console that read follows an earlier exchange and is answered by what that
 exchange left behind; played on its own at a part that has just booted there is
 nothing behind it, and no command can change that because the read happens first.
-Three of the 112 shapes are like this, and they are reported as asked out of order
-rather than counted as silence.
+Three of the 59 shapes that both give and take are like this, and they are
+reported as asked out of order rather than counted as silence.
 
 Every other exchange, on all four parts, gets an answer.
 
