@@ -88,7 +88,7 @@ jobs:
         run: python -m coverage report
 
   firmware:
-    name: Against the microcode, when any is present
+    name: Against the parts, when any microcode is present
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -99,19 +99,18 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      # These checks exist and are meant to be seen. They run the program the
-      # cartridge carries, which belongs to whoever wrote it, so on a machine
-      # without one every check reports as skipped rather than as passed.
-      - name: Run the microcode itself
+      # This runs the program a cartridge carries, which belongs to whoever
+      # wrote it, so on a machine without one it says so and stops rather than
+      # reporting a pass. Everything a machine without one can check runs in the
+      # test job above: this package has no behaviour of its own to get wrong.
+      - name: Drive the parts with the exchanges real cartridges make
         run: |
-          python conformance/against_firmware.py | tee report.txt
-          python conformance/against_firmware.test.py -v 2>&1 | tee -a report.txt
-          python conformance/against_part.py 2>&1 | tee -a report.txt
+          python conformance/against_cartridges.py dsp3 | tee report.txt
         shell: bash
 
       - name: Say what ran and what could not
         run: |
-          if grep -q "skipped" report.txt; then
-            echo "::notice title=Microcode checks skipped::No firmware image was present, so the checks that run the microcode itself did not run. They are not failures; they had nothing to run against."
+          if grep -q "nothing was driven" report.txt; then
+            echo "::notice title=No microcode present::The checks that run a part's own program did not run. They are not failures; they had nothing to run."
           fi
         shell: bash

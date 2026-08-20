@@ -1,89 +1,59 @@
-"""Models of the DSP-1, DSP-2, DSP-3 and DSP-4, the coprocessors in SNES cartridges.
+"""The DSP-1, DSP-2, DSP-3 and DSP-4, run rather than described.
 
     from snesdsp import Dsp
 
-    chip = Dsp(model="dsp2")
+    chip = Dsp("dsp2")
     chip.write(0x09)
     for byte in (0x02, 0x00, 0x03, 0x00):
         chip.write(byte)
     [chip.read() for _ in range(4)]
 
-Nothing starts clean. The chip's parameter RAM holds whatever the previous
-command left, because the hardware never clears it, and one command reads past
-its own data straight into that.
+All four are one processor, a NEC uPD77C25, with different microcode masked into
+it. So there is nothing here that works out what a command computes: the answer
+to that is the program the part carries, and this runs it.
+
+That is a deliberate narrowing. A hand-written model of a command set can be
+checked and can never be finished, because what it covers is the commands
+somebody thought to look at, and the corners nobody characterised are exactly
+where it is silently wrong. Running the program has no such edge: the answer to
+every command, in every state, including the ones no cartridge ever used, is
+whatever the part answers.
+
+What it costs is the microcode, which belongs to whoever made the part and is
+never carried here. A copy you already own goes in the firmware directory of this
+project, or of the project this one sits inside, or in any directory named by
+`UPD7725_FIRMWARE_DIR`. Without one this refuses and says so. It does not fall
+back to a guess.
 """
 
-from .backend import BACKENDS, MODELLED, SILICON, UnknownBackend, chosen
-from .chip import (
-    COMMAND_MERGE,
-    COMMAND_MIRROR,
-    COMMAND_MULTIPLY,
-    COMMAND_SCALE,
-    COMMAND_SYNC,
-    COMMAND_TILE,
-    COMMAND_TRANSPARENT,
-    IDLE_BYTE,
-    Chip,
-)
-from .commands import merge, mirror, multiply, scale, tile
-from .dsp1 import Dsp1
-from .dsp3 import Dsp3
-from .dsp4 import Dsp4
-from .memory import PARAMETER_BYTES, UNSET_SEED, parameter_ram, scramble
-from .models import MODELS, UnknownModelError, describe
-from .silicon import NoFirmware, Silicon
+from .models import MODELS, SHARES_MICROCODE, UnknownModelError, describe
+from .silicon import NeverReady, NoFirmware, Silicon, available, why_not
 from .version import VERSION
 
 __version__ = VERSION
 
-DEFAULT_MODEL = "dsp2"
+DEFAULT_MODEL = "dsp1"
 
 
-def Dsp(model=DEFAULT_MODEL, backend=None, **options):  # noqa: N802
-    """A part of that name, run by its own microcode when an image is present.
+def Dsp(model=DEFAULT_MODEL, **options):  # noqa: N802
+    """One part of that name, running its own microcode.
 
-    `backend` forces one of the two. Left alone, the microcode is used wherever
-    there is an image for the part and the model is used where there is not,
-    because a definition beats a description of it.
+    Refuses when there is no image for it rather than answering from somewhere
+    else, because an answer that did not come from the part is worse than none.
     """
-    which = chosen(model, backend)
-    chip = Silicon(model, **options) if which == SILICON else describe(model).build(**options)
-    chip.backend = which
-    return chip
+    return Silicon(describe(model).name, **options)
 
 
 __all__ = [
-    "BACKENDS",
-    "COMMAND_MERGE",
-    "COMMAND_MIRROR",
-    "COMMAND_MULTIPLY",
-    "COMMAND_SCALE",
-    "COMMAND_SYNC",
-    "COMMAND_TILE",
-    "COMMAND_TRANSPARENT",
-    "IDLE_BYTE",
-    "MODELLED",
     "MODELS",
-    "PARAMETER_BYTES",
-    "SILICON",
-    "UNSET_SEED",
-    "Chip",
+    "SHARES_MICROCODE",
     "Dsp",
-    "Dsp1",
-    "Dsp3",
-    "Dsp4",
+    "NeverReady",
     "NoFirmware",
     "Silicon",
-    "UnknownBackend",
     "UnknownModelError",
     "__version__",
-    "chosen",
+    "available",
     "describe",
-    "merge",
-    "mirror",
-    "multiply",
-    "parameter_ram",
-    "scale",
-    "scramble",
-    "tile",
+    "why_not",
 ]

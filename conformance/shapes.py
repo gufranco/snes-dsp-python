@@ -14,9 +14,10 @@ routine makes and how wide each one was, with no payload attached.
 
 A shape is what this file replays. The bytes filling it are generated from a seed
 here, so nothing belonging to the cartridge is needed to run the sweep and
-nothing belonging to it is stored. What the sweep proves is that the model and
-the part answer the same thing when driven the way the game drives them, which is
-the only driving that has ever had to work.
+nothing belonging to it is stored. What a shape is for is driving the part the
+way the game drives it, which is the only driving that has ever had to work: a
+part fed a sequence no cartridge ever sent is being asked a question nobody has
+an answer for.
 
 The shapes sit in a JSON file beside this one, with the digests of the cartridge
 they were read from, so anybody holding the same cartridge can confirm they are
@@ -92,6 +93,8 @@ def recorded(part, where=None):
     one, and a sweep that is cut short should have spent its budget on those.
     """
     path = Path(where) if where is not None else ROOT / f"{part}shapes.json"
+    if not path.exists():
+        return ()
     held = json.loads(path.read_text())
     if held.get("part") != part:
         raise Malformed(f"{path} holds shapes for {held.get('part')}, not for {part}")
@@ -136,8 +139,9 @@ def commanded(payload, command):
 def drive(chip, steps, payload):
     """One shape through one part, returning everything it said back.
 
-    Both backends are driven through the same three calls, so what is compared is
-    the part against the model rather than two different ways of asking.
+    Three calls, which is everything a console can do to one of these: give it a
+    byte, take a byte, and look at the register that says whether it wants
+    attention.
     """
     giving = iter(payload)
     said = []
