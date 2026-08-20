@@ -424,6 +424,24 @@ carries. Only the DSP-1B changed the program.
 
 </details>
 
+## Contributing
+
+Measurements first. If you have a part, a cartridge, or a machine this has not
+been run against, the most useful thing you can send is a run and what it found,
+especially a disagreement. [CONTRIBUTING.md](CONTRIBUTING.md) has the gates a
+change is expected to pass, [SECURITY.md](SECURITY.md) says what belongs in a
+private report, and the [Code of Conduct](CODE_OF_CONDUCT.md) applies wherever
+this project is discussed.
+
+Never attach a copyrighted image or a game, and never link to somewhere one can
+be downloaded. A digest identifies a file without carrying it.
+
+## Citing this
+
+[CITATION.cff](CITATION.cff) is kept in step with the released version by the
+same script that stamps the package, so the version it names is the version that
+shipped. GitHub renders it as a Cite this repository button.
+
 ## License
 
 [MIT](LICENSE)

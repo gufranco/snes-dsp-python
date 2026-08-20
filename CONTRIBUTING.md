@@ -23,6 +23,12 @@ python3 -m coverage report
 Coverage is a hard gate at 100% statement and branch. A branch with no test
 fails the build rather than lowering the number.
 
+## The workflows
+
+They are checked too, by actionlint, and the archive it comes from is verified
+by digest before it runs. If you have it installed already, `actionlint` from the
+repository root is the same check.
+
 ## Tests
 
 A test file sits beside the module it covers and is named after it. Test bodies
@@ -46,6 +52,14 @@ by semantic-release from those subjects, so the type is what decides the version
 - A number in a document that no run produced.
 - A behaviour changed without the corpus or the pinned digests moving with it.
 - A test that asserts what the code does rather than what the hardware does.
+
+## Conduct
+
+The [Code of Conduct](CODE_OF_CONDUCT.md) applies everywhere this project is
+discussed. One line of it is specific to this repository and worth reading twice:
+never post a copyrighted image, a game, or a link to somewhere either can be
+downloaded. A digest identifies a file without carrying it, and a digest is all
+anybody needs.
 
 ## What is welcome without asking
 
