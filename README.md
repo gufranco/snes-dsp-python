@@ -2,7 +2,7 @@
 
 <h1>SNES DSP Family</h1>
 
-<strong>The NEC uPD77C25 as Nintendo shipped it, with its commands proved rather than sampled.</strong>
+<strong>The NEC uPD77C25 as Nintendo shipped it, running the microcode you supply rather than a description of it.</strong>
 
 <br>
 <br>
@@ -16,22 +16,19 @@
 
 <p align="center">
   <a href="#quick-start">Quick start</a> &nbsp;|&nbsp;
-  <a href="#models">The family</a> &nbsp;|&nbsp;
-  <a href="#the-dsp-2-commands">Commands</a> &nbsp;|&nbsp;
-  <a href="#how-this-is-proved">How this is proved</a> &nbsp;|&nbsp;
-  <a href="#against-the-part-itself">Against the parts</a> &nbsp;|&nbsp;
-  <a href="#the-corpus-and-why-it-can-ship">Why the corpus is legal</a> &nbsp;|&nbsp;
-  <a href="#the-rescale-reads-past-its-own-data">The rescale</a> &nbsp;|&nbsp;
-  <a href="#models">The DSP-4</a> &nbsp;|&nbsp;
+  <a href="#the-family">The family</a> &nbsp;|&nbsp;
+  <a href="#why-there-is-no-model-here">Why there is no model</a> &nbsp;|&nbsp;
+  <a href="#the-microcode-you-supply">The microcode you supply</a> &nbsp;|&nbsp;
+  <a href="#what-is-checked-without-one">What is checked without one</a> &nbsp;|&nbsp;
   <a href="https://github.com/gufranco/snes-dsp-python/issues">Issues</a>
 </p>
 
-**4** microcodes · **5** models, counting both masks of the DSP-1 · **65** commands · **7** renderers that suspend and resume · **810** scripts answered by the parts themselves · **4,715** bytes compared against real hardware · **851,132** bytes agreeing with snes9x · **735** tests · **100%** statement and branch coverage
+**6** parts across **5** microcodes · **1** processor underneath them all · **0** commands described by hand · **142** tests · **100%** statement and branch coverage · every image confirmed by **SHA-256** before a byte of it runs
 
 ```python
 from snesdsp import Dsp
 
-chip = Dsp(model="dsp2")
+chip = Dsp("dsp2")
 
 chip.write(0x09)
 for byte in (0x02, 0x00, 0x03, 0x00):
@@ -41,74 +38,58 @@ for byte in (0x02, 0x00, 0x03, 0x00):
 # [6, 0, 0, 0]
 ```
 
-```python
-from snesdsp import Dsp
-
-road = Dsp(model="dsp4")
-
-road.write(0x01)
-road.write(0x00)
-for byte in opening_stretch:
-    road.write(byte)
-
-road.out_count
-# how many bytes of scanline this stretch produced
-```
-
 ---
 
 ## The problem
 
-None of these chips has a published per-instruction test suite the way a 6502 or a Z80 does, and none ever will. They are one NEC uPD77C25 with Nintendo's microcode masked into it, and the microcode is what makes each of them a different chip. The DSP-2 modelled here shipped in exactly one cartridge, so its sample size is one game.
+The DSP-1, DSP-2, DSP-3 and DSP-4 are not four chips. They are one chip, a NEC
+uPD77C25, with four different programs masked into it, which is why they answer
+completely unrelated commands while being the same silicon underneath.
 
-The usual answer is to record the real chip and replay the recording. That works, and it has a ceiling. A recording only covers what that one game happened to ask for, so the moment you use the model for anything else, you are outside what was ever tested. It is also the game's own artwork, which makes shipping it a redistribution problem rather than a testing one.
+Every emulator that supports them carries a hand-written implementation of what
+each command computes. Those implementations are derived: somebody worked out
+what a command does and wrote it down. That can be checked and it can never be
+finished, because what it covers is the commands somebody thought to look at, and
+the corners nobody characterised are exactly where it is quietly wrong.
+
+This package carried one too. Held against the parts' own microcode, four of the
+five sat between 67% and 100% of the bytes their hardware answers, with 75 places
+written down where they differed. Two of those differences were in a reference
+implementation the whole scene works from.
 
 ## The solution
 
-Separate what each command computes from the protocol that feeds it, then prove the commands directly.
+Run the program instead.
 
-Five of the six commands are pure functions of their input, and each one has an input space small enough or structured enough to be settled rather than sampled. The tile conversion is a permutation of the 256 bits it is given, so 256 single-bit inputs pin where every bit lands and nothing can be hiding. The merge is a per-nibble rule, so every combination of colour and byte it accepts is checked. The multiply is checked against arithmetic. That is a stronger claim than any recording supports.
+Given the microcode, there is nothing left to derive. The answer to every
+command, in every state, including the ones no cartridge ever sent, is whatever
+the part answers, because it is the part answering. There is no long tail to
+chase and no percentage to report.
 
-The recording still has a job, and it is kept: this model agrees byte for byte with a reference that reproduced **71,970,987 bytes** of real recorded traffic with zero errors, over 1,139,246 reads of randomised command streams that reach lengths the game never used.
+| | Running the program | Describing what it does |
+|:--|:--|:--|
+| Commands covered | Every one, including undocumented | The ones somebody characterised |
+| Behaviour in a state nobody tried | The part's | Unknown, and silently plausible |
+| What it needs | An image of the microcode | Nothing |
+| How wrong it can be | Not a meaningful question | A number that moves |
 
-The DSP-4 does not fit that argument, and gets a different one. It is a renderer rather than a calculator: nothing it does is a small pure function, and several of its commands cannot finish in one go. So it is held to a corpus of roads generated from seeds and answered by the chip's own reference, 140 of them and 725,032 bytes, covering every one of its seven renderers. That comparison found two defects in this model and one in the reference.
+The cost is real and is stated plainly: without an image this package refuses.
+It does not fall back to a guess, because an answer that did not come from the
+part is worse than no answer.
 
-Those corpora are recordings. They were taken from the reference implementations once and are replayed here forever after, which is why this repository is Python throughout and needs nothing else installed to check itself. New evidence now comes from a stronger direction: the microcode the cartridge itself carries, run on a model of the processor it is masked into.
+## Why there is no model here
 
-<table>
-<tr>
-<td width="50%" valign="top">
+This used to be roughly twelve thousand lines: four command sets, the tables they
+worked from, four corpora recorded from other implementations, and a switch that
+chose between running the part and describing it. All of it is gone.
 
-### Proved, not sampled
+What went with it is worth naming, because none of it was checking anything the
+part could not answer itself. The corpora were recordings of software, and where
+that software and the chip disagreed the chip was right. The command sets were
+the only reason a corpus was needed at all.
 
-The bit permutation is settled by 256 one-hot inputs. The merge is checked over every input it accepts. Neither is a spot check.
-
-</td>
-<td width="50%" valign="top">
-
-### Nothing starts clean
-
-The parameter RAM is scrambled by default, because the chip never clears it and one command reads straight into whatever is there.
-
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
-
-### Commands split from protocol
-
-The five transforms are plain functions with no notion of a port. That separation is what makes them provable at all.
-
-</td>
-<td width="50%" valign="top">
-
-### It never redistributes a game
-
-No recording ships here, and none ever will. The bytes this chip returns are the artwork.
-
-</td>
-</tr>
-</table>
+What is left is the part catalogue, the port layer, and the arrangement that
+loads an image and drives it.
 
 ## Quick start
 
@@ -116,443 +97,132 @@ No recording ships here, and none ever will. The bytes this chip returns are the
 
 | Tool | Version | Install |
 |:-----|:--------|:--------|
-| Python | >= 3.12 | [python.org](https://www.python.org/downloads/) |
+| Python | 3.12, 3.13 or 3.14 | [python.org](https://www.python.org/downloads/) |
+| Git | any | [git-scm.com](https://git-scm.com/) |
 
 ### Setup
 
 ```bash
-git clone https://github.com/gufranco/snes-dsp-python.git
+git clone --recurse-submodules https://github.com/gufranco/snes-dsp-python.git
 cd snes-dsp-python
 ```
+
+The submodule is [`nec-upd7725-python`](https://github.com/gufranco/nec-upd7725-python),
+the processor these parts are built on. Without it nothing here can run at all.
+
+### Supply the microcode
+
+A copy of the microcode you already own goes in one of these, and the first one
+that has it wins:
+
+1. any directory named by `UPD7725_FIRMWARE_DIR`, several separated the way your
+   system separates a path
+2. the `firmware/` directory of the project this one sits inside, which is what a
+   parent project uses when it carries this as a submodule
+3. this project's own `firmware/` directory
+
+Nothing is downloaded and nothing is shipped. The files are named below so you
+can confirm the one you have is the one the part expects.
 
 ### Verify
 
 ```bash
-python3 snesdsp/commands.test.py
-# Ran 33 tests in 0.03s
-# OK
+python3 -c "import snesdsp; print(sorted(snesdsp.available()) or snesdsp.why_not())"
+# ['dsp1', 'dsp1a', 'dsp1b', 'dsp2', 'dsp3', 'dsp4']
 ```
 
-## The DSP-2 commands
+Without an image that prints the reason instead, naming where to put one.
 
-Everything reaches the chip through one byte-wide port: a command, then any lengths it needs, then its data. Results leave the same way, a byte at a time, and reading past the end gives `$FF`.
+## The microcode you supply
 
-| Command | Byte | Takes | Gives |
-|:--------|:----:|:------|:------|
-| Tile conversion | `$01` | 32 bytes | 32 bytes, rearranged into bit planes |
-| Transparent colour | `$03` | 1 byte | nothing; it sets state the merge reads |
-| Merge | `$05` | a length, then two runs of it | one run, overlaid |
-| Mirror | `$06` | a length, then that many bytes | the run reversed, with each byte's pixels swapped |
-| Multiply | `$09` | 4 bytes | a 32-bit product |
-| Rescale | `$0D` | two lengths, then half the input | the output length, resampled |
-| Sync | `$0F` | nothing | nothing |
+Every image is identified before a byte of it is executed. SHA-256 decides; the
+other values are there so you can cross-check against a database that keys on
+them.
 
-A command the chip does not recognise produces nothing and leaves it ready for the next one.
+| Part | Bytes | CRC32 | SHA-256 |
+|:--|--:|:--|:--|
+| `dsp1` | 8,192 | `27124599` | `5f2e5ed06b362be023b978b5978813ecb9a07c76592454b45c2a1ed17a0de349` |
+| `dsp1b` | 8,192 | `588279b4` | `4d42db0f36faef263d6b93f508e8c1c4ae8fc2605fd35e3390ecc02905cd420c` |
+| `dsp2` | 8,192 | `f0221c90` | `5efbdf96ed0652790855225964f3e90e6a4d466cfa64df25b110933c6cf94ea1` |
+| `dsp3` | 8,192 | `e3b54e6a` | `2e635f72e4d4681148bc35429421c9b946e4f407590e74e31b93b8987b63ba90` |
+| `dsp4` | 8,192 | `ca09e176` | `63ede17322541c191ed1fdf683872554a0a57306496afc43c59de7c01a6e764a` |
 
-## The rescale reads past its own data
-
-This is the behaviour that makes the parameter RAM part of the model rather than an implementation detail.
-
-```python
-from snesdsp import Dsp
-
-chip = Dsp(fill=0)
-chip.parameter_ram[60] = 0xAB
-
-chip.write(0x0D)
-chip.write(120)
-chip.write(120)
-for _ in range(60):
-    chip.write(0x00)
-
-bytes(chip.read() for _ in range(120))[60]
-# 0xAB, which was never sent as part of this command
-```
-
-The walk is bounded by the **output** length, not by the data it was given. With the step at one unit, which is every case where the input is no longer than the output, it reads 120 bytes from a 60-byte payload. What it finds past the payload is whatever the previous command left behind, because the chip never clears its RAM.
-
-> [!IMPORTANT]
-> An earlier implementation padded with zeroes and agreed with every recorded run anyway, because in those runs the reads past the payload happened to land on bytes that were still zero. It disagreed everywhere else. This is exactly the class of bug that a clean-start model hides and a scrambled one exposes.
-
-## How this is proved
-
-| Command | Oracle | Strength |
-|:--------|:-------|:---------|
-| Tile conversion | 256 one-hot inputs, one per bit | Exhaustive. A bit permutation is fully determined by where each single bit lands |
-| Merge | Every colour against a spread of byte pairs, checked against the nibble rule | Exhaustive over the rule's inputs |
-| Multiply | Compared against arithmetic across the 16-bit range | Settled |
-| Mirror | Reversal and nibble-swap properties, plus its own inverse | Settled |
-| Rescale | Fixed-point walk, including reads past the payload and wrapping in RAM | Behavioural |
-| Whole chip | 95,784 reads against snes9x's own `dsp2.cpp` | Differential, independent implementation |
-| Real command shapes | Every command, length and transition a cartridge actually uses | Measured from 1,804,133 real commands |
-
-The differential is the one that ties this to real hardware, and it found a real bug. The chip latches per command whether a length has already been given, and decides whether data follows by looking at the length byte itself. A length of zero therefore does not cancel a command; it arms one, and the next byte on the port is read as a new command. A tidier model that resets on a zero length passes every ordinary test and answers differently here.
-
-### Against the part itself
-
-Everything above holds a model to a recording or to a rule. This holds it to the
-part. Each of the five is asked the same fixed set of questions once, on a
-machine that has an image of its microcode, and what it answered is recorded in
-[`conformance/against_part.json`](conformance/against_part.json) beside the
-questions. Everywhere else the models are replayed against that record, so a
-machine that will never hold an image still checks against what the hardware
-said.
-
-That is what makes the two backends one promise rather than two. The microcode is
-used wherever an image is present and is right by construction. The model is what
-ships, and this says how far it is from the part.
-
-| Part | Bytes compared | Matching the part | Where the rest is |
-|:-----|---------------:|------------------:|:------------------|
-| DSP-1 | 1,820 | 1,819 | Command `0x34` |
-| DSP-1B | 1,820 | 1,819 | The same command |
-| DSP-2 | 260 | 228 | Command `0x09`, the multiply |
-| DSP-3 | 365 | 259 | Commands `0x02`, `0x1e` and `0x38` |
-| DSP-4 | 450 | 300 | Eight of its fifteen commands |
-
-None of those is a defect in the part. The microcode is the definition, so every
-one of them is a place the model is wrong, and each is written down in the corpus
-as a line naming the part, the command, the input and the byte. That list is a
-gate rather than a footnote: fixing one removes a line, breaking one adds a line,
-and either way [`conformance/against_part.py`](conformance/against_part.py) fails
-until the change is written down. A number in a README drifts; this cannot.
-
-The commands that read a part's own table back out are asked too, and compared
-differently. What they answer is content rather than behaviour, so the answer is
-never written down: one digest over the whole of it is. A digest settles whether
-two parts said the same thing and reconstructs nothing, and taking one over the
-whole answer means it cannot be walked back a word at a time the way a digest per
-word could. On a machine with no image those scripts report as skipped, out loud,
-rather than as passed.
-
-The questions come from the parts as well. What each command takes was found by
-feeding it one word at a time and watching for the first answer that was not an
-echo of what had just been written, because a part still waiting hands back the
-last thing it was given. And for the DSP-3, the shape of a real exchange was read
-out of the only retail cartridge that carries one, with
-[`snes-driver-python`](https://github.com/gufranco/snes-driver-python), which
-disassembles the routine that drives it rather than running the game.
-
-### The corpus, and why it can ship
-
-The DSP-2 has no published per-instruction suite, so the evidence is a recording of a real cartridge driving a real chip. A recording holds two separable things, and only one of them can leave your machine.
-
-| Part of a recording | What it is | Ships? |
-|:--------------------|:-----------|:-------|
-| Payload bytes | The game's graphics, encoded | Never |
-| Which commands were issued | How a program drives a peripheral | Yes |
-| The lengths asked for | Interface parameters | Yes |
-| The order commands came in | Program behaviour | Yes |
-
-The second group is functional rather than authored. It is dictated by the chip's interface, not chosen by an artist, and that is the distinction copyright draws in [17 U.S.C. 102(b)](https://www.law.cornell.edu/uscode/text/17/102) and in `Feist` for facts. [`conformance/capture.py`](conformance/capture.py) produces exactly that and never writes a payload byte.
-
-So [`conformance/corpus.json`](conformance/corpus.json) is built in three steps:
-
-1. **Shapes measured from real hardware.** `1,804,133 commands issued by a cartridge to its DSP-2. Every command it uses, every length it asks for, and every transition between commands is reproduced.
-2. **Payloads generated from a seed.** The bytes filling those shapes are arithmetic, not artwork, produced by `port_for` in [`conformance/corpus.py`](conformance/corpus.py).
-3. **Answers computed by the reference chip.** Expected outputs come from snes9x's `dsp2.cpp`, not from this implementation, so agreement is a cross-check rather than a restatement.
-
-The result is real in the way that matters and synthetic in the way it must be. A bug that only appears on a length the cartridge actually uses is caught; a byte of the game is not shipped.
+Confirm one you hold:
 
 ```bash
-python3 conformance/corpus.py
-#   257 exchanges from conformance/corpus.json, against snes9x 1.63 dsp2.cpp
-#   shapes measured from 1804133 real commands
-#   257 agreed, 0 did not
+shasum -a 256 firmware/dsp1.bin      # macOS
+sha256sum firmware/dsp1.bin          # Linux
+certutil -hashfile firmware\dsp1.bin SHA256   # Windows
 ```
 
-> [!IMPORTANT]
-> This reasoning is how the repository is built, not legal advice. If you plan to redistribute anything derived from a cartridge, the safe rule is the one used here: publish behaviour, never content.
+A file that does not match is refused rather than run, and the refusal says what
+was computed so you can search for it.
 
-### Recording your own cartridge
+## The family
 
-None of the above replaces decoding real payloads. If you own the game, record its port traffic and turn it into a shape profile:
+| Part | What it does | Image it runs |
+|:--|:--|:--|
+| DSP-1 | Fixed-point three dimensional maths, in more cartridges than the rest together | its own |
+| DSP-1A | A die shrink of the DSP-1, same program and data ROM | the DSP-1's |
+| DSP-1B | The last mask, which corrected an arithmetic fault | its own |
+| DSP-2 | Tile conversion, scaling and a multiply | its own |
+| DSP-3 | Decompression and a search across a hex grid | its own |
+| DSP-4 | Draws a road, one scanline batch at a time | its own |
+
+Three of those are one part masked three times. Two programs, three parts: the
+DSP-1A carries the DSP-1's program, so no DSP-1A image exists to find and none is
+needed. It is still a part in its own right and is answered as one.
+
+## What is checked without one
+
+A machine holding no microcode still checks everything this package can get
+wrong, because the part-specific knowledge is no longer in the code.
+
+| Layer | What is checked | Needs an image |
+|:--|:--|:--:|
+| The processor | Every instruction, in [`nec-upd7725-python`](https://github.com/gufranco/nec-upd7725-python) | No |
+| The port | The handshake, the pacing, the status register, driven by a program of zeroes | No |
+| Identity | That every part names an image with a deciding digest, so a supplied file is confirmed rather than trusted | No |
+| The catalogue | Every part, every name it answers to, and which image each runs | No |
+| The parts | Driven through the exchanges a real cartridge makes with them | Yes |
+
+That last one is the only check that needs an image, and it reports as skipped
+rather than as passed when there is none.
+
+### Driven by what a cartridge actually sends
+
+These parts have no framing, so a byte means whatever the state left by the bytes
+before it decides, and a sequence no game ever sent asks a question nobody has an
+answer for. What a game sends is not derived here either: it is read out of the
+cartridge by [`snes-driver-python`](https://github.com/gufranco/snes-driver-python),
+which disassembles the routine that drives the part rather than running the game.
+
+What comes back is a shape, the accesses a routine makes with the width of each
+and no payload attached. [`conformance/dsp3shapes.json`](conformance/dsp3shapes.json)
+holds the seventeen the only DSP-3 cartridge uses, with the digests of the game
+they were read from and none of its bytes.
 
 ```bash
-python3 conformance/capture.py trace.bin shapes.json 28 12 13
-#   1804133 commands, 7 kinds, from trace.bin
-#   16 distinct length shapes
+python3 conformance/against_cartridges.py dsp3
 ```
-
-The log format is deliberately dumb: fixed-size records with a kind byte and a value byte at offsets you name, so a trace from any emulator or logic capture is read by pointing the offsets at the right columns rather than by writing a parser. The trailing arguments above are record size, kind offset and value offset.
-
-That profile stays on your machine, and so does any corpus built from it with real payloads. The shipped corpus is what the reasoning above allows to travel.
-
-## Models
-
-Nintendo shipped one part four times. The DSP-1, DSP-2, DSP-3 and DSP-4 are the
-same NEC uPD77C25 with different microcode masked into it, which is why they
-share a port interface and a parameter RAM and answer completely different
-commands through them. A package named after one of them could not grow into the
-others, so this one is named after the family and the microcode is a construction
-argument.
-
-```python
-from snesdsp import Dsp, describe
-
-describe("dsp-2").parameter_bytes
-# 512
-
-chip = Dsp(model="dsp2")
-```
-
-| Model | State | Parameter RAM | Notes |
-|:------|:------|:-------------:|:------|
-| `dsp1` | modelled | 512 bytes | The first mask, in Pilotwings alone, with its own vector length and its own version word. Thirty one commands: a camera, three attitude matrices, and the projections that ask questions of them. Aliases: `dsp-1`, `upd77c25dsp1`, `nintendodsp1` |
-| `dsp1b` | modelled | 512 bytes | The last mask, in nearly every other cartridge of the family. It corrects the first mask's vector length. Aliases: `dsp-1b`, `upd77c25dsp1b`, `nintendodsp1b` |
-| `dsp2` | modelled | 512 bytes | Six commands. Aliases: `dsp-2`, `upd77c25dsp2`, `nintendodsp2` |
-| `dsp3` | modelled | none | Thirteen commands: a decompressor, a bit plane converter, a hex grid search. Aliases: `dsp-3`, `upd77c25dsp3`, `nintendodsp3` |
-| `dsp4` | modelled | 512 bytes | Fifteen commands, seven of them renderers. Aliases: `dsp-4`, `upd77c25dsp4`, `nintendodsp4` |
-| `dsp1a` | refused by name | | The middle mask. No image of it has been measured here |
-
-Each of the four has its own recorded corpus, replayed by its own runner, and none
-of them needs anything installed to run.
-
-### The DSP-1 was masked three times
-
-The DSP-1, the DSP-1A and the DSP-1B are three microcodes rather than three
-spellings of one, and the last corrected the first. Nearly half the program
-differs between the first and the last: 993 of 2,048 instruction words and 537 of
-1,024 table words.
-
-Two of the three are modelled here as separate parts, because two of the three
-were measured. Both images were run on the processor they are masked into, in the
-`processor` submodule, and asked the same questions. They answer command `0x2F`
-differently on every input tried:
-
-```python
-from snesdsp import Dsp
-
-
-def names_itself(model):
-    chip = Dsp(model=model, fill=0)
-    for byte in (0x2F, 0x00, 0x00):
-        chip.write(byte)
-    return chip.read() | chip.read() << 8
-
-
-hex(names_itself("dsp1"))  # '0x100'
-hex(names_itself("dsp1b"))  # '0x101'
-```
-
-It is a version word: the part names its own mask.
-
-The second difference is the one that matters, and it is a real fault. Between two
-nodes of its root curve the part blends by a fraction taken from a normalised
-coefficient. The last mask reads nine bits of that fraction, unsigned, which is what
-the blend wants. **The first mask reads ten and treats the tenth as a sign**, so
-whenever that bit is set it blends the wrong way: instead of moving from the lower
-node towards the higher one it moves the same distance below the lower node.
-
-```python
-from snesdsp import Dsp
-
-
-def length(model, x, y, z):
-    chip = Dsp(model=model, fill=0)
-    chip.write(0x28)
-    for value in (x, y, z):
-        chip.write(value & 0xFF)
-        chip.write(value >> 8)
-    return chip.read() | chip.read() << 8
-
-
-length("dsp1", 0x15B9, 0x0AA7, 0x1A44)  # 8908
-length("dsp1b", 0x15B9, 0x0AA7, 0x1A44)  # 9140
-```
-
-The two agree on exactly the half of all inputs where that bit is clear, which is
-why the fault survived long enough to need a mask revision. Both readings were
-measured against their own image: over 200 random vectors the signed reading
-matches the first mask on every one, and the unsigned reading matches the last on
-every one.
-
-Across the 365 answers that corpus covers, both masks match their own microcode
-on every one. A later sweep that picks its inputs at random rather than from the
-corpus found one command where they do not: `0x34` returns three words, and the
-model's first and third differ from the part's by 2 and by 12. The middle word
-agrees. That is a rounding difference inside a maths routine, and since the
-microcode is the definition, it is the model that is wrong. It is open.
-
-The middle mask runs the first mask's program, because that is what the part
-does: the DSP-1A is a die shrink of the DSP-1 and carries the same program and
-data ROM, so there is no DSP-1A image to find and none in circulation has one.
-It is a distinct part with its own die and is answered here as one.
-
-```python
-Dsp(model="dsp1a").backend
-# 'silicon', running the DSP-1's image, because the DSP-1A carries that program
-```
-
-Only the DSP-1B changed the program, correcting the fault above. That is the
-difference the two images actually disagree on.
-
-The DSP-4 is the odd one in the family. It draws rather than answers: a command
-hands it a viewpoint and a stretch of track and it walks that track outwards from
-the viewer, producing scanline segments and sprite entries until it runs out of
-either. Seven of its commands cannot finish in one go. They consume a batch of
-input, produce output, and then wait for the next batch, resuming exactly where
-they stopped, and the resumption point is state. Two of them suspend in places
-that ask for the same number of bytes, so which one it is cannot be recovered
-from what arrives next.
-
-The reference implements that by jumping back into the middle of a function. Here
-each such command is a generator, which resumes where it yielded for the same
-reason and without the jump.
-
-Three things the comparison settled that reading the code would not have.
-
-The reciprocal table holds one over one as a value the lookup hands back signed,
-so a run of a single scanline steps the wrong way. Every caller then negates that
-step again, so the two mistakes cancel where they meet and neither is visible on
-its own. Ten single-line runs in the corpus pin it.
-
-A fork in the road does not interrupt the wait for the next distance, it restarts
-it. The two bytes after one are a distance in their own right and may be another
-fork, or the marker that ends the track. Reading them as the curvature that
-normally follows bends the road by whatever the caller meant as an ending. Nine of
-the twelve forked cases catch it.
-
-And the chip's output buffer is 512 bytes, so a stretch that would produce more
-than that cannot be expressed through the interface: there is nowhere for the
-bytes to go. The reference does not notice. It writes past the end of its own
-buffer and over the variables that follow, one of which is the loop counter, so
-the loop stops at a length decided by the layout of a C struct. That is a property
-of that program rather than of the chip, so those cases are not in the corpus, and
-the corpus says so.
-
-The DSP-3 is three unrelated chips sharing one port. It decompresses tile data,
-it converts a bitmap into bit planes, and it walks a hex grid working out what a
-unit can reach and what each step there costs. The three have nothing to do with
-each other beyond arriving through the same two registers.
-
-What makes it awkward is that it has no framing at all. There is no length, no
-command envelope, and no way to ask it what it is doing. A command sets the state
-machine's next step, and every word after it is handed to whatever step is
-current, which sets the next one. So a byte means whatever the step holding it
-decides, and the step is state that outlives the byte. A corpus of single
-commands would prove nothing; each case here is a whole session.
-
-Three things the comparison settled. One command is accepted without the chip
-also saying it is busy, so the byte after it arrives on its own rather than as
-half of a word, and nothing about the command says so. The tile conversion takes
-its eight bytes of bitmap one at a time and says so in its status register while
-they arrive, where feeding the same bytes as words looks identical and is never
-confirmed. And the ring walk hands the caller a cell, takes two single-byte
-answers about it, and hands over the next, which is a protocol nothing in the
-command names.
-
-One thing the part settled against the comparison. Command `0x1c` was written
-here, and in the reference the recording came from, as two words in and two
-zeroes out. Asked on its own microcode it answers the last word it was written,
-over and over, for as long as it is asked, given one word or eight.
-
-All four are in the catalogue now, because all four have a corpus behind them. A
-model with nothing behind it would make its fidelity a claim rather than a
-measurement, and listing one would have been worse than the gap.
-
-### The DSP-1
-
-The microcode that shipped in the most cartridges, and the only one in the family
-whose commands are recognisably arithmetic. A camera is placed, three attitude
-matrices are built, and everything else asks questions of them: where a point in
-the world lands on the screen, where a screen position lands in the world, how
-long a vector is, where an aircraft ends up after a moment of flying the way it
-is pointed.
-
-None of it is floating point. Every value is a word with a separate exponent, and
-the chip carries its own normalise, its own reciprocal and its own saturating
-narrow to move between them. Four defects in this model came from getting those
-wrong rather than from getting the geometry wrong, and each was found by the
-reference rather than by reading:
-
-- The reciprocal narrows its Newton step to a word one operation too early, which
-  is invisible until the value being inverted is large enough for the product to
-  matter.
-- The wide normalise takes the complement of an already complemented value on its
-  second pass, so an exponent past fifteen comes back shifted the wrong way.
-- The three squared sums wrap at thirty two bits, and a vector long enough to wrap
-  them makes the length command read its own square root curve backwards, landing
-  in the reciprocal seeds instead. That is not a bug to be guarded against; it is
-  what the chip does, and the model reproduces it.
-- The size a projected thing comes back at continues the exponent the reciprocal
-  produced. Starting it from nothing halves every answer, and nothing else about
-  the projection changes.
-
-### The mask ROM no chip here ships
-
-The DSP-1 and DSP-3 each carry a thousand-entry table masked into the silicon.
-That is chip content rather than a description of behaviour, so it is not here.
-
-For the DSP-1 that turned out to cost nothing at all. Everything its arithmetic
-reads out of that table is stated as the formula that produces it, and every one
-of them agrees exactly with the table across its whole range:
-
-| What the chip reads | What it is |
-|:--------------------|:-----------|
-| A sine over 256 steps | The truncation of a word times the sine, clamped where one does not fit |
-| The line it interpolates along between two steps | Not pi. Three hundred and fifty five over one hundred and thirteen |
-| A ladder of powers of two, read from four different offsets | One run that rises to a saturated word and falls away again |
-| One hundred and twenty eight reciprocal seeds | One over where the value sits, rounded |
-| A square root curve | A scale a hair above a saturated word, times the root of the step |
-
-Two things are carried as measurements rather than as formulas, and both are
-numbers rather than expression: five coefficients of the curve that bends the
-horizon once the view is clipped, and one word of the ladder that holds one where
-the run says sixteen. That last is what a slip in transcribing a table looks
-like, it is reachable from three different directions, and it is reproduced
-rather than quietly corrected.
-
-For the DSP-3 the cost is almost as small. Only one part of its table is reachable
-by anything other than the command that dumps it: six pairs naming the neighbours
-of a cell on a hex grid, which are the grid's own geometry. Those are modelled.
-The dump command answers from a table you supply and refuses clearly when you
-have not supplied one, because a table that is absent is not a table of zeroes.
-
-```python
-from snesdsp import Dsp
-
-chip = Dsp(model="dsp3")
-chip.write(0x1F)
-chip.write(0x00)
-chip.write(0x00)
-# DataRomMissing: command 0x1f hands back this chip's mask ROM word by word,
-# which is content rather than behaviour and is not shipped here
-```
-
-One more thing the corpus had to decide. A stream of noise can ask the
-decompressor for a symbol past the end of the table it just built, and what
-happens there is a property of whichever memory the reference keeps after its own
-array rather than of the chip. Those sessions are refused rather than guessed at,
-and the corpus records only the seeds that stay inside.
 
 ## Project structure
 
-```
+```text
 snesdsp/
-  __init__.py     the package, and the model chosen at construction
-  chip.py         the DSP-2 port protocol, and nothing else
-  commands.py     what each DSP-2 command computes, as functions of their input
-  dsp1.py         the DSP-1: its port, its fixed point arithmetic, and its projections
-  dsp1tables.py   what its arithmetic reads out of the mask ROM, as the formulas
-  dsp3.py         the DSP-3: its port, its decompressor, and its grid search
-  dsp4.py         the DSP-4: its port, its commands, and its seven renderers
-  memory.py       parameter RAM that holds what it held
-  models.py       what each part is
+  __init__.py     the package, and the part chosen at construction
+  models.py       which parts exist, what they answer to, which image each runs
+  silicon.py      loading an image and driving the part it belongs to
   version.py      rewritten by the release job and by nothing else
 conformance/
-  against_part.py   every model against its own part, byte by byte
-  record_parts.py   asks the parts those questions once, where an image is present
-  against_firmware.py runs the microcode and reports where a model parts from it
-  shapes.py       replays the exchanges a real cartridge has with a part
-  corpus.py       replays a DSP-2 recording you captured yourself
-  capture.py      turns a recording into shapes, and never into payload
-  dsp1corpus.py   whole sessions generated from seeds, answered by the reference
-  dsp4corpus.py   roads generated from seeds, answered by the reference
-  cartridges.py   finds and confirms the cartridges those exchanges are read from
+  against_cartridges.py  drives a part with the exchanges a real cartridge makes
+  shapes.py       reads and replays those exchanges
+  cartridges.py   finds and confirms the cartridges they were read from
+processor/        the NEC uPD7725, as a submodule
 ```
 
-Each module has its tests beside it as `<module>.test.py`, so a module and the cases that pin its behaviour are read together.
+Each module has its tests beside it as `<module>.test.py`, so a module and the
+cases that pin its behaviour are read together.
 
 ## Tests
 
@@ -560,91 +230,84 @@ Each module has its tests beside it as `<module>.test.py`, so a module and the c
 for f in snesdsp/*.test.py conformance/*.test.py; do python3 "$f"; done
 ```
 
-| Suite | File | Covers |
-|:------|:-----|:-------|
-| Commands | [`snesdsp/commands.test.py`](snesdsp/commands.test.py) | The exhaustive bit permutation, the merge rule, the product, the mirror, the rescale walk |
-| Protocol | [`snesdsp/chip.test.py`](snesdsp/chip.test.py) | Command framing, lengths, payload assembly, result readout, unknown commands |
-| Parameter RAM | [`snesdsp/memory.test.py`](snesdsp/memory.test.py) | Scrambled fills, explicit zeroes, seeding, size |
-| Models | [`snesdsp/models.test.py`](snesdsp/models.test.py) | The catalogue, alias matching, construction |
-| DSP-1 | [`snesdsp/dsp1.test.py`](snesdsp/dsp1.test.py) | The port, the thirty one commands, the reciprocal, the normalise, the saturating narrow |
-| DSP-1 tables | [`snesdsp/dsp1tables.test.py`](snesdsp/dsp1tables.test.py) | Every formula against the range the chip reads, including the word that breaks the run |
-| DSP-3 | [`snesdsp/dsp3.test.py`](snesdsp/dsp3.test.py) | The port and its half-word toggle, the thirteen commands, the decompressor, the ring walk, the cost spread |
-| DSP-4 | [`snesdsp/dsp4.test.py`](snesdsp/dsp4.test.py) | The port, the eight single-shot commands, all seven renderers, the sprite packer, the reciprocal table |
-| Corpus harness | [`conformance/corpus.test.py`](conformance/corpus.test.py) | Replay, comparison, reporting, the command line |
-| DSP-1 corpus | [`conformance/dsp1corpus.test.py`](conformance/dsp1corpus.test.py) | Session generation, recording, replay against 80 recorded sessions |
-| Against the parts | [`conformance/against_part.test.py`](conformance/against_part.test.py) | Profiles, script generation, replay, the digest path, the recorded gaps, the report |
-| Recorder | [`conformance/record_parts.test.py`](conformance/record_parts.test.py) | Asking every part, measuring the gaps, writing the corpus, the command line |
-| Cartridge exchanges | [`conformance/shapes.test.py`](conformance/shapes.test.py) | Parsing what a driver does, replaying it, the payloads it is filled with |
-| DSP-4 corpus | [`conformance/dsp4corpus.test.py`](conformance/dsp4corpus.test.py) | Case generation, the buffer-overrun exclusion, recording, replay against 140 recorded roads |
+| Area | File | What it pins |
+|:--|:--|:--|
+| The catalogue | [`snesdsp/models.test.py`](snesdsp/models.test.py) | Every part, its names, its image, and that the image is declared with a digest |
+| The part | [`snesdsp/silicon.test.py`](snesdsp/silicon.test.py) | Loading, the handshake, the pacing, reading, refusing |
+| Cartridge exchanges | [`conformance/shapes.test.py`](conformance/shapes.test.py) | Reading a driver's accesses, replaying them, the payloads they are filled with |
+| Driving a part | [`conformance/against_cartridges.test.py`](conformance/against_cartridges.test.py) | Playing every recorded exchange, and what silence means |
 
-Coverage is enforced at 100% of statements and branches by [`pyproject.toml`](pyproject.toml), so a new branch without a test fails the build rather than quietly lowering the number.
+Coverage is enforced at 100% of statements and branches by
+[`pyproject.toml`](pyproject.toml), so a new branch without a test fails the
+build rather than quietly lowering the number.
 
 ## Development
 
 | Command | Description |
-|:--------|:------------|
+|:--|:--|
 | `ruff format .` | Format |
 | `ruff check .` | Lint |
 | `python3 -m coverage run -a <file>` | Run one test file under coverage |
 | `python3 -m coverage report` | Coverage, which fails below 100% |
-| `python3 conformance/corpus.py <file>` | Replay a DSP-2 recording |
-| `python3 conformance/dsp1corpus.py` | Replay the 80 recorded DSP-1 sessions |
-| `python3 conformance/against_part.py` | Replay every part's own answers against the models |
-| `python3 conformance/against_firmware.py` | Run the microcode, where an image is present |
-| `python3 conformance/record_parts.py <file>` | Ask the parts again, which needs an image |
-| `python3 conformance/dsp4corpus.py` | Replay the 140 recorded roads |
+| `python3 conformance/against_cartridges.py dsp3` | Drive a part with real cartridge exchanges |
 | `pnpm install` | Install the JSON formatter |
-| `pnpm run format` | Format every JSON file |
 | `pnpm run format:check` | Check that every JSON file is formatted, which CI also does |
 
 ## Project conventions
 
 | Convention | Source |
-|:-----------|:-------|
+|:--|:--|
 | Commit format | [Conventional Commits](https://www.conventionalcommits.org/) |
-| Releases | [semantic-release](https://semantic-release.gitbook.io/), driven by [`.releaserc.json`](.releaserc.json) |
-| Lint and format | [Ruff](https://docs.astral.sh/ruff/), configured in [`pyproject.toml`](pyproject.toml) |
-| JSON formatting | [Prettier](https://prettier.io/), configured in [`.prettierrc.json`](.prettierrc.json). Re-recording a corpus writes it plainly; `pnpm run format` settles it |
-| Test layout | `<module>.test.py` beside the module it covers |
+| Formatting and lint | [ruff](https://docs.astral.sh/ruff/), pinned in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+| Versioning | [semantic-release](https://semantic-release.gitbook.io/), from the commit history |
+| Tests | Beside the module, named `<module>.test.py` |
 
 ## Versioning
 
-This project follows [Semantic Versioning](https://semver.org/), and every release is tagged from `main` by semantic-release. See [releases](https://github.com/gufranco/snes-dsp-python/releases).
-
-> [!IMPORTANT]
-> While the version is below `1.0.0`, the public interface may change on a minor release. Pin an exact version if that matters to you.
+This project follows [Semantic Versioning](https://semver.org/). Every release is
+tagged. See [releases](https://github.com/gufranco/snes-dsp-python/releases) for
+the changelog and upgrade notes.
 
 ## FAQ
 
 <details>
-<summary><strong>Why is there no test suite shipped with this, like the CPU repositories have?</strong></summary>
+<summary><strong>Why will it not work without a firmware image?</strong></summary>
 <br>
 
-Because none exists to ship. SingleStepTests covers processors with published instruction sets and many implementations to compare against. The DSP-2 is one microcode mask in one cartridge. What replaces the suite here is proving the commands directly, which for a bit permutation and a per-nibble rule is available and is stronger than any suite would be.
+Because what these parts do is the program masked into them, and that program
+belongs to whoever made the part. A package that answered without one would be
+answering from a description somebody wrote, which is the thing this exists to
+stop doing.
 
 </details>
 
 <details>
-<summary><strong>Could you not just include a recording of the real chip?</strong></summary>
+<summary><strong>Where do I get the microcode?</strong></summary>
 <br>
 
-No. What a DSP-2 returns is the game's graphics, tile by tile. A recording of its output is the artwork in a different container, so distributing one is distributing the game. The tooling to make your own from a cartridge you own is here; the recording stays on your machine.
+Not from here, and this will not tell you. Dump it from hardware you own. The
+digests above let you confirm that what you have is what the part expects.
 
 </details>
 
 <details>
-<summary><strong>Why does the parameter RAM start scrambled instead of zeroed?</strong></summary>
+<summary><strong>What happened to the command implementations?</strong></summary>
 <br>
 
-Because the chip never clears it, and one command reads past its own data straight into it. Zeroing makes those reads look deliberate and stable, which is precisely how a real bug in that path passed every recorded test before being caught. Pass `fill=0` when you want zeroes, and the decision is then recorded in the code.
+They were removed. Held against the parts' own microcode they sat between 67% and
+100% of the bytes the hardware answers, and closing that gap meant deriving
+undocumented fixed-point arithmetic command by command. Running the program
+closes it completely and permanently.
 
 </details>
 
 <details>
-<summary><strong>Does this emulate the uPD77C25 processor itself?</strong></summary>
+<summary><strong>Is the DSP-1A really the same as the DSP-1?</strong></summary>
 <br>
 
-No. This models each chip at its port: the commands the cartridge sends and the bytes that come back. Emulating the uPD77C25 core and running Nintendo's microcode on it would need that microcode, which is copyrighted and not distributable, so it would not be a package anyone could use.
+Same program and same data ROM, on a smaller die. No DSP-1A image exists to find
+and none is needed; asking for one runs the DSP-1's, which is what the part
+carries. Only the DSP-1B changed the program.
 
 </details>
 
