@@ -103,14 +103,19 @@ jobs:
       # wrote it, so on a machine without one it says so and stops rather than
       # reporting a pass. Everything a machine without one can check runs in the
       # test job above: this package has no behaviour of its own to get wrong.
+      # Exit 2 is the runner saying it had nothing to run, which is the honest
+      # answer to a person who asked it to drive a part and holds no image. It is
+      # not a failure of this build, so it is caught here rather than by making
+      # the tool lie about it.
       - name: Drive the parts with the exchanges real cartridges make
         run: |
+          set +e
           python conformance/against_cartridges.py dsp3 | tee report.txt
-        shell: bash
-
-      - name: Say what ran and what could not
-        run: |
-          if grep -q "nothing was driven" report.txt; then
+          status=${PIPESTATUS[0]}
+          set -e
+          if [ "${status}" -eq 2 ]; then
             echo "::notice title=No microcode present::The checks that run a part's own program did not run. They are not failures; they had nothing to run."
+            exit 0
           fi
+          exit "${status}"
         shell: bash
