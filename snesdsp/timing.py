@@ -55,7 +55,7 @@ crystal whichever it is.
 """
 
 
-def clock_of(part):
+def clock_of(part: str) -> int:
     """The rate that part's oscillator runs at, refusing a name nobody answers to."""
     describe(part)
     return DSP_CLOCK
@@ -69,7 +69,7 @@ memory and costs what an access costs, so this is what sets the floor below.
 """
 
 
-def steps_for(master_clocks, clock=DSP_CLOCK, master=MASTER_CLOCK):
+def steps_for(master_clocks: int, clock: int = DSP_CLOCK, master: int = MASTER_CLOCK) -> int:
     """How many instructions the part gets while the console spends that long.
 
     Rounded down, because a part that is halfway through an instruction when the

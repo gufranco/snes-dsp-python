@@ -97,8 +97,44 @@ omit = [
 fail_under = 100
 show_missing = true
 exclude_also = [
+  # A protocol body is a contract, never code: the type checker reads it and the
+  # runtime never runs it, because the class exists to be satisfied rather than
+  # instantiated. Demanding coverage of the ellipses would mean calling methods
+  # that deliberately do nothing.
+  'class .*\(.*Protocol.*\):',
   # The command line guard hands argv to a function that is itself tested, so
   # there is nothing behind it left to exercise. Importing the module to cover
   # the guard would run the tool rather than test it.
   'if __name__ == "__main__":',
 ]
+
+[tool.mypy]
+# Every flag mypy has, plus the ones strict does not turn on. A model of a
+# processor is arithmetic on masked integers from end to end, and the errors that
+# matter most here are the ones where a width, a sign or a None slips through a
+# boundary. A checker that sees the whole register file is the cheapest place to
+# catch those.
+strict = true
+python_version = "3.12"
+warn_unreachable = true
+warn_no_return = true
+strict_equality = true
+extra_checks = true
+enable_error_code = [
+  "explicit-override",
+  "ignore-without-code",
+  "possibly-undefined",
+  "redundant-expr",
+  "truthy-bool",
+  "truthy-iterable",
+  "unused-awaitable",
+]
+files = ["snesdsp", "conformance"]
+
+[[tool.mypy.overrides]]
+# The submodules are checked in their own repositories, against their own gate.
+# Following imports into them here would report the state of somebody else's
+# project, and a finding nobody in this one can act on.
+module = ["upd7725.*", "mapper.*", "snesdriver.*"]
+follow_imports = "skip"
+ignore_missing_imports = true

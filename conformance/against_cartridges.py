@@ -25,12 +25,15 @@ Usage:
 """
 
 import sys
+from collections.abc import Callable, Iterable, Sequence
 from pathlib import Path
+from typing import override
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import shapes
+from driven import BuildWatched, Watched
 
 import snesdsp
 from snesdsp import silicon
@@ -44,16 +47,22 @@ class Usage(Exception):
     pass
 
 
-class Driven:
-    """One shape, and everything the part said while it was played."""
+class Played:
+    """One shape, and everything the part said while it was played.
 
-    def __init__(self, shape, said, kinds=()):
+    Named for the run rather than for the part: this holds what came back, and
+    the thing that came back is not something anybody can drive.
+    """
+
+    def __init__(
+        self, shape: str, said: Sequence[Sequence[int]], kinds: Iterable[str] = ()
+    ) -> None:
         self.shape = shape
         self.said = said
         self.kinds = tuple(kinds)
 
     @property
-    def answered(self):
+    def answered(self) -> bool:
         """Whether anything came back from the data port that was not a zero.
 
         The data port only. A part that is doing nothing still has a status
@@ -71,30 +80,33 @@ class Driven:
             for byte in run
         )
 
-    def __repr__(self):
-        return f"<Driven {self.shape}, {len(self.said)} answers>"
+    @override
+    def __repr__(self) -> str:
+        return f"<Played {self.shape}, {len(self.said)} answers>"
 
 
-def _silicon(part):  # pragma: no cover
+def _silicon(part: str) -> Watched:  # pragma: no cover
     return snesdsp.Dsp(part)
 
 
-def driven(part=DEFAULT_PART, build=_silicon, seed=None):
+def driven(
+    part: str = DEFAULT_PART, build: BuildWatched = _silicon, seed: int | None = None
+) -> "list[Played]":
     """Every recorded shape for that part, played at a freshly started one."""
     held = shapes.interesting(shapes.recorded(part))
     if not held:
         raise Usage(f"no cartridge exchanges are recorded for {part}")
     chance = shapes.rolls() if seed is None else shapes.rolls(seed)
-    found = []
+    found: list[Played] = []
     for steps, _seen in held:
         payload = shapes.payload_for(steps, chance)
         said = shapes.drive(build(part), steps, payload)
         taken = [one.what for one in steps if one.what in (shapes.READ, shapes.POLL)]
-        found.append(Driven(" ".join(f"{one.what}{one.width}" for one in steps), said, taken))
+        found.append(Played(" ".join(f"{one.what}{one.width}" for one in steps), said, taken))
     return found
 
 
-def report(found):
+def report(found: "Sequence[Played]") -> list[str]:
     """The lines a person reads, one exchange at a time."""
     return [
         f"    {one.shape}: {[[hex(byte) for byte in run] for run in one.said]}"
@@ -102,12 +114,12 @@ def report(found):
     ]
 
 
-def silent(found):
+def silent(found: "Iterable[Played]") -> "list[Played]":
     """Every exchange the part answered nothing to."""
     return [one for one in found if not one.answered]
 
 
-def lines_for(found, part):
+def lines_for(found: "Sequence[Played]", part: str) -> list[str]:
     """What the run says about one part."""
     quiet = silent(found)
     lines = [f"  {part}: {len(found)} exchanges a real cartridge makes, played at the part"]
@@ -118,7 +130,12 @@ def lines_for(found, part):
     return lines
 
 
-def main(argv, why_not=silicon.why_not, build=_silicon, say=print):
+def main(
+    argv: Sequence[str],
+    why_not: Callable[[], str | None] = silicon.why_not,
+    build: BuildWatched = _silicon,
+    say: Callable[[str], object] = print,
+) -> int:
     reason = why_not()
     if reason:
         say(f"  nothing was driven: {reason}")

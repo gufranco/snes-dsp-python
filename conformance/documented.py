@@ -11,19 +11,28 @@ in the first place.
 """
 
 import sys
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from driven import BuildIdentified, Driven
+
 from snesdsp import Dsp, silicon
 
+Documented = Sequence[tuple[str, Callable[[BuildIdentified], str], str]]
+"""Each README example: what it is called, how to run it, what the README says."""
 
-def _word(chip, value):
+Found = tuple[tuple[str, str, str], ...]
+"""Each example after running: its name, what the README says, what it gave."""
+
+
+def _word(chip: Driven, value: int) -> None:
     chip.write(value & 0xFF)
     chip.write(value >> 8)
 
 
-def dsp1_multiply(build):
+def dsp1_multiply(build: BuildIdentified) -> str:
     chip = build("dsp1")
     chip.write(0x00)
     for value in (0x4000, 0x2000):
@@ -32,15 +41,19 @@ def dsp1_multiply(build):
     return hex(low | (high << 8))
 
 
-def dsp1a_runs_the_dsp1_image(build):
-    return build("dsp1a").identity.part
+def dsp1a_runs_the_dsp1_image(build: BuildIdentified) -> str:
+    named = build("dsp1a").identity.part
+    assert isinstance(named, str)
+    return named
 
 
-def dsp1b_runs_its_own(build):
-    return build("dsp1b").identity.part
+def dsp1b_runs_its_own(build: BuildIdentified) -> str:
+    named = build("dsp1b").identity.part
+    assert isinstance(named, str)
+    return named
 
 
-def dsp1b_multiply(build):
+def dsp1b_multiply(build: BuildIdentified) -> str:
     chip = build("dsp1b")
     chip.write(0x00)
     for value in (0x4000, 0x2000):
@@ -49,7 +62,7 @@ def dsp1b_multiply(build):
     return hex(low | (high << 8))
 
 
-def dsp2_multiply(build):
+def dsp2_multiply(build: BuildIdentified) -> str:
     chip = build("dsp2")
     chip.write(0x09)
     for value in (0x0002, 0x0003):
@@ -57,7 +70,7 @@ def dsp2_multiply(build):
     return str([hex(chip.read()) for _ in range(4)])
 
 
-def dsp3_echoes_the_last_word(build):
+def dsp3_echoes_the_last_word(build: BuildIdentified) -> str:
     chip = build("dsp3")
     for byte in (0x1C, 0x00):
         chip.write(byte)
@@ -66,7 +79,7 @@ def dsp3_echoes_the_last_word(build):
     return " ".join(f"{chip.read():02x}" for _ in range(8))
 
 
-def dsp4_answers_a_batch(build):
+def dsp4_answers_a_batch(build: BuildIdentified) -> str:
     chip = build("dsp4")
     chip.write(0x01)
     chip.write(0x00)
@@ -90,17 +103,17 @@ DOCUMENTED = (
 )
 
 
-def run(build=Dsp, documented=DOCUMENTED):
+def run(build: BuildIdentified = Dsp, documented: Documented = DOCUMENTED) -> Found:
     """Each example, what the README says it gives, and what it gave here."""
     return tuple((name, wanted, example(build)) for name, example, wanted in documented)
 
 
-def disagreements(found):
+def disagreements(found: Found) -> Found:
     """The rows where the document and the part do not say the same thing."""
     return tuple(one for one in found if one[1] != one[2])
 
 
-def lines_for(found):
+def lines_for(found: Found) -> list[str]:
     wrong = disagreements(found)
     said = [f"{len(found)} examples from the README, run against the parts"]
     said.extend(
@@ -116,7 +129,13 @@ def lines_for(found):
     return said
 
 
-def main(argv=(), why_not=silicon.why_not, build=Dsp, documented=DOCUMENTED, say=print):
+def main(
+    argv: Sequence[str] = (),
+    why_not: Callable[[], str | None] = silicon.why_not,
+    build: BuildIdentified = Dsp,
+    documented: Documented = DOCUMENTED,
+    say: Callable[[str], object] = print,
+) -> int:
     reason = why_not()
     if reason:
         say(f"nothing to run: {reason}")

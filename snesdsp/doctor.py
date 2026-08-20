@@ -27,9 +27,16 @@ import json
 import platform
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, override
 
 from . import models, silicon, timing
 from .version import VERSION
+
+if TYPE_CHECKING:  # pragma: no cover
+    from collections.abc import Callable, Iterable, Sequence
+
+    Images = dict[str, tuple[Any, Path]]
+    Build = Callable[[str, Images], object]
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -44,29 +51,30 @@ PROCESSOR_NAME = "nec-upd7725-python"
 class Finding:
     """One thing that was looked at, and what was there."""
 
-    def __init__(self, name, ok, detail, advice=None):
+    def __init__(self, name: str, ok: bool, detail: str, advice: str | None = None) -> None:
         self.name = name
         self.ok = ok
         self.detail = detail
         self.advice = advice
 
     @property
-    def line(self):
+    def line(self) -> str:
         """The one-line form, which is what a reader scans."""
         return f"  {'ok  ' if self.ok else '   !'}  {self.name}: {self.detail}"
 
     @property
-    def report(self):
+    def report(self) -> str:
         """The same, with what to do about it when there is something to do."""
         if self.ok or not self.advice:
             return self.line
         return f"{self.line}\n         {self.advice}"
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         return f"<Finding {self.name} {'ok' if self.ok else 'not ok'}>"
 
 
-def _python():
+def _python() -> Finding:
     where = sys.version_info
     return Finding(
         "python",
@@ -76,11 +84,11 @@ def _python():
     )
 
 
-def _package():
+def _package() -> Finding:
     return Finding("snesdsp", True, f"version {VERSION}")
 
 
-def _processor():
+def _processor() -> Finding:
     found = silicon.PROCESSOR.is_dir() and any(silicon.PROCESSOR.iterdir())
     return Finding(
         "processor",
@@ -90,7 +98,7 @@ def _processor():
     )
 
 
-def _clocks():
+def _clocks() -> Finding:
     return Finding(
         "timing",
         True,
@@ -99,14 +107,14 @@ def _clocks():
     )
 
 
-def _default_build(part, images):
+def _default_build(part: str, images: "Images") -> silicon.Silicon:
     return silicon.Silicon(part, images=images)
 
 
-def _part(name, images, build):
+def _part(name: str, images: "Images", build: "Build") -> Finding:
     """Whether that part is here and starts, saying exactly what stopped it."""
     wanted = silicon.SHARES_IMAGE.get(name, name)
-    if images is not None and wanted not in images:
+    if wanted not in images:
         return Finding(
             name,
             False,
@@ -131,7 +139,7 @@ def _part(name, images, build):
     return Finding(name, True, f"runs the {running} image{digest}")
 
 
-def _digest_of(wanted, images):
+def _digest_of(wanted: str, images: "Images | None") -> str:
     """The digest of the file that is actually here, which is what settles a report.
 
     Two people with the same part and different answers almost always have
@@ -148,7 +156,7 @@ def _digest_of(wanted, images):
     return f", sha256 {hashlib.sha256(raw).hexdigest()}"
 
 
-def _default_beneath():
+def _default_beneath() -> "list[Finding]":
     """The doctor of the project this one is built on, asked in its own terms.
 
     Recursive by construction: whatever that project examines, including anything
@@ -160,10 +168,11 @@ def _default_beneath():
     _reach()
     from upd7725 import doctor as underneath
 
-    return underneath.examine()
+    found: list[Finding] = list(underneath.examine())
+    return found
 
 
-def _reach(path=None):
+def _reach(path: "list[str] | None" = None) -> "list[str]":
     """Put the project underneath where it can be imported from, once.
 
     It sits beside this package rather than inside it, so nothing has taught the
@@ -178,7 +187,7 @@ def _reach(path=None):
     return path
 
 
-def _beneath(beneath):
+def _beneath(beneath: "Callable[[], Iterable[Finding]]") -> list[Finding]:
     """Everything the project underneath found, filed under its name."""
     try:
         found = list(beneath())
@@ -199,7 +208,7 @@ def _beneath(beneath):
     ]
 
 
-def _exchanges(where=EXCHANGES):
+def _exchanges(where: Path | str = EXCHANGES) -> Finding:
     """The shapes real cartridges use, and how many games each part was read from."""
     found = []
     for path in sorted(Path(where).glob("*shapes.json")):
@@ -220,7 +229,7 @@ def _exchanges(where=EXCHANGES):
     )
 
 
-def _answers(where=EXCHANGES):
+def _answers(where: Path | str = EXCHANGES) -> Finding:
     """Whether what each part answers has been written down and can be compared.
 
     A part whose answers are not pinned is a part where the pacing, the port
@@ -235,7 +244,7 @@ def _answers(where=EXCHANGES):
     )
 
 
-def _masks(where=EXCHANGES):
+def _masks(where: Path | str = EXCHANGES) -> Finding:
     """Whether the DSP-1B's correction is demonstrated rather than described."""
     path = Path(where) / "dsp1masks.json"
     if not path.exists():
@@ -260,7 +269,11 @@ def _masks(where=EXCHANGES):
     )
 
 
-def examine(images=None, build=_default_build, beneath=_default_beneath):
+def examine(
+    images: "Images | None" = None,
+    build: "Build" = _default_build,
+    beneath: "Callable[[], Iterable[Finding]]" = _default_beneath,
+) -> list[Finding]:
     """Everything worth looking at on this machine, in the order a reader wants it.
 
     This package first, then what it is built on. A reader scanning the output
@@ -277,7 +290,7 @@ def examine(images=None, build=_default_build, beneath=_default_beneath):
     return found
 
 
-def report(found):
+def report(found: "Sequence[Finding]") -> list[str]:
     """The lines a person pastes into an issue."""
     unwell = [one for one in found if not one.ok]
     lines = [f"snesdsp {VERSION} on {platform.python_version()}, {platform.system()}", ""]
@@ -290,7 +303,11 @@ def report(found):
     return lines
 
 
-def main(argv=(), examine=examine, say=print):
+def main(
+    argv: "Sequence[str]" = (),
+    examine: "Callable[..., Sequence[Finding]]" = examine,
+    say: "Callable[[str], object]" = print,
+) -> int:
     found = examine()
     for line in report(found):
         say(line)

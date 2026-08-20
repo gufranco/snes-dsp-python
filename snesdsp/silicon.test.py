@@ -1,6 +1,8 @@
 import sys
 import unittest
 from pathlib import Path
+from types import ModuleType
+from typing import Any, override
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -12,51 +14,57 @@ PRESENT = silicon.available()
 class WithoutTest(unittest.TestCase):
     """What the backend says when the things it needs are not there."""
 
-    def setUp(self):
+    @override
+    def setUp(self) -> None:
         self.real = silicon._processor
 
-    def tearDown(self):
+    @override
+    def tearDown(self) -> None:
         silicon._processor = self.real
 
-    def test_with_no_processor_it_offers_nothing(self):
+    def test_with_no_processor_it_offers_nothing(self) -> None:
         silicon._processor = lambda: None
 
         self.assertEqual(silicon.available(), {})
 
-    def test_and_says_the_submodule_is_missing(self):
+    def test_and_says_the_submodule_is_missing(self) -> None:
         silicon._processor = lambda: None
 
         self.assertEqual(silicon.why_not(), silicon.WHY_NOT_PROCESSOR)
 
-    def test_and_refuses_to_build_a_part(self):
+    def test_and_refuses_to_build_a_part(self) -> None:
         silicon._processor = lambda: None
 
         with self.assertRaises(silicon.NoFirmware):
             silicon.Silicon("dsp1")
 
-    def test_with_a_processor_but_no_image_it_says_that_instead(self):
-        silicon._processor = lambda: (None, None, None)
+    def test_with_a_processor_but_no_image_it_says_that_instead(self) -> None:
+        # Three module-shaped stand-ins rather than three Nones. The real
+        # function hands back three modules or nothing at all, and a state it
+        # cannot produce is not a state worth asking it about.
+        held = ModuleType("held")
+        silicon._processor = lambda: (held, held, held)
 
         self.assertEqual(silicon.why_not({}), silicon.WHY_NOT_FIRMWARE)
 
-    def test_a_part_sharing_an_image_that_is_absent_is_refused(self):
+    def test_a_part_sharing_an_image_that_is_absent_is_refused(self) -> None:
         with self.assertRaises(silicon.NoFirmware):
             silicon.Silicon("dsp1a", images={})
 
 
 class SharingTest(unittest.TestCase):
-    def test_a_part_that_shares_an_image_is_offered_when_the_image_is(self):
-        held = {"dsp1": ("identity", "path")}
+    def test_a_part_that_shares_an_image_is_offered_when_the_image_is(self) -> None:
+        held = {"dsp1": ("identity", Path("dsp1.bin"))}
 
         self.assertIn("dsp1a", silicon.available(held))
 
-    def test_and_is_not_offered_when_it_is_not(self):
-        held = {"dsp2": ("identity", "path")}
+    def test_and_is_not_offered_when_it_is_not(self) -> None:
+        held = {"dsp2": ("identity", Path("dsp2.bin"))}
 
         self.assertNotIn("dsp1a", silicon.available(held))
 
-    def test_what_was_found_is_left_as_it_was(self):
-        held = {"dsp1": ("identity", "path")}
+    def test_what_was_found_is_left_as_it_was(self) -> None:
+        held = {"dsp1": ("identity", Path("dsp1.bin"))}
 
         silicon.available(held)
 
@@ -64,11 +72,14 @@ class SharingTest(unittest.TestCase):
 
 
 class ImportTest(unittest.TestCase):
-    def test_with_the_processor_unimportable_it_offers_nothing(self):
+    def test_with_the_processor_unimportable_it_offers_nothing(self) -> None:
         import sys as system
 
         held = dict(system.modules)
-        system.modules["upd7725"] = None
+        # A module entry of None is how the import system records a module that
+        # cannot be found, so this is the state a machine without the submodule
+        # is actually in rather than an approximation of it.
+        system.modules["upd7725"] = None  # type: ignore[assignment]
         try:
             self.assertIsNone(silicon._processor())
         finally:
@@ -77,17 +88,17 @@ class ImportTest(unittest.TestCase):
 
 
 class AvailabilityTest(unittest.TestCase):
-    def test_it_says_which_parts_it_can_run(self):
+    def test_it_says_which_parts_it_can_run(self) -> None:
         self.assertIsInstance(silicon.available(), dict)
 
-    def test_a_part_with_no_image_is_not_offered(self):
+    def test_a_part_with_no_image_is_not_offered(self) -> None:
         self.assertNotIn("nonsense", silicon.available())
 
-    def test_asking_for_a_part_it_cannot_run_is_refused(self):
+    def test_asking_for_a_part_it_cannot_run_is_refused(self) -> None:
         with self.assertRaises(silicon.NoFirmware):
             silicon.Silicon("nonsense")
 
-    def test_the_refusal_says_what_is_missing_and_what_to_do(self):
+    def test_the_refusal_says_what_is_missing_and_what_to_do(self) -> None:
         with self.assertRaises(silicon.NoFirmware) as raised:
             silicon.Silicon("nonsense")
 
@@ -96,7 +107,7 @@ class AvailabilityTest(unittest.TestCase):
         self.assertIn("microcode", told)
         self.assertTrue("firmware" in told or "submodule" in told)
 
-    def test_the_reason_is_the_same_one_the_refusal_carries(self):
+    def test_the_reason_is_the_same_one_the_refusal_carries(self) -> None:
         self.assertTrue(silicon.why_not() is None or isinstance(silicon.why_not(), str))
 
 
@@ -110,7 +121,7 @@ class BusTest(unittest.TestCase):
     round.
     """
 
-    def _built(self, **options):
+    def _built(self, **options: Any) -> "silicon.Silicon":
         import sys as system
 
         system.path.insert(0, str(silicon.PROCESSOR))
@@ -120,22 +131,22 @@ class BusTest(unittest.TestCase):
         image = bytes(2048 * 3 + 1024 * 2)
         return silicon.Silicon("made-up", image=image, identity=identity, boot=64, **options)
 
-    def test_an_even_address_is_the_data_port(self):
+    def test_an_even_address_is_the_data_port(self) -> None:
         chip = self._built()
 
         self.assertEqual(chip.read_bus(0x00C000), chip.read())
 
-    def test_an_odd_address_is_the_status_register(self):
+    def test_an_odd_address_is_the_status_register(self) -> None:
         chip = self._built()
 
         self.assertEqual(chip.read_bus(0x00C001), chip.read_status())
 
-    def test_only_the_lowest_bit_decides(self):
+    def test_only_the_lowest_bit_decides(self) -> None:
         chip = self._built()
 
         self.assertEqual(chip.read_bus(0x3F8000), chip.read_bus(0x008000))
 
-    def test_a_write_to_an_even_address_reaches_the_data_port(self):
+    def test_a_write_to_an_even_address_reaches_the_data_port(self) -> None:
         chip = self._built()
         before = chip.chip.registers.pc
 
@@ -143,14 +154,14 @@ class BusTest(unittest.TestCase):
 
         self.assertNotEqual(chip.chip.registers.pc, before)
 
-    def test_a_write_to_an_odd_address_is_taken_as_a_status_write(self):
+    def test_a_write_to_an_odd_address_is_taken_as_a_status_write(self) -> None:
         chip = self._built()
 
         chip.write_bus(0x00C001, 0x00)
 
         self.assertIsInstance(chip.read_status(), int)
 
-    def test_what_is_written_is_narrowed_to_a_byte(self):
+    def test_what_is_written_is_narrowed_to_a_byte(self) -> None:
         chip = self._built()
 
         chip.write_bus(0x00C000, 0x1FF)
@@ -161,7 +172,7 @@ class BusTest(unittest.TestCase):
 class PacingTest(unittest.TestCase):
     """That the part is left the time the console would have left it."""
 
-    def _built(self, **options):
+    def _built(self, **options: Any) -> "silicon.Silicon":
         import sys as system
 
         system.path.insert(0, str(silicon.PROCESSOR))
@@ -171,10 +182,10 @@ class PacingTest(unittest.TestCase):
         image = bytes(2048 * 3 + 1024 * 2)
         return silicon.Silicon("made-up", image=image, identity=identity, boot=64, **options)
 
-    def test_the_default_gap_is_the_one_the_console_clocks_imply(self):
+    def test_the_default_gap_is_the_one_the_console_clocks_imply(self) -> None:
         self.assertEqual(silicon.GAP, timing.GAP)
 
-    def test_a_caller_can_say_how_long_their_console_actually_spent(self):
+    def test_a_caller_can_say_how_long_their_console_actually_spent(self) -> None:
         chip = self._built()
         before = chip.chip.registers.pc
 
@@ -182,7 +193,7 @@ class PacingTest(unittest.TestCase):
 
         self.assertNotEqual(chip.chip.registers.pc, before)
 
-    def test_more_console_time_runs_the_part_further(self):
+    def test_more_console_time_runs_the_part_further(self) -> None:
         one, two = self._built(), self._built()
 
         one.elapsed(timing.SLOW_ACCESS)
@@ -190,7 +201,7 @@ class PacingTest(unittest.TestCase):
 
         self.assertNotEqual(one.chip.registers.pc, two.chip.registers.pc)
 
-    def test_no_console_time_at_all_runs_it_nowhere(self):
+    def test_no_console_time_at_all_runs_it_nowhere(self) -> None:
         chip = self._built()
         before = chip.chip.registers.pc
 
@@ -198,7 +209,7 @@ class PacingTest(unittest.TestCase):
 
         self.assertEqual(chip.chip.registers.pc, before)
 
-    def test_the_part_says_what_rate_it_runs_at(self):
+    def test_the_part_says_what_rate_it_runs_at(self) -> None:
         self.assertEqual(self._built().clock, timing.DSP_CLOCK)
 
 
@@ -211,7 +222,7 @@ class StatusTest(unittest.TestCase):
     one.
     """
 
-    def _built(self):
+    def _built(self) -> "silicon.Silicon":
         import sys as system
 
         system.path.insert(0, str(silicon.PROCESSOR))
@@ -221,15 +232,15 @@ class StatusTest(unittest.TestCase):
         image = bytes(2048 * 3 + 1024 * 2)
         return silicon.Silicon("made-up", image=image, identity=identity, boot=64)
 
-    def test_the_status_register_can_be_read_without_taking_a_byte(self):
+    def test_the_status_register_can_be_read_without_taking_a_byte(self) -> None:
         chip = self._built()
 
         self.assertIsInstance(chip.read_status(), int)
 
-    def test_it_is_one_byte_wide(self):
+    def test_it_is_one_byte_wide(self) -> None:
         self.assertLessEqual(self._built().read_status(), 0xFF)
 
-    def test_reading_it_does_not_change_what_the_part_has_to_say(self):
+    def test_reading_it_does_not_change_what_the_part_has_to_say(self) -> None:
         chip = self._built()
         before = chip.pending_output
 
@@ -247,7 +258,7 @@ class FoundOnDiskTest(unittest.TestCase):
     the same code a real image goes through.
     """
 
-    def _catalogue(self):
+    def _catalogue(self) -> "dict[str, tuple[object, Path]]":
         import sys as system
         import tempfile
 
@@ -259,23 +270,23 @@ class FoundOnDiskTest(unittest.TestCase):
         where.write_bytes(bytes(2048 * 3 + 1024 * 2))
         return {"dsp1": (identity, where)}
 
-    def test_an_image_the_search_found_is_read_from_its_file(self):
+    def test_an_image_the_search_found_is_read_from_its_file(self) -> None:
         chip = silicon.Silicon("dsp1", images=self._catalogue(), boot=64)
 
         self.assertEqual(chip.part, "dsp1")
 
-    def test_a_part_sharing_another_part_image_is_built_from_it(self):
+    def test_a_part_sharing_another_part_image_is_built_from_it(self) -> None:
         chip = silicon.Silicon("dsp1a", images=self._catalogue(), boot=64)
 
         self.assertEqual(chip.part, "dsp1a")
 
-    def test_a_part_with_no_image_anywhere_is_refused_by_name(self):
+    def test_a_part_with_no_image_anywhere_is_refused_by_name(self) -> None:
         with self.assertRaises(silicon.NoFirmware) as raised:
             silicon.Silicon("dsp4", images=self._catalogue())
 
         self.assertIn("dsp4", str(raised.exception))
 
-    def test_with_an_image_present_there_is_no_reason_it_cannot_run(self):
+    def test_with_an_image_present_there_is_no_reason_it_cannot_run(self) -> None:
         self.assertIsNone(silicon.why_not(self._catalogue()))
 
 
@@ -288,7 +299,7 @@ class SuppliedImageTest(unittest.TestCase):
     anything in particular.
     """
 
-    def _built(self, **options):
+    def _built(self, **options: Any) -> "silicon.Silicon":
         import sys as system
 
         system.path.insert(0, str(silicon.PROCESSOR))
@@ -298,60 +309,62 @@ class SuppliedImageTest(unittest.TestCase):
         image = bytes(2048 * 3 + 1024 * 2)
         return silicon.Silicon("made-up", image=image, identity=identity, boot=64, **options)
 
-    def test_a_supplied_image_is_run_without_one_on_disk(self):
+    def test_a_supplied_image_is_run_without_one_on_disk(self) -> None:
         self.assertEqual(self._built().part, "made-up")
 
-    def test_it_names_the_processor_the_image_says_it_runs_on(self):
+    def test_it_names_the_processor_the_image_says_it_runs_on(self) -> None:
         self.assertEqual(self._built().processor, "upd7725")
 
-    def test_it_carries_the_same_name_field_the_models_do(self):
+    def test_it_carries_the_same_name_field_the_models_do(self) -> None:
         self.assertEqual(self._built().model, "made-up")
 
-    def test_it_prints_as_the_part_and_how_it_is_run(self):
+    def test_it_prints_as_the_part_and_how_it_is_run(self) -> None:
         self.assertIn("silicon", repr(self._built()))
 
-    def test_a_part_that_is_already_asking_is_read_without_waiting(self):
+    def test_a_part_that_is_already_asking_is_read_without_waiting(self) -> None:
         chip = self._built(patience=1)
         chip.chip.registers.sr.rqm = True
 
         self.assertLess(chip.read(), 0x100)
 
-    def test_and_waiting_on_one_that_is_asking_says_so_at_once(self):
+    def test_and_waiting_on_one_that_is_asking_says_so_at_once(self) -> None:
         chip = self._built(patience=1)
         chip.chip.registers.sr.rqm = True
 
         self.assertTrue(chip.waited())
 
-    def test_while_one_that_never_asks_says_it_never_did(self):
+    def test_while_one_that_never_asks_says_it_never_did(self) -> None:
         chip = self._built(patience=8)
 
         self.assertFalse(chip.waited())
 
-    def test_waiting_on_a_part_that_is_asking_returns_rather_than_refusing(self):
+    def test_waiting_on_a_part_that_is_asking_returns_rather_than_refusing(self) -> None:
         chip = self._built(patience=1)
         chip.chip.registers.sr.rqm = True
 
-        self.assertIsNone(chip.settle())
+        chip.settle()
 
-    def test_writing_a_byte_runs_the_part_afterwards(self):
+        self.assertTrue(chip.chip.registers.sr.rqm)
+
+    def test_writing_a_byte_runs_the_part_afterwards(self) -> None:
         chip = self._built()
 
         chip.write(0x12)
 
         self.assertIsInstance(chip.pending_output, int)
 
-    def test_a_program_that_never_asks_is_given_up_on_when_waited_on(self):
+    def test_a_program_that_never_asks_is_given_up_on_when_waited_on(self) -> None:
         chip = self._built(patience=32)
 
         with self.assertRaises(silicon.NeverReady):
             chip.settle()
 
-    def test_but_reading_from_it_takes_the_port_rather_than_hanging(self):
+    def test_but_reading_from_it_takes_the_port_rather_than_hanging(self) -> None:
         chip = self._built(patience=32)
 
         self.assertLess(chip.read(), 0x100)
 
-    def test_reading_leaves_the_part_room_to_act_before_the_next_access(self):
+    def test_reading_leaves_the_part_room_to_act_before_the_next_access(self) -> None:
         chip = self._built(patience=32)
         before = chip.chip.registers.pc
 
@@ -359,26 +372,26 @@ class SuppliedImageTest(unittest.TestCase):
 
         self.assertNotEqual(chip.chip.registers.pc, before)
 
-    def test_a_part_that_is_asking_can_be_read_from(self):
+    def test_a_part_that_is_asking_can_be_read_from(self) -> None:
         chip = self._built()
         chip.chip.registers.sr.rqm = True
 
         self.assertLess(chip.read(), 0x100)
 
-    def test_and_reports_that_it_has_something_to_say(self):
+    def test_and_reports_that_it_has_something_to_say(self) -> None:
         chip = self._built()
         chip.chip.registers.sr.rqm = True
 
         self.assertEqual(chip.pending_output, 1)
 
-    def test_stepping_a_given_number_of_times_is_allowed(self):
+    def test_stepping_a_given_number_of_times_is_allowed(self) -> None:
         chip = self._built()
 
         chip.step(3)
 
         self.assertTrue(True)
 
-    def test_an_image_supplied_without_saying_what_it_is_is_refused(self):
+    def test_an_image_supplied_without_saying_what_it_is_is_refused(self) -> None:
         with self.assertRaises(silicon.NoFirmware) as raised:
             silicon.Silicon("made-up", image=bytes(64))
 

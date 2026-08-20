@@ -9,13 +9,13 @@ from snesdsp import version
 
 
 class VersionTest(unittest.TestCase):
-    def test_the_version_is_three_numbers(self):
+    def test_the_version_is_three_numbers(self) -> None:
         parts = version.VERSION.split(".")
 
         self.assertEqual(len(parts), 3)
         self.assertTrue(all(part.isdigit() for part in parts))
 
-    def test_the_package_reports_the_same_version(self):
+    def test_the_package_reports_the_same_version(self) -> None:
         self.assertEqual(snesdsp.__version__, version.VERSION)
 
 

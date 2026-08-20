@@ -26,7 +26,14 @@ looking at the same thing.
 
 import json
 import random
+import sys
+from collections.abc import Iterable, Sequence
 from pathlib import Path
+from typing import override
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from driven import Watched
 
 ROOT = Path(__file__).resolve().parent
 
@@ -42,6 +49,9 @@ DEFAULT_SEED = 0x5D3A9C
 
 WIDTHS = (1, 2)
 
+Shapes = tuple[tuple["tuple[Step, ...]", int], ...]
+"""Recorded shapes and how many sites used each, longest first."""
+
 
 class Malformed(Exception):
     pass
@@ -50,28 +60,31 @@ class Malformed(Exception):
 class Step:
     """One access in a shape: what kind it was and how many bytes wide."""
 
-    def __init__(self, what, width):
+    def __init__(self, what: str, width: int) -> None:
         self.what = what
         self.width = width
 
     @property
-    def moves(self):
+    def moves(self) -> bool:
         """Whether this access carries a payload rather than watching a register."""
         return self.what in (WRITE, READ)
 
-    def __eq__(self, other):
+    @override
+    def __eq__(self, other: object) -> bool:
         return isinstance(other, Step) and self.what == other.what and self.width == other.width
 
-    def __hash__(self):
+    @override
+    def __hash__(self) -> int:
         return hash((self.what, self.width))
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         return f"<Step {self.what}{self.width}>"
 
 
-def parse(shape):
+def parse(shape: str) -> "tuple[Step, ...]":
     """One recorded shape, as the steps it describes."""
-    steps = []
+    steps: list[Step] = []
     for word in shape.split():
         for what in STEPS:
             if not word.startswith(what):
@@ -86,7 +99,7 @@ def parse(shape):
     return tuple(steps)
 
 
-def recorded(part, where=None):
+def recorded(part: str, where: Path | str | None = None) -> "Shapes":
     """Every shape read out of a cartridge for that part, longest first.
 
     Longest first because a long shape exercises more of the part than a short
@@ -96,13 +109,14 @@ def recorded(part, where=None):
     if not path.exists():
         return ()
     held = json.loads(path.read_text())
+    assert isinstance(held, dict), f"{path} does not hold an object"
     if held.get("part") != part:
         raise Malformed(f"{path} holds shapes for {held.get('part')}, not for {part}")
     found = [(parse(one["shape"]), one["seen"]) for one in held["shapes"]]
     return tuple(sorted(found, key=lambda one: (-len(one[0]), -one[1])))
 
 
-def interesting(shapes):
+def interesting(shapes: "Shapes") -> "Shapes":
     """The shapes worth sweeping: the ones that both give and take.
 
     A shape that only writes proves nothing about what comes back, and a shape
@@ -116,14 +130,14 @@ def interesting(shapes):
     )
 
 
-def payload_for(steps, chance):
+def payload_for(steps: "Iterable[Step]", chance: random.Random) -> list[list[int]]:
     """Bytes to fill one shape's writes, generated rather than taken from anywhere."""
     return [
         [chance.randrange(0x100) for _ in range(step.width)] for step in steps if step.what == WRITE
     ]
 
 
-def commanded(payload, command):
+def commanded(payload: Sequence[Sequence[int]], command: int) -> list[list[int]]:
     """The same payload with a real command in front of it.
 
     A shape says how a routine drives the part; it does not say which command it
@@ -132,11 +146,13 @@ def commanded(payload, command):
     work. Putting a command the part actually has in that byte sweeps the part.
     """
     if not payload:
-        return payload
-    return [[command, *payload[0][1:]], *payload[1:]]
+        return []
+    return [[command, *payload[0][1:]], *(list(one) for one in payload[1:])]
 
 
-def drive(chip, steps, payload):
+def drive(
+    chip: Watched, steps: "Iterable[Step]", payload: Iterable[Sequence[int]]
+) -> list[list[int]]:
     """One shape through one part, returning everything it said back.
 
     Three calls, which is everything a console can do to one of these: give it a
@@ -144,7 +160,7 @@ def drive(chip, steps, payload):
     attention.
     """
     giving = iter(payload)
-    said = []
+    said: list[list[int]] = []
     for step in steps:
         if step.what == WRITE:
             for byte in next(giving):
@@ -156,6 +172,6 @@ def drive(chip, steps, payload):
     return said
 
 
-def rolls(seed=DEFAULT_SEED):
+def rolls(seed: int = DEFAULT_SEED) -> random.Random:
     """The generator the payloads come from, seeded so a run repeats."""
     return random.Random(seed)

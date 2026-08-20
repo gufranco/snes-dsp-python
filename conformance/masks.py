@@ -27,9 +27,13 @@ import hashlib
 import json
 import random
 import sys
+from collections.abc import Callable, Collection, Container, Iterable, Sequence
 from pathlib import Path
+from typing import Any, override
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from driven import Build, Driven
 
 import snesdsp
 from snesdsp import silicon
@@ -37,6 +41,9 @@ from snesdsp import silicon
 ROOT = Path(__file__).resolve().parent
 
 FILE = "dsp1masks.json"
+
+Divergence = dict[str, Any]
+"""One case where the masks part company: the command, the arguments, the answers."""
 
 MASKS = ("dsp1", "dsp1b")
 """The two masks that can differ. The DSP-1A shares the DSP-1's image, so it cannot."""
@@ -80,21 +87,27 @@ NOTE = (
 class Checked:
     """What the pinned cases and the parts on this machine had to say to each other."""
 
-    def __init__(self, disagreements, converged, checked):
+    def __init__(
+        self,
+        disagreements: Iterable[tuple[int, str, str, str]],
+        converged: Iterable[int],
+        checked: int,
+    ) -> None:
         self.disagreements = tuple(disagreements)
         self.converged = tuple(converged)
         self.checked = checked
 
     @property
-    def agrees(self):
+    def agrees(self) -> bool:
         """Whether every pinned divergence is still there, and still says what it said."""
         return not self.disagreements and not self.converged
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         return f"<Checked {self.checked} cases, {len(self.disagreements)} wrong>"
 
 
-def argument_sets(seed=SEED, extra=10):
+def argument_sets(seed: int = SEED, extra: int = 10) -> tuple[tuple[int, ...], ...]:
     """The corners first, then a fixed number of random sets from the seed."""
     chance = random.Random(seed)
     return (
@@ -106,15 +119,15 @@ def argument_sets(seed=SEED, extra=10):
 ARGUMENTS = argument_sets()
 
 
-def _default_build(part):  # pragma: no cover
+def _default_build(part: str) -> Driven:  # pragma: no cover
     return snesdsp.Dsp(part)
 
 
-def _default_available():  # pragma: no cover
+def _default_available() -> set[str]:  # pragma: no cover
     return set(silicon.available())
 
 
-def _default_digest(part):  # pragma: no cover
+def _default_digest(part: str) -> str:  # pragma: no cover
     wanted = silicon.SHARES_IMAGE.get(part, part)
     held = silicon.available()
     if wanted not in held:
@@ -122,7 +135,9 @@ def _default_digest(part):  # pragma: no cover
     return hashlib.sha256(Path(held[wanted][1]).read_bytes()).hexdigest()
 
 
-def answer(build, part, command, arguments, reads=READS):
+def answer(
+    build: Build, part: str, command: int, arguments: Sequence[int], reads: int = READS
+) -> bytes:
     """What one mask says to one command, driven the way a console drives it."""
     chip = build(part)
     chip.write(command)
@@ -132,14 +147,19 @@ def answer(build, part, command, arguments, reads=READS):
     return bytes(chip.read() for _ in range(reads))
 
 
-def _first_difference(first, second):
+def _first_difference(first: bytes, second: bytes) -> int:
     for at, (one, other) in enumerate(zip(first, second, strict=False)):
         if one != other:
             return at
     return min(len(first), len(second))
 
 
-def sweep(build=_default_build, commands=COMMANDS, arguments=ARGUMENTS, reads=READS):
+def sweep(
+    build: Build = _default_build,
+    commands: Sequence[int] = COMMANDS,
+    arguments: Sequence[Sequence[int]] = ARGUMENTS,
+    reads: int = READS,
+) -> list[Divergence]:
     """Every command and argument set where the two masks part company."""
     found = []
     for command in commands:
@@ -159,7 +179,9 @@ def sweep(build=_default_build, commands=COMMANDS, arguments=ARGUMENTS, reads=RE
     return found
 
 
-def check(divergences, build=_default_build, reads=READS):
+def check(
+    divergences: Collection[Divergence], build: Build = _default_build, reads: int = READS
+) -> "Checked":
     """Every pinned case re-derived, reporting anything that moved."""
     disagreements = []
     converged = []
@@ -177,7 +199,11 @@ def check(divergences, build=_default_build, reads=READS):
     return Checked(disagreements, converged, len(divergences))
 
 
-def store(divergences, where=ROOT, digest=_default_digest):
+def store(
+    divergences: Sequence[Divergence],
+    where: Path = ROOT,
+    digest: Callable[[str], str] = _default_digest,
+) -> Path:
     """What a sweep found, written with the images that produced it."""
     path = Path(where) / FILE
     path.write_text(
@@ -201,15 +227,17 @@ def store(divergences, where=ROOT, digest=_default_digest):
     return path
 
 
-def load(where=ROOT):
+def load(where: Path = ROOT) -> dict[str, Any] | None:
     """What was pinned, or nothing when no sweep has been kept."""
     path = Path(where) / FILE
     if not path.exists():
         return None
-    return json.loads(path.read_text())
+    held = json.loads(path.read_text())
+    assert isinstance(held, dict), f"{path} does not hold an object"
+    return held
 
 
-def lines_for(found):
+def lines_for(found: "Checked") -> list[str]:
     """What a comparison found, in the order somebody reading it wants it."""
     said = [f"  {found.checked} pinned divergences re-derived"]
     for command, mask, wanted, got in found.disagreements:
@@ -222,7 +250,11 @@ def lines_for(found):
     return said
 
 
-def lines_for_sweep(divergences, commands=COMMANDS, arguments=ARGUMENTS):
+def lines_for_sweep(
+    divergences: Collection[Divergence],
+    commands: Sequence[int] = COMMANDS,
+    arguments: Sequence[Sequence[int]] = ARGUMENTS,
+) -> list[str]:
     """What a sweep turned up, one case at a time.
 
     The counts come from what was actually swept rather than from the defaults, so
@@ -240,15 +272,15 @@ def lines_for_sweep(divergences, commands=COMMANDS, arguments=ARGUMENTS):
 
 
 def main(
-    argv=(),
-    available=_default_available,
-    build=_default_build,
-    commands=COMMANDS,
-    arguments=ARGUMENTS,
-    digest=_default_digest,
-    where=ROOT,
-    say=print,
-):
+    argv: Sequence[str] = (),
+    available: Callable[[], Container[str]] = _default_available,
+    build: Build = _default_build,
+    commands: Sequence[int] = COMMANDS,
+    arguments: Sequence[Sequence[int]] = ARGUMENTS,
+    digest: Callable[[str], str] = _default_digest,
+    where: Path = ROOT,
+    say: Callable[[str], object] = print,
+) -> int:
     """Sweep for divergences between the masks, or check the ones already pinned."""
     held = available()
     absent = [mask for mask in MASKS if mask not in held]
@@ -260,9 +292,9 @@ def main(
         return 2
 
     if "--sweep" in argv:
-        found = sweep(build, commands, arguments)
-        store(found, where, digest)
-        for line in lines_for_sweep(found, commands, arguments):
+        swept = sweep(build, commands, arguments)
+        store(swept, where, digest)
+        for line in lines_for_sweep(swept, commands, arguments):
             say(line)
         return 0
 

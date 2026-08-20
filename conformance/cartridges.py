@@ -22,7 +22,9 @@ import hashlib
 import json
 import os
 import zlib
+from collections.abc import Iterable, Iterator, Mapping
 from pathlib import Path
+from typing import Any, override
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -67,18 +69,19 @@ class Corrupt(Exception):
 class Identity:
     """What a cartridge turned out to be."""
 
-    def __init__(self, name, title, size, chipset, sha256):
+    def __init__(self, name: str, title: str, size: int, chipset: str, sha256: str) -> None:
         self.name = name
         self.title = title
         self.size = size
         self.chipset = chipset
         self.sha256 = sha256
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         return f"<Identity {self.name}, {self.title}, {self.size} bytes>"
 
 
-def digests_of(image):
+def digests_of(image: bytes) -> dict[str, str]:
     """Every digest this manifest publishes, for one file."""
     return {
         "crc32": f"{zlib.crc32(image) & 0xFFFFFFFF:08x}",
@@ -88,19 +91,23 @@ def digests_of(image):
     }
 
 
-def manifest(path=None):
+def manifest(path: Path | str | None = None) -> dict[str, Any]:
     with Path(path or MANIFEST).open() as handle:
-        return json.load(handle)
+        held = json.load(handle)
+    assert isinstance(held, dict), f"{path or MANIFEST} does not hold an object"
+    return held
 
 
-def directories(environment=None):
+def directories(environment: Mapping[str, str] | None = None) -> tuple[Path, ...]:
     """Everywhere a cartridge is looked for, nearest intent first."""
     named = (environment if environment is not None else os.environ).get(DIRECTORY_VARIABLE)
     places = [Path(named)] if named else []
     return (*places, DEFAULT_DIRECTORY, ALONGSIDE)
 
 
-def directory(environment=None, places=None):
+def directory(
+    environment: Mapping[str, str] | None = None, places: Iterable[Path] | None = None
+) -> Path:
     """Where to look: what was named, or the first place that is actually there.
 
     A named directory wins even when it is empty or missing. Quietly falling back
@@ -116,7 +123,7 @@ def directory(environment=None, places=None):
     return DEFAULT_DIRECTORY
 
 
-def identify(image, catalogue=None):
+def identify(image: bytes, catalogue: Mapping[str, Any] | None = None) -> "Identity":
     """Which cartridge this is, or why it is not one the manifest knows."""
     found = digests_of(image)
     entries = (catalogue or manifest())["cartridges"]
@@ -136,7 +143,7 @@ def identify(image, catalogue=None):
     raise Unrecognised(_diagnosis(image, found, entries))
 
 
-def _confirm(entry, found):
+def _confirm(entry: Mapping[str, Any], found: Mapping[str, str]) -> None:
     """Every other digest the manifest publishes has to agree as well.
 
     Reaching here means the deciding digest already matched, so a disagreement is
@@ -155,7 +162,7 @@ def _confirm(entry, found):
             )
 
 
-def _diagnosis(image, found, entries):
+def _diagnosis(image: bytes, found: Mapping[str, str], entries: Iterable[Mapping[str, Any]]) -> str:
     same_length = [entry for entry in entries if entry["bytes"] == len(image)]
 
     if same_length:
@@ -175,13 +182,15 @@ def _diagnosis(image, found, entries):
     )
 
 
-def found(where=None, catalogue=None):
+def found(
+    where: Path | str | None = None, catalogue: Mapping[str, Any] | None = None
+) -> "Iterator[tuple[Identity, Path]]":
     """Every cartridge on disk the manifest recognises, with the file it came from."""
-    where = Path(where) if where is not None else directory()
-    if not where.is_dir():
+    at = Path(where) if where is not None else directory()
+    if not at.is_dir():
         return
 
-    for path in sorted(where.iterdir()):
+    for path in sorted(at.iterdir()):
         if path.suffix.lower() not in READABLE_SUFFIXES or not path.is_file():
             continue
         try:
@@ -190,5 +199,7 @@ def found(where=None, catalogue=None):
             continue
 
 
-def present(where=None, catalogue=None):
+def present(
+    where: Path | str | None = None, catalogue: Mapping[str, Any] | None = None
+) -> "tuple[tuple[Identity, Path], ...]":
     return tuple(found(where, catalogue))

@@ -5,6 +5,7 @@ import tempfile
 import unittest
 import zlib
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -14,11 +15,11 @@ import cartridges
 PRESENT = cartridges.present()
 
 
-def a_cartridge(filler=0xAB, size=64):
+def a_cartridge(filler: int = 0xAB, size: int = 64) -> bytes:
     return bytes([filler]) * size
 
 
-def a_catalogue(image, name="made-up.sfc", **overrides):
+def a_catalogue(image: bytes, name: str = "made-up.sfc", **overrides: Any) -> dict[str, Any]:
     entry = {
         "name": name,
         "title": "MADE UP",
@@ -34,30 +35,30 @@ def a_catalogue(image, name="made-up.sfc", **overrides):
 
 
 class ManifestTest(unittest.TestCase):
-    def test_the_manifest_describes_cartridges(self):
+    def test_the_manifest_describes_cartridges(self) -> None:
         self.assertTrue(cartridges.manifest()["cartridges"])
 
-    def test_every_cartridge_carries_all_four_digests(self):
+    def test_every_cartridge_carries_all_four_digests(self) -> None:
         for entry in cartridges.manifest()["cartridges"]:
             for name in cartridges.DIGESTS:
                 self.assertIn(name, entry, (entry["name"], name))
 
-    def test_each_digest_is_the_length_that_kind_of_digest_has(self):
+    def test_each_digest_is_the_length_that_kind_of_digest_has(self) -> None:
         for entry in cartridges.manifest()["cartridges"]:
             for name, width in cartridges.DIGEST_WIDTHS.items():
                 self.assertEqual(len(entry[name]), width, (entry["name"], name))
 
-    def test_every_cartridge_names_a_file_and_a_length(self):
+    def test_every_cartridge_names_a_file_and_a_length(self) -> None:
         for entry in cartridges.manifest()["cartridges"]:
             self.assertTrue(entry["name"])
             self.assertGreater(entry["bytes"], 0)
 
-    def test_no_two_cartridges_share_a_deciding_digest(self):
+    def test_no_two_cartridges_share_a_deciding_digest(self) -> None:
         seen = [entry["sha256"] for entry in cartridges.manifest()["cartridges"]]
 
         self.assertEqual(len(seen), len(set(seen)))
 
-    def test_the_manifest_carries_no_run_of_bytes_longer_than_a_digest(self):
+    def test_the_manifest_carries_no_run_of_bytes_longer_than_a_digest(self) -> None:
         longest = max(cartridges.DIGEST_WIDTHS.values())
         written = json.dumps(cartridges.manifest())
         runs = [
@@ -68,7 +69,7 @@ class ManifestTest(unittest.TestCase):
 
         self.assertEqual(runs, [])
 
-    def test_a_manifest_can_be_read_from_somewhere_else(self):
+    def test_a_manifest_can_be_read_from_somewhere_else(self) -> None:
         where = Path(tempfile.mkdtemp()) / "other.json"
         where.write_text(json.dumps({"cartridges": []}))
 
@@ -76,17 +77,17 @@ class ManifestTest(unittest.TestCase):
 
 
 class IdentifyTest(unittest.TestCase):
-    def test_a_cartridge_the_manifest_knows_is_named(self):
+    def test_a_cartridge_the_manifest_knows_is_named(self) -> None:
         image = a_cartridge()
 
         self.assertEqual(cartridges.identify(image, a_catalogue(image)).name, "made-up.sfc")
 
-    def test_and_carries_the_title_its_header_declared(self):
+    def test_and_carries_the_title_its_header_declared(self) -> None:
         image = a_cartridge()
 
         self.assertEqual(cartridges.identify(image, a_catalogue(image)).title, "MADE UP")
 
-    def test_a_cartridge_of_the_right_length_and_wrong_content_says_so(self):
+    def test_a_cartridge_of_the_right_length_and_wrong_content_says_so(self) -> None:
         image = a_cartridge()
         catalogue = a_catalogue(image, sha256="0" * 64)
 
@@ -95,13 +96,13 @@ class IdentifyTest(unittest.TestCase):
 
         self.assertIn("altered", str(raised.exception))
 
-    def test_a_cartridge_of_no_length_the_manifest_knows_says_that(self):
+    def test_a_cartridge_of_no_length_the_manifest_knows_says_that(self) -> None:
         with self.assertRaises(cartridges.Unrecognised) as raised:
             cartridges.identify(b"\x00" * 7, {"cartridges": []})
 
         self.assertIn("7", str(raised.exception))
 
-    def test_the_report_always_carries_the_digest_that_was_computed(self):
+    def test_the_report_always_carries_the_digest_that_was_computed(self) -> None:
         with self.assertRaises(cartridges.Unrecognised) as raised:
             cartridges.identify(b"\x00" * 7, {"cartridges": []})
 
@@ -109,7 +110,7 @@ class IdentifyTest(unittest.TestCase):
 
 
 class CrossCheckTest(unittest.TestCase):
-    def test_a_cartridge_whose_other_digests_disagree_is_refused(self):
+    def test_a_cartridge_whose_other_digests_disagree_is_refused(self) -> None:
         image = a_cartridge()
         catalogue = a_catalogue(image, crc32="00000000")
 
@@ -118,13 +119,13 @@ class CrossCheckTest(unittest.TestCase):
 
         self.assertIn("crc32", str(raised.exception))
 
-    def test_every_kind_of_disagreement_is_caught(self):
+    def test_every_kind_of_disagreement_is_caught(self) -> None:
         image = a_cartridge()
         for name, wrong in (("md5", "0" * 32), ("sha1", "0" * 40), ("crc32", "0" * 8)):
             with self.assertRaises(cartridges.Corrupt):
                 cartridges.identify(image, a_catalogue(image, **{name: wrong}))
 
-    def test_a_manifest_that_only_names_the_deciding_digest_is_still_accepted(self):
+    def test_a_manifest_that_only_names_the_deciding_digest_is_still_accepted(self) -> None:
         image = a_cartridge()
         catalogue = a_catalogue(image)
         for name in ("crc32", "md5", "sha1"):
@@ -134,7 +135,7 @@ class CrossCheckTest(unittest.TestCase):
 
 
 class PrintingTest(unittest.TestCase):
-    def test_a_cartridge_prints_as_the_file_and_the_title_it_carries(self):
+    def test_a_cartridge_prints_as_the_file_and_the_title_it_carries(self) -> None:
         printed = repr(cartridges.Identity("a.sfc", "A GAME", 512, "0x03", "0" * 64))
 
         self.assertIn("a.sfc", printed)
@@ -142,41 +143,41 @@ class PrintingTest(unittest.TestCase):
 
 
 class DirectoryTest(unittest.TestCase):
-    def test_the_directory_comes_from_the_environment_when_one_is_named(self):
+    def test_the_directory_comes_from_the_environment_when_one_is_named(self) -> None:
         self.assertEqual(cartridges.directory({"SNES_CARTRIDGE_DIR": "/x"}), Path("/x"))
 
-    def test_and_from_the_repository_when_none_is(self):
+    def test_and_from_the_repository_when_none_is(self) -> None:
         self.assertEqual(cartridges.directory({}).name, "cartridges")
 
-    def test_the_project_this_sits_inside_is_looked_at_too(self):
+    def test_the_project_this_sits_inside_is_looked_at_too(self) -> None:
         self.assertIn(cartridges.ALONGSIDE, cartridges.directories({}))
 
-    def test_a_named_directory_comes_before_either_of_them(self):
+    def test_a_named_directory_comes_before_either_of_them(self) -> None:
         found = cartridges.directories({cartridges.DIRECTORY_VARIABLE: "/x"})
 
         self.assertEqual(found[0], Path("/x"))
 
-    def test_the_first_place_that_is_actually_there_is_the_one_used(self):
+    def test_the_first_place_that_is_actually_there_is_the_one_used(self) -> None:
         import tempfile
 
         here = Path(tempfile.mkdtemp())
 
         self.assertEqual(cartridges.directory({}, places=[Path("/nowhere"), here]), here)
 
-    def test_and_when_no_place_is_there_the_folder_here_is_named(self):
+    def test_and_when_no_place_is_there_the_folder_here_is_named(self) -> None:
         chosen = cartridges.directory({}, places=[Path("/nowhere"), Path("/nor/here")])
 
         self.assertEqual(chosen, cartridges.DEFAULT_DIRECTORY)
 
-    def test_a_named_directory_wins_even_when_it_is_not_there(self):
+    def test_a_named_directory_wins_even_when_it_is_not_there(self) -> None:
         chosen = cartridges.directory({cartridges.DIRECTORY_VARIABLE: "/nowhere"})
 
         self.assertEqual(chosen, Path("/nowhere"))
 
-    def test_a_directory_that_is_not_there_yields_nothing(self):
+    def test_a_directory_that_is_not_there_yields_nothing(self) -> None:
         self.assertEqual(list(cartridges.found(Path("/nowhere/at/all"))), [])
 
-    def test_a_file_the_manifest_does_not_know_is_passed_over(self):
+    def test_a_file_the_manifest_does_not_know_is_passed_over(self) -> None:
         where = Path(tempfile.mkdtemp())
         (where / "nonsense.sfc").write_bytes(b"\x00" * 99)
 
@@ -185,11 +186,11 @@ class DirectoryTest(unittest.TestCase):
 
 @unittest.skipUnless(PRESENT, cartridges.WHY_NOT)
 class OnDiskTest(unittest.TestCase):
-    def test_every_cartridge_on_disk_matches_all_four_of_its_digests(self):
+    def test_every_cartridge_on_disk_matches_all_four_of_its_digests(self) -> None:
         for identity, path in PRESENT:
             self.assertTrue(identity.sha256, path)
 
-    def test_the_manifest_describes_every_cartridge_that_is_here(self):
+    def test_the_manifest_describes_every_cartridge_that_is_here(self) -> None:
         named = {entry["name"] for entry in cartridges.manifest()["cartridges"]}
 
         for _, path in PRESENT:

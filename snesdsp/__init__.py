@@ -26,6 +26,8 @@ project, or of the project this one sits inside, or in any directory named by
 back to a guess.
 """
 
+from typing import Any
+
 from .models import MODELS, SHARES_MICROCODE, UnknownModelError, describe
 from .silicon import NeverReady, NoFirmware, Silicon, available, why_not
 from .timing import DSP_CLOCK, GAP, MASTER_CLOCK, clock_of, steps_for
@@ -36,7 +38,7 @@ __version__ = VERSION
 DEFAULT_MODEL = "dsp1"
 
 
-def Dsp(model=DEFAULT_MODEL, **options):  # noqa: N802
+def Dsp(model: str = DEFAULT_MODEL, **options: "Any") -> Silicon:  # noqa: N802
     """One part of that name, running its own microcode.
 
     Refuses when there is no image for it rather than answering from somewhere

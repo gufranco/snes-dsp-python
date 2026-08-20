@@ -22,6 +22,10 @@ thing derived by hand, which is the very thing this exists to avoid.
 
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, override
+
+if TYPE_CHECKING:  # pragma: no cover
+    from types import ModuleType
 
 from . import timing
 
@@ -91,7 +95,7 @@ class NeverReady(Exception):
     pass
 
 
-def _processor():
+def _processor() -> "tuple[ModuleType, ModuleType, ModuleType] | None":
     """The processor package, or nothing when the submodule is absent."""
     if str(PROCESSOR) not in sys.path:
         sys.path.insert(0, str(PROCESSOR))
@@ -102,7 +106,7 @@ def _processor():
     return firmware, models, ports
 
 
-def available(held=None):
+def available(held: "dict[str, tuple[Any, Path]] | None" = None) -> "dict[str, tuple[Any, Path]]":
     """Every part there is an image for, by the name the part is known as.
 
     `held` is what was found on disk, passed in so the sharing below can be
@@ -120,7 +124,7 @@ def available(held=None):
     return held
 
 
-def why_not(held=None):
+def why_not(held: "dict[str, tuple[Any, Path]] | None" = None) -> str | None:
     """Why this backend cannot run, or nothing when it can.
 
     `held` is passed through to `available` for the same reason it exists there:
@@ -151,15 +155,15 @@ class Silicon:
 
     def __init__(
         self,
-        part,
-        fill=0,
-        patience=SETTLE_LIMIT,
-        boot=BOOT_STEPS,
-        gap=GAP,
-        image=None,
-        identity=None,
-        images=None,
-    ):
+        part: str,
+        fill: int = 0,
+        patience: int = SETTLE_LIMIT,
+        boot: int = BOOT_STEPS,
+        gap: int = GAP,
+        image: bytes | None = None,
+        identity: "Any | None" = None,
+        images: "dict[str, tuple[Any, Path]] | None" = None,
+    ) -> None:
         found = _processor()
         if found is None:
             raise NoFirmware(WHY_NOT_PROCESSOR)
@@ -196,7 +200,7 @@ class Silicon:
         self.step(boot)
 
     @property
-    def clock(self):
+    def clock(self) -> int:
         """The rate this part's oscillator runs at.
 
         One rate for the whole family, so a part built from an image that names
@@ -204,12 +208,12 @@ class Silicon:
         """
         return timing.DSP_CLOCK
 
-    def step(self, count=None):
+    def step(self, count: int | None = None) -> None:
         """Run the part for a while, which is what the console's silence is."""
         for _ in range(self.gap if count is None else count):
             self.chip.step()
 
-    def elapsed(self, master_clocks):
+    def elapsed(self, master_clocks: int) -> "Silicon":
         """Run the part for as long as the console spent, in the console's clocks.
 
         What an emulator calls instead of guessing. The conversion is the two
@@ -219,13 +223,13 @@ class Silicon:
         self.step(timing.steps_for(master_clocks, self.clock))
         return self
 
-    def read_bus(self, address):
+    def read_bus(self, address: int) -> int:
         """One byte, from wherever on the bus the console reached for it."""
         if address >> STATUS_BIT & 1:
             return self.read_status()
         return self.read()
 
-    def write_bus(self, address, value):
+    def write_bus(self, address: int, value: int) -> "Silicon":
         """One byte in, to whichever side of the part the address names."""
         if address >> STATUS_BIT & 1:
             self.console.write(self._ports.STATUS, value & 0xFF)
@@ -235,12 +239,12 @@ class Silicon:
         return self
 
     @property
-    def asking(self):
+    def asking(self) -> bool:
         """Whether the part is waiting on the console rather than working."""
         return bool(self.chip.registers.sr.rqm)
 
     @property
-    def pending_output(self):
+    def pending_output(self) -> int:
         """Whether the part has something to say, as far as the console can tell.
 
         One, never a count. The models can say how many bytes remain because they
@@ -249,7 +253,7 @@ class Silicon:
         """
         return 1 if self.asking else 0
 
-    def waited(self):
+    def waited(self) -> bool:
         """Run until the part asks for attention, reporting whether it ever did."""
         for _ in range(self.patience):
             if self.asking:
@@ -257,7 +261,7 @@ class Silicon:
             self.chip.step()
         return False
 
-    def settle(self):
+    def settle(self) -> None:
         """Wait for the part to ask, and refuse to continue if it never does.
 
         For a caller who wants to know. Reading does not go through this, because
@@ -268,21 +272,22 @@ class Silicon:
                 f"{self.part} did not ask for attention within {self.patience} instructions"
             )
 
-    def write(self, value):
+    def write(self, value: int) -> None:
         """Give the part one byte, then leave it room to act on it."""
         self.console.write(self._ports.DATA, value & 0xFF)
         self.step()
 
-    def read_status(self):
+    def read_status(self) -> int:
         """The status register, which is what the console watches rather than a count.
 
         Taken without waiting and without disturbing anything, because that is
         what the console does: the register is readable at any moment and reading
         it is how a part that is clocked a word at a time is driven at all.
         """
-        return self.console.read(self._ports.STATUS)
+        found: int = self.console.read(self._ports.STATUS)
+        return found
 
-    def read(self):
+    def read(self) -> int:
         """Give the part a chance to answer, take the port, and leave it room again.
 
         A chance rather than a guarantee, because that is the console's position.
@@ -296,9 +301,10 @@ class Silicon:
         already answering.
         """
         self.waited()
-        value = self.console.read(self._ports.DATA)
+        value: int = self.console.read(self._ports.DATA)
         self.step()
         return value
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         return f"<{self.part} on silicon, {self.processor}>"

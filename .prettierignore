@@ -1,3 +1,5 @@
 pnpm-lock.yaml
 node_modules/
 .coverage
+.mypy_cache/
+.ruff_cache/

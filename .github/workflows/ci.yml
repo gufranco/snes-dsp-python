@@ -66,6 +66,30 @@ jobs:
           ACTIONLINT_VERSION: "1.7.12"
           ACTIONLINT_SHA256: "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
 
+  types:
+    name: Types
+    runs-on: ubuntu-latest
+    steps:
+      # The processor is reached through a submodule, and the checker follows the
+      # import to type it. Without the checkout it would report the whole backend
+      # as missing rather than as wrong, which is a different and useless answer.
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install the type checker
+        run: pipx install mypy==1.14.1
+
+      # Strict, with every optional error class the version offers turned on. The
+      # settings live in pyproject.toml so a local run and this one agree; a gate
+      # that only holds in CI teaches people to push and find out.
+      - name: Every annotation has to hold
+        run: mypy
+
   test:
     name: Tests on Python ${{ matrix.python }}
     runs-on: ubuntu-latest

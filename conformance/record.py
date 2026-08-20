@@ -23,7 +23,9 @@ nobody's hardware has.
 
 import json
 import sys
+from collections.abc import Callable, Collection, Iterable, Mapping
 from pathlib import Path
+from typing import Any, override
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -49,14 +51,14 @@ NOTE = (
 class Recorded:
     """Everything read for one part, and where each shape came from."""
 
-    def __init__(self, part):
+    def __init__(self, part: str) -> None:
         self.part = part
-        self.counted = {}
-        self.cartridges = {}
-        self.sources = []
-        self.silent = []
+        self.counted: dict[str, int] = {}
+        self.cartridges: dict[str, int] = {}
+        self.sources: list[dict[str, Any]] = []
+        self.silent: list[str] = []
 
-    def add(self, identity, layout, shapes):
+    def add(self, identity: Mapping[str, Any], layout: str, shapes: Mapping[str, int]) -> None:
         """One cartridge's shapes pooled into this part's."""
         for shape, seen in shapes.items():
             self.counted[shape] = self.counted.get(shape, 0) + seen
@@ -76,7 +78,7 @@ class Recorded:
             }
         )
 
-    def ordered(self):
+    def ordered(self) -> list[dict[str, Any]]:
         """Longest shape first, and the busier of two equal lengths before the other.
 
         Longest first because a long shape exercises more of the part than a short
@@ -89,53 +91,62 @@ class Recorded:
             )
         ]
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         return f"<Recorded {self.part}, {len(self.counted)} shapes from {len(self.sources)}>"
 
 
-def _default_confirm(image):  # pragma: no cover
+def _default_confirm(image: bytes) -> object:  # pragma: no cover
     sys.path.insert(0, str(ROOT / "conformance"))
     import cartridges
 
     return cartridges.identify(image)
 
 
-def _default_layout(image):  # pragma: no cover
+def _default_layout(image: bytes) -> str:  # pragma: no cover
     _reach()
     from mapper import header
 
-    return header.read(image).layout
+    layout = header.read(image).layout
+    assert isinstance(layout, str)
+    return layout
 
 
-def _default_shapes(image, window):  # pragma: no cover
+def _default_shapes(image: bytes, window: object) -> dict[str, int]:  # pragma: no cover
     _reach()
     from snesdriver import conversation
 
-    return conversation.shapes(image, window)
+    found = conversation.shapes(image, window)
+    assert isinstance(found, dict)
+    return found
 
 
-def _default_window(layout):  # pragma: no cover
+def _default_window(layout: str) -> object:  # pragma: no cover
     _reach()
     from snesdriver import windows
 
     return windows.window_for(PART_FAMILY, layout)
 
 
-def _reach():
+def _reach() -> None:
     """Put the reading tool and the mapper it uses where they can be imported."""
     for where in (DRIVER, DRIVER / "snes-mapper-python"):
         if str(where) not in sys.path:
             sys.path.insert(0, str(where))
 
 
+Reading = Callable[[str], tuple[str, dict[str, int]] | None]
+"""How one cartridge is read, so a test can hand over something already read."""
+
+
 def reading(
-    name,
-    where=CARTRIDGES,
-    confirm=_default_confirm,
-    layout_of=_default_layout,
-    shapes_of=_default_shapes,
-    window_of=_default_window,
-):
+    name: str,
+    where: Path = CARTRIDGES,
+    confirm: Callable[[bytes], object] = _default_confirm,
+    layout_of: Callable[[bytes], str] = _default_layout,
+    shapes_of: Callable[[bytes, Any], dict[str, int]] = _default_shapes,
+    window_of: Callable[[str], object] = _default_window,
+) -> tuple[str, dict[str, int]] | None:
     """What one cartridge says, or nothing when it is not on this machine.
 
     The confirmation runs before the disassembly rather than after it. A file that
@@ -151,9 +162,13 @@ def reading(
     return layout, shapes_of(image, window_of(layout))
 
 
-def gather(manifest, reading=reading, keep_silent=False):
+def gather(
+    manifest: Mapping[str, Any],
+    reading: Reading = reading,
+    keep_silent: bool = False,
+) -> dict[str, "Recorded"]:
     """Every cartridge present, read and pooled under the part it drives."""
-    found = {}
+    found: dict[str, Recorded] = {}
     for identity in manifest["cartridges"]:
         said = reading(identity["name"])
         if said is None:
@@ -168,7 +183,7 @@ def gather(manifest, reading=reading, keep_silent=False):
     return {part: held for part, held in found.items() if held.sources or held.silent}
 
 
-def write(recorded, where):
+def write(recorded: Mapping[str, "Recorded"], where: Path) -> list[Path]:
     """One file per part, each naming every cartridge it was read from."""
     written = []
     for part, held in sorted(recorded.items()):
@@ -192,7 +207,7 @@ def write(recorded, where):
     return written
 
 
-def lines_for(recorded, written):
+def lines_for(recorded: Mapping[str, "Recorded"], written: Collection[Path]) -> list[str]:
     """What was read and what was written, in the order a reader wants it."""
     said = []
     for part, held in sorted(recorded.items()):
@@ -202,15 +217,24 @@ def lines_for(recorded, written):
         )
         for one in held.sources:
             said.append(f"      {one['name']}  {one['layout']}, {one['shapes']} shapes")
-        for one in held.silent:
-            said.append(f"      {one}  said nothing to the {part}")
+        for name in held.silent:
+            said.append(f"      {name}  said nothing to the {part}")
     said.append(f"  wrote {len(written)} files")
     return said
 
 
-def main(argv=(), manifest=None, reading=reading, where=None, say=print):
+def main(
+    argv: Iterable[str] = (),
+    manifest: Mapping[str, Any] | None = None,
+    reading: Reading = reading,
+    where: Path | str | None = None,
+    say: Callable[[str], object] = print,
+) -> int:
     """Read every cartridge on this machine and write the shapes it says."""
-    manifest = json.loads(MANIFEST.read_text()) if manifest is None else manifest
+    if manifest is None:
+        held = json.loads(MANIFEST.read_text())
+        assert isinstance(held, dict), f"{MANIFEST} does not hold an object"
+        manifest = held
     where = Path(__file__).resolve().parent if where is None else Path(where)
 
     recorded = gather(manifest, reading, keep_silent=True)

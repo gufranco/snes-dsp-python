@@ -28,13 +28,17 @@ and it reconstructs nothing: the program that produced it stays where it was.
 
 import hashlib
 import json
+import random
 import sys
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from pathlib import Path
+from typing import Any, override
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import shapes as shapes_module
+from driven import BuildWatched, Watched
 
 import snesdsp
 from snesdsp import models, silicon
@@ -74,7 +78,14 @@ class WrongImage(Exception):
 class Checked:
     """What a corpus and the part on this machine had to say to each other."""
 
-    def __init__(self, part, disagreements, unrecorded, vanished, checked):
+    def __init__(
+        self,
+        part: str,
+        disagreements: Iterable[tuple[str, list[str], list[str]]],
+        unrecorded: Iterable[str],
+        vanished: Iterable[str],
+        checked: int,
+    ) -> None:
         self.part = part
         self.disagreements = tuple(disagreements)
         self.unrecorded = tuple(unrecorded)
@@ -82,7 +93,7 @@ class Checked:
         self.checked = checked
 
     @property
-    def agrees(self):
+    def agrees(self) -> bool:
         """Whether the part still answers what it answered, and still answers it all.
 
         An exchange that has gone missing counts against agreement. It means the
@@ -91,15 +102,16 @@ class Checked:
         """
         return not self.disagreements and not self.vanished
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         return f"<Checked {self.part}, {self.checked} exchanges, {len(self.disagreements)} wrong>"
 
 
-def _default_build(part):  # pragma: no cover
+def _default_build(part: str) -> Watched:  # pragma: no cover
     return snesdsp.Dsp(part)
 
 
-def _default_digest(part):  # pragma: no cover
+def _default_digest(part: str) -> str:  # pragma: no cover
     """The digest of the image that will answer, taken from the file itself."""
     wanted = silicon.SHARES_IMAGE.get(part, part)
     held = silicon.available()
@@ -108,21 +120,27 @@ def _default_digest(part):  # pragma: no cover
     return hashlib.sha256(Path(held[wanted][1]).read_bytes()).hexdigest()
 
 
-def shapes_named(part):
+def shapes_named(part: str) -> str:
     """Whose shapes drive that part, which is its own unless it shares a protocol."""
     return DRIVEN_LIKE.get(part, part)
 
 
-def _default_shapes(part):
+def _default_shapes(part: str) -> list[dict[str, Any]]:
     path = ROOT / f"{shapes_named(part)}shapes.json"
     if not path.exists():
         return []
-    return json.loads(path.read_text())["shapes"]
+    held = json.loads(path.read_text())
+    assert isinstance(held, dict), f"{path} does not hold an object"
+    named = held["shapes"]
+    assert isinstance(named, list), f"{path} does not hold a list of shapes"
+    return named
 
 
-def _exchanges(part, build, held, chance):
+def _exchanges(
+    part: str, build: BuildWatched, held: Iterable[Mapping[str, Any]], chance: random.Random
+) -> list[dict[str, Any]]:
     """Every shape that both gives and takes, played once at a freshly started part."""
-    found = []
+    found: list[dict[str, Any]] = []
     for one in held:
         steps = shapes_module.parse(one["shape"])
         writes = any(step.what == shapes_module.WRITE for step in steps)
@@ -136,13 +154,13 @@ def _exchanges(part, build, held, chance):
 
 
 def take(
-    part,
-    build=_default_build,
-    shapes=None,
-    seed=shapes_module.DEFAULT_SEED,
-    digest=_default_digest,
-    rolls=shapes_module.rolls,
-):
+    part: str,
+    build: BuildWatched = _default_build,
+    shapes: Iterable[Mapping[str, Any]] | None = None,
+    seed: int = shapes_module.DEFAULT_SEED,
+    digest: Callable[[str], str] = _default_digest,
+    rolls: Callable[[int], random.Random] = shapes_module.rolls,
+) -> dict[str, Any]:
     """Everything that part answers today, in a form that can be written down."""
     held = _default_shapes(part) if shapes is None else shapes
     return {
@@ -155,12 +173,12 @@ def take(
 
 
 def check(
-    corpus,
-    build=_default_build,
-    shapes=None,
-    digest=_default_digest,
-    rolls=shapes_module.rolls,
-):
+    corpus: Mapping[str, Any],
+    build: BuildWatched = _default_build,
+    shapes: Iterable[Mapping[str, Any]] | None = None,
+    digest: Callable[[str], str] = _default_digest,
+    rolls: Callable[[int], random.Random] = shapes_module.rolls,
+) -> "Checked":
     """A corpus against the part on this machine, refusing if the image differs."""
     part = corpus["part"]
     wanted = corpus["image"]["sha256"]
@@ -191,25 +209,26 @@ def check(
     )
 
 
-def store(corpus, where=ROOT):
+def store(corpus: Mapping[str, Any], where: Path = ROOT) -> Path:
     """One corpus written where its part names."""
     path = Path(where) / f"{corpus['part']}answers.json"
     path.write_text(json.dumps(corpus, indent=2) + "\n")
     return path
 
 
-def load(part, where=ROOT):
+def load(part: str, where: Path = ROOT) -> dict[str, Any] | None:
     """That part's corpus, or nothing when none has been taken."""
     path = Path(where) / f"{part}answers.json"
     if not path.exists():
         return None
     held = json.loads(path.read_text())
+    assert isinstance(held, dict), f"{path} does not hold an object"
     if held.get("part") != part:
         raise Malformed(f"{path} holds answers for {held.get('part')}, not for {part}")
     return held
 
 
-def lines_for(found):
+def lines_for(found: "Checked") -> list[str]:
     """What a comparison found, in the order somebody reading it wants it."""
     said = [f"  {found.part}: {found.checked} exchanges re-derived and compared"]
     for shape, wanted, got in found.disagreements:
@@ -224,15 +243,15 @@ def lines_for(found):
 
 
 def main(
-    argv=(),
-    why_not=silicon.why_not,
-    build=_default_build,
-    shapes_for=_default_shapes,
-    digest=_default_digest,
-    where=ROOT,
-    parts=PARTS,
-    say=print,
-):
+    argv: Sequence[str] = (),
+    why_not: Callable[[], str | None] = silicon.why_not,
+    build: BuildWatched = _default_build,
+    shapes_for: Callable[[str], list[dict[str, Any]]] = _default_shapes,
+    digest: Callable[[str], str] = _default_digest,
+    where: Path = ROOT,
+    parts: Sequence[str] = PARTS,
+    say: Callable[[str], object] = print,
+) -> int:
     """Take a corpus, or check one, depending on what was asked for."""
     reason = why_not()
     if reason:
@@ -251,13 +270,13 @@ def main(
 
     unwell = False
     for part in wanted:
-        corpus = load(part, where)
-        if corpus is None:
+        recorded = load(part, where)
+        if recorded is None:
             say(f"  {part}: no answers are recorded. Take them with --take {part}")
             unwell = True
             continue
         try:
-            found = check(corpus, build, shapes_for(part), digest=digest)
+            found = check(recorded, build, shapes_for(part), digest=digest)
         except WrongImage as wrong:
             say(f"  {part}: {wrong}")
             return 2

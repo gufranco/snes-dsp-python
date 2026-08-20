@@ -17,6 +17,12 @@ fault Pilotwings had come to depend on. Saying which shares which is more honest
 than collapsing the middle one into the first or refusing to name it at all.
 """
 
+from typing import TYPE_CHECKING, override
+
+if TYPE_CHECKING:  # pragma: no cover
+    from collections.abc import Iterable
+
+
 SHARES_MICROCODE = {"dsp1a": "dsp1"}
 """Parts whose program is another part's, so their behaviour is that part's.
 
@@ -38,17 +44,18 @@ class UnknownModelError(Exception):
 class Model:
     """One part: what it is, what it holds, and how to build it."""
 
-    def __init__(self, name, summary, aliases=()):
+    def __init__(self, name: str, summary: str, aliases: "Iterable[str]" = ()) -> None:
         self.name = name
         self.summary = summary
         self.aliases = tuple(aliases)
 
     @property
-    def image(self):
+    def image(self) -> str:
         """The name of the image this part runs, which may be another part's."""
         return SHARES_MICROCODE.get(self.name, self.name)
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         return f"<Model {self.name}, running the {self.image} image>"
 
 
@@ -122,11 +129,11 @@ for _model in _CATALOGUE:
         _BY_ALIAS[_alias] = _model
 
 
-def _normalise(name):
+def _normalise(name: str) -> str:
     return str(name).strip().lower().replace("-", "").replace("_", "")
 
 
-def describe(name):
+def describe(name: str) -> Model:
     """The part of that name, however it happens to be written."""
     wanted = _normalise(name)
     found = _BY_ALIAS.get(wanted)
