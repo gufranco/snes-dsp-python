@@ -1,6 +1,7 @@
 import sys
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -90,6 +91,67 @@ class RunTest(unittest.TestCase):
         for one in found:
             if one.name.startswith("dsp") and not one.ok:
                 self.assertIn("firmware", one.report)
+
+
+class PresentImageTest(unittest.TestCase):
+    """That a part which starts is examined on machines holding no microcode.
+
+    Nobody who does not already own these parts can put one on a machine, so the
+    build holds nothing and most machines that ever run this report hold nothing
+    either. Leaving the started-part checks to whatever happens to be lying
+    around means they run where it is convenient and nowhere else, and a check
+    that only runs on one laptop is not a check.
+    """
+
+    def _made_up(self):
+        import tempfile
+
+        where = Path(tempfile.mkdtemp()) / "made-up.bin"
+        where.write_bytes(b"nothing anybody owns")
+        return where
+
+    def _held(self, where):
+        from snesdsp import models
+
+        return dict.fromkeys(models.MODELS, ("identity", where))
+
+    def _nameless(self, _part, _images):
+        return SimpleNamespace(identity=None)
+
+    def _named(self, _part, _images):
+        return SimpleNamespace(identity=SimpleNamespace(part="dsp1b"))
+
+    def test_a_part_that_starts_is_reported_as_running_something(self):
+        found = doctor.examine(images=self._held(self._made_up()), build=self._nameless)
+
+        parts = [one for one in found if one.name.startswith("dsp")]
+        self.assertTrue(all(one.ok for one in parts))
+
+    def test_and_says_which_image_it_is_running(self):
+        found = doctor.examine(images=self._held(self._made_up()), build=self._named)
+
+        for one in found:
+            if one.name == "dsp1":
+                self.assertIn("dsp1b", one.detail)
+
+    def test_a_part_whose_chip_will_not_name_itself_falls_back_to_the_one_asked_for(self):
+        found = doctor.examine(images=self._held(self._made_up()), build=self._nameless)
+
+        for one in found:
+            if one.name == "dsp1a":
+                self.assertIn("dsp1", one.detail)
+
+    def test_and_carries_the_digest_of_the_file_it_ran(self):
+        import hashlib
+
+        found = doctor.examine(images=self._held(self._made_up()), build=self._nameless)
+
+        digest = hashlib.sha256(b"nothing anybody owns").hexdigest()
+        self.assertIn(digest, " ".join(one.detail for one in found))
+
+    def test_the_build_it_uses_by_default_is_the_one_that_runs_the_microcode(self):
+        with self.assertRaises(doctor.silicon.NoFirmware):
+            doctor._default_build("dsp1", {})
 
 
 class ExplodingTest(unittest.TestCase):
