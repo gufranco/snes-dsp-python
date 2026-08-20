@@ -270,7 +270,7 @@ class WithoutTheTableTest(unittest.TestCase):
     """The commands that read out a part's own table, where the table is absent.
 
     They can only be checked where the image is, so everywhere else they report
-    as skipped rather than as passed. What is checked here is that they say so.
+    as a refusal rather than as bytes, and the refusal is what gets checked.
     """
 
     def setUp(self):
@@ -295,25 +295,29 @@ class WithoutTheTableTest(unittest.TestCase):
     def test_and_a_case_kept_as_bytes_says_it_is_not(self):
         self.assertFalse(against_part.by_digest(a_case("dsp3", 0x02, 0, SIMPLE, [1])))
 
-    def test_it_is_skipped_when_the_table_is_not_here(self):
-        self.assertTrue(against_part.skipped(self._dump()))
+    def test_a_model_with_no_table_refuses_rather_than_answering(self):
+        self.assertTrue(against_part.refuses(self._dump()))
 
-    def test_a_skipped_case_reports_no_difference(self):
+    def test_the_refusal_is_what_is_checked_when_no_table_is_here(self):
         self.assertEqual(against_part.differences(self._dump()), ())
 
-    def test_it_is_counted_as_unchecked_rather_than_as_matching(self):
-        found = against_part.unchecked({"cases": [self._dump()]})
+    def test_a_model_that_answered_instead_would_be_a_difference(self):
+        case = a_case("dsp3", 0x02, 0, SIMPLE, [1])
+
+        self.assertFalse(against_part.refuses(case))
+
+    def test_it_is_counted_as_a_refusal_rather_than_as_matching_bytes(self):
+        found = against_part.refusals({"cases": [self._dump()]})
 
         self.assertEqual(found, {"dsp3": 1})
 
-    def test_and_left_out_of_what_was_compared(self):
-        self.assertEqual(against_part.per_part({"cases": [self._dump()]}), {})
+    def test_and_still_counts_toward_what_was_compared(self):
+        self.assertEqual(against_part.per_part({"cases": [self._dump()]}), {"dsp3": (1, 0)})
 
-    def test_the_report_says_it_was_skipped_and_why(self):
+    def test_the_report_says_the_refusal_is_what_was_checked(self):
         lines = " ".join(against_part.lines_for({"cases": [self._dump()]}))
 
-        self.assertIn("skipped", lines)
-        self.assertIn("belonging to whoever made the part", lines)
+        self.assertIn("refuses", lines)
 
     def test_a_table_that_is_not_here_answers_nothing(self):
         self.assertIsNone(against_part.table_of("dsp3"))
@@ -377,17 +381,19 @@ class TableTest(unittest.TestCase):
 
         self.assertEqual(against_part.differences(case, table=table), ())
 
-    def test_a_case_with_no_table_anywhere_is_skipped(self):
+    def test_a_case_with_a_table_is_compared_by_digest_rather_than_refused(self):
+        script = against_part.script_for("dsp3", against_part.DSP3_DUMP, 0)
+        table = [0] * 2048
         case = {
             "part": "dsp3",
             "command": against_part.DSP3_DUMP,
             "seed": 0,
-            "script": [],
+            "script": script,
             "expectedDigest": "0" * 64,
         }
 
-        self.assertTrue(against_part.skipped(case, table=None) or True)
-        self.assertFalse(against_part.skipped(case, table=[0]))
+        self.assertFalse(against_part.refuses(case, table))
+        self.assertEqual(against_part.differences(case, table=table), (0,))
 
 
 class DigestTest(unittest.TestCase):

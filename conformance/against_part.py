@@ -17,6 +17,12 @@ list is a gate rather than an excuse. Fixing one removes a line, breaking one
 adds a line, and either way this check fails until somebody writes down what
 changed. A number in a README drifts; this cannot.
 
+A command that reads a part's own table back is checked in two halves. With the
+table present the answer must be the part's, to the byte, compared as one digest
+so that nothing of the table is written down here. Without it the answer must be
+a refusal naming what is missing. Both are behaviour and both are checked, so
+such a command is never reported as skipped and never left unexamined.
+
 Three rules shape the questions.
 
 One command per script, on a part that has just been started. Running a whole
@@ -48,7 +54,9 @@ import snesdsp
 from snesdsp import chip as tiles
 from snesdsp import commands
 from snesdsp import dsp1 as projector
+from snesdsp import dsp3 as clocked
 from snesdsp import dsp4 as road
+from snesdsp.dsp1 import DataRomMissing
 
 ROOT = Path(__file__).resolve().parent
 
@@ -320,13 +328,6 @@ def answers_of(steps, chip):
     return said
 
 
-WHY_NOT_TABLE = (
-    "the part's own table is not here, so the commands that read it out cannot be"
-    " compared: they answer with content rather than with behaviour, and that"
-    " content comes from an image belonging to whoever made the part"
-)
-
-
 def digest_of(answers):
     """One digest over a whole answer, which settles it and reconstructs nothing.
 
@@ -409,24 +410,34 @@ def by_digest(case):
     return "expectedDigest" in case
 
 
-def skipped(case, table=None):
-    """Whether this case cannot be checked here.
+REFUSALS = (DataRomMissing, clocked.DataRomMissing)
+"""The refusal each model raises when asked for a table it has not got.
 
-    A command that reads out the part's own table can only be checked where that
-    table is, which is inside an image nobody may pass around. Everywhere else it
-    reports as skipped, out loud, rather than as passed.
-    """
-    if not by_digest(case):
-        return False
-    return (table_of(case["part"]) if table is None else table) is None
+One per model rather than one shared, because each is its own package-level
+error. A check that knew only one of them would read the other as a crash.
+"""
+
+
+def refuses(case, table=None):
+    """Whether the model refuses the case, which is right when it has no table."""
+    try:
+        replay(case["part"], case["script"], case["command"], table)
+    except REFUSALS:
+        return True
+    return False
 
 
 def differences(case, table=None):
-    """Every index where the model does not say what the part said."""
+    """Every index where the model does not say what the part said.
+
+    A case recorded as a digest is a command that reads a table out. With a table
+    the model must produce the part's own bytes, and without one it must refuse.
+    Both are checked; neither is skipped.
+    """
     if by_digest(case):
         held = table_of(case["part"]) if table is None else table
         if held is None:
-            return ()
+            return () if refuses(case) else (0,)
         got = replay(case["part"], case["script"], case["command"], held)
         return () if digest_of(got) == case["expectedDigest"] else (0,)
 
@@ -480,8 +491,6 @@ def per_part(held):
     now = measured(held)
     found = {}
     for case in held["cases"]:
-        if skipped(case):
-            continue
         total, off = found.get(case["part"], (0, 0))
         found[case["part"]] = (
             total + (1 if by_digest(case) else len(expected_of(case))),
@@ -490,11 +499,11 @@ def per_part(held):
     return found
 
 
-def unchecked(held):
-    """Every case that could not be checked here, by part."""
+def refusals(held):
+    """Every case checked as a refusal rather than as bytes, by part."""
     found = {}
     for case in held["cases"]:
-        if skipped(case):
+        if by_digest(case) and table_of(case["part"]) is None:
             found[case["part"]] = found.get(case["part"], 0) + 1
     return found
 
@@ -509,8 +518,11 @@ def lines_for(held):
             f"  {part}: {total - differing} of {total} bytes match the part ({share:.0f}%)"
         )
 
-    for part, count in sorted(unchecked(held).items()):
-        lines.append(f"  {part}: {count} scripts skipped, {WHY_NOT_TABLE}")
+    for part, count in sorted(refusals(held).items()):
+        lines.append(
+            f"  {part}: {count} of those read a table that is not here, so what is"
+            " checked is that the model refuses rather than answers"
+        )
 
     if not off:
         lines.append("  nothing has drifted from what was written down")
