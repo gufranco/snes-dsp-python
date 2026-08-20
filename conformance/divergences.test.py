@@ -48,6 +48,20 @@ class RecordTest(unittest.TestCase):
         for one in declared()["divergences"]:
             self.assertGreater(len(one["whatIsNotEstablished"]), 0)
 
+    def test_an_entry_can_be_found_by_part_and_command(self) -> None:
+        found = entry_for("dsp3", "0x1c")
+
+        self.assertEqual(found["part"], "dsp3")
+
+    def test_and_carries_the_reads_that_were_taken(self) -> None:
+        self.assertGreater(entry_for("dsp3", "0x1c")["thisProject"]["reads"], 0)
+
+    def test_asking_for_something_not_recorded_says_so(self) -> None:
+        with self.assertRaises(AssertionError) as raised:
+            entry_for("dsp1", "0xff")
+
+        self.assertIn("dsp1", str(raised.exception))
+
     def test_the_file_says_which_side_is_the_authority(self) -> None:
         self.assertIn("microcode is the part", declared()["howToRead"]["authority"])
 
