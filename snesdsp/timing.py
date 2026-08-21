@@ -69,6 +69,14 @@ DSP_CLOCK = 7_600_000
 One rate for all of them, because they are one piece of silicon with different
 programs masked into it and the cartridge that carries one carries the same
 crystal whichever it is.
+
+Unverified, and marked as such in `conformance/hardware.json`. This is the
+crystal on a cartridge board rather than a property of the part, so no NEC
+document would carry it and Nintendo's development manual does not either. It is
+what every implementation uses, which is the weakest kind of source this project
+accepts, and it is load-bearing: it decides how many instructions the part gets
+between two console accesses. A photograph of a DSP-1 board showing the crystal
+marking would settle it.
 """
 
 
