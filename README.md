@@ -37,6 +37,7 @@ for byte in (0x02, 0x00, 0x03, 0x00):
     chip.write(byte)
 
 [chip.read() for _ in range(4)]
+
 # [6, 0, 0, 0]
 ```
 
@@ -133,6 +134,7 @@ can confirm the one you have is the one the part expects.
 
 ```bash
 python3 -c "import snesdsp; print(sorted(snesdsp.available()) or snesdsp.why_not())"
+
 # ['dsp1', 'dsp1a', 'dsp1b', 'dsp2', 'dsp3', 'dsp4']
 ```
 
@@ -599,8 +601,6 @@ build rather than quietly lowering the number.
 | Versioning | [semantic-release](https://semantic-release.gitbook.io/), from the commit history |
 | Tests | Beside the module, named `<module>.test.py` |
 | Types | [mypy](https://mypy.readthedocs.io/) at strict, configured in [`pyproject.toml`](pyproject.toml) |
-| Agent instructions | [`AGENTS.md`](AGENTS.md) |
-| Current behaviour | [`specs/current/`](specs/current/), one requirement per observable behaviour with checkable scenarios |
 
 ## Reporting something
 
