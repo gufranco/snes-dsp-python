@@ -25,7 +25,7 @@
   <a href="https://github.com/gufranco/snes-dsp-python/issues">Issues</a>
 </p>
 
-**6** parts across **5** microcodes · **1** processor underneath them all · **0** commands described by hand · **112** exchanges read out of **36** real cartridges compared, **0** failures · **830** tests · **100%** statement and branch coverage · **strict** types throughout · every image confirmed by **SHA-256** before a byte of it runs · no dependencies
+**6** parts across **5** microcodes · **1** processor underneath them all · **0** commands described by hand · **112** exchanges read out of **36** real cartridges compared, **0** failures · **847** tests · **100%** statement and branch coverage · **strict** types throughout · every image confirmed by **SHA-256** before a byte of it runs · no dependencies
 
 ```python
 from snesdsp import Chip

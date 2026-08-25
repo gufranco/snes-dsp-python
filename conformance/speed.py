@@ -31,7 +31,7 @@ from typing import TYPE_CHECKING
 import snesdsp
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
 FLOOR = 150_000
 """Steps per second this must beat, an order of magnitude below what it does.
@@ -82,8 +82,14 @@ class Timed:
         return self.rate() >= floor
 
 
-def measure(calls: int = CALLS, repeats: int = REPEATS) -> Timed:
-    """Step the part through its own microcode, and time it."""
+def measure(calls: int = CALLS, repeats: int = REPEATS) -> Timed:  # pragma: no cover
+    """Step the part through its own microcode, and time it.
+
+    Measured out of the coverage gate on purpose, for the same reason the checks
+    that drive real microcode are: it needs a program nobody may distribute, so a
+    machine that has one runs a path a machine without one cannot, and a gate
+    that demands the impossible gets switched off rather than met.
+    """
     part = snesdsp.Chip(MODEL)
     seconds = []
     for _ in range(repeats):
@@ -106,12 +112,29 @@ def lines_for(found: Timed, floor: int = FLOOR) -> list[str]:
     return lines
 
 
-def main(calls: int = CALLS, repeats: int = REPEATS, floor: int = FLOOR) -> int:
-    missing = snesdsp.why_not()
-    if missing is not None:
-        print(f"  nothing measured: {missing}")
-        return 0
-    found = measure(calls, repeats)
+def main(
+    calls: int = CALLS,
+    repeats: int = REPEATS,
+    floor: int = FLOOR,
+    taken: Callable[[int, int], Timed] | None = None,
+) -> int:
+    """Measure, report, and say whether the floor was beaten.
+
+    `taken` is a parameter so the report can be checked on a machine that cannot
+    measure. The part runs a program this repository is not allowed to carry, so
+    a test that measures for real passes where the program is present and
+    reports success on a runner that measured nothing at all.
+
+    A machine with no program is told so and the run succeeds, because a fresh
+    checkout is not a regression. That path is skipped when a measurement was
+    handed in, since a caller who supplied one is not asking this machine.
+    """
+    if taken is None:
+        missing = snesdsp.why_not()
+        if missing is not None:
+            print(f"  nothing measured: {missing}")
+            return 0
+    found = (measure if taken is None else taken)(calls, repeats)
     for line in lines_for(found, floor):
         print(line)
     return 0 if found.beats(floor) else 1
