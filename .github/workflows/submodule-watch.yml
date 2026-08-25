@@ -1,0 +1,93 @@
+name: Submodule watch
+
+# A submodule is pinned by commit so a build is reproducible and a red run always
+# has a commit of its own to explain it. That pin is also how a repository stops
+# noticing that a member it is built on has moved.
+#
+# One of them sat seven major versions behind, and what it had done in that time
+# was remove a whole layer this repository depends on. Nothing here reported it,
+# because a pin that resolves is not a pin that is current.
+#
+# So this asks weekly where each submodule's upstream is now. It never moves a
+# pin on its own: it opens an issue naming what is behind and by how much, and
+# says nothing when everything is at its head.
+
+on:
+  schedule:
+    # Early Monday, UTC, clear of the other watchers so they do not compete for
+    # a runner or for a reader's attention.
+    - cron: "51 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: submodule-watch
+  cancel-in-progress: false
+
+jobs:
+  ask:
+    name: Ask every submodule whether it is at its head
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Compare every pin against its upstream
+        id: compare
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          behind=""
+          while read -r sha where; do
+            url=$(git config -f .gitmodules --get "submodule.${where}.url")
+            repo=$(echo "${url%.git}" | sed -E 's#^.*[:/]([^/]+/[^/]+)$#\1#')
+            branch=$(gh api "repos/${repo}" --jq '.default_branch' 2>/dev/null || echo "")
+            head=$(gh api "repos/${repo}/commits/${branch}" --jq '.sha' 2>/dev/null || echo "")
+            # A lookup that fails must not read as a pin that is behind. The
+            # endpoint answers with a message rather than a sha when the ref is
+            # wrong, and taking that at face value reported every submodule here
+            # as stale at once, which is how an oracle nobody calibrated lies.
+            case "${head}" in
+              [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*) ;;
+              *)
+                echo "could not ask ${repo}, which is not the same as being behind"
+                continue
+                ;;
+            esac
+            if [ "${head}" != "${sha}" ]; then
+              count=$(git -C "${where}" rev-list --count "${sha}..${head}" 2>/dev/null || echo "?")
+              behind="${behind}- \`${where}\` is at \`${sha:0:12}\`, upstream is at \`${head:0:12}\`, ${count} commits ahead"$'\n'
+              echo "behind: ${where}"
+            else
+              echo "at its head: ${where}"
+            fi
+          done < <(git submodule status | sed -E 's/^[ +-]//' | awk '{print $1, $2}')
+          {
+            echo "behind<<REPORT"
+            printf '%s' "${behind}"
+            echo "REPORT"
+          } >> "${GITHUB_OUTPUT}"
+        shell: bash
+
+      - name: Report the pins that have fallen behind
+        if: steps.compare.outputs.behind != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          title="A submodule is behind its upstream"
+          if [ -n "$(gh issue list --search "${title} in:title" --state open --json number --jq '.[].number')" ]; then
+            echo "already reported"
+            exit 0
+          fi
+          gh issue create --title "${title}" --body-file - <<BODY
+          Every submodule here is meant to sit at its upstream head. These do not.
+
+          ${{ steps.compare.outputs.behind }}
+
+          A pin that resolves is not a pin that is current. Bumping one is not automatic on purpose: a member that has moved may have changed what it publishes, and the run that proves this repository still agrees with it is the point of doing it by hand.
+          BODY
+        shell: bash
