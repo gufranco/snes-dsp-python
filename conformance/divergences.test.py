@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import snesdsp
-from snesdsp import silicon
+from snesdsp import chip
 
 RECORDED = Path(__file__).resolve().parent / "divergences.json"
 
@@ -78,39 +78,39 @@ class DivergenceTest(unittest.TestCase):  # pragma: no cover
     """
 
     def test_the_part_still_answers_what_was_recorded(self) -> None:
-        if silicon.why_not() is not None:
+        if chip.why_not() is not None:
             self.skipTest("no microcode on this machine")
 
         one = entry_for("dsp3", "0x1c")
-        chip = snesdsp.Dsp("dsp3")
+        part = snesdsp.Chip("dsp3")
         for byte in one["thisProject"]["sends"]:
-            chip.write(int(byte, 16))
+            part.write(int(byte, 16))
 
-        said = " ".join(f"{chip.read():02x}" for _ in range(8))
+        said = " ".join(f"{part.read():02x}" for _ in range(8))
 
         self.assertEqual(said, "78 56 78 56 78 56 78 56")
 
     def test_and_echoes_the_last_word_rather_than_a_constant(self) -> None:
-        if silicon.why_not() is not None:
+        if chip.why_not() is not None:
             self.skipTest("no microcode on this machine")
 
-        chip = snesdsp.Dsp("dsp3")
+        part = snesdsp.Chip("dsp3")
         for byte in (0x1C, 0x00, 0xAA, 0xBB, 0xCC, 0xDD):
-            chip.write(byte)
+            part.write(byte)
 
-        said = " ".join(f"{chip.read():02x}" for _ in range(4))
+        said = " ".join(f"{part.read():02x}" for _ in range(4))
 
         self.assertEqual(said, "cc dd cc dd")
 
     def test_and_does_not_answer_the_zeroes_the_other_one_does(self) -> None:
-        if silicon.why_not() is not None:
+        if chip.why_not() is not None:
             self.skipTest("no microcode on this machine")
 
-        chip = snesdsp.Dsp("dsp3")
+        part = snesdsp.Chip("dsp3")
         for byte in (0x1C, 0x00, 0x34, 0x12, 0x78, 0x56):
-            chip.write(byte)
+            part.write(byte)
 
-        self.assertNotEqual([chip.read() for _ in range(4)], [0, 0, 0, 0])
+        self.assertNotEqual([part.read() for _ in range(4)], [0, 0, 0, 0])
 
 
 if __name__ == "__main__":

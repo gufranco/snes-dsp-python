@@ -15,7 +15,7 @@
         "reads": 32,
         "answers": "78 56 repeated for as many reads as are taken, which is the second argument word echoed back without end",
         "andWithOtherArguments": "Sending 0x1c 0x00 0xaa 0xbb 0xcc 0xdd answers cc dd repeated, so what comes back is the last word written rather than a constant",
-        "howToReproduce": "python3 -c \"import snesdsp; c=snesdsp.Dsp('dsp3'); [c.write(b) for b in (0x1c,0x00,0x34,0x12,0x78,0x56)]; print([hex(c.read()) for _ in range(8)])\"",
+        "howToReproduce": "python3 -c \"import snesdsp; c=snesdsp.Chip('dsp3'); [c.write(b) for b in (0x1c,0x00,0x34,0x12,0x78,0x56)]; print([hex(c.read()) for _ in range(8)])\"",
         "evidence": "The part's own program, run on a model of the processor NEC documents. Pinned as a README example and re-run by conformance/documented.py on every machine that holds the microcode."
       },
       "otherImplementation": {

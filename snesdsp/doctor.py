@@ -31,7 +31,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, override
 
-from . import models, silicon, timing
+from . import chip, models, timing
 from .version import VERSION
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -91,11 +91,11 @@ def _package() -> Finding:
 
 
 def _processor() -> Finding:
-    found = silicon.PROCESSOR.is_dir() and any(silicon.PROCESSOR.iterdir())
+    found = chip.PROCESSOR.is_dir() and any(chip.PROCESSOR.iterdir())
     return Finding(
         "processor",
         found,
-        f"{silicon.PROCESSOR.name} {'is checked out' if found else 'is missing'}",
+        f"{chip.PROCESSOR.name} {'is checked out' if found else 'is missing'}",
         "run git submodule update --init --recursive",
     )
 
@@ -109,13 +109,13 @@ def _clocks() -> Finding:
     )
 
 
-def _default_build(part: str, images: Images) -> silicon.Silicon:
-    return silicon.Silicon(part, images=images)
+def _default_build(part: str, images: Images) -> chip.Chip:
+    return chip.Chip(part, images=images)
 
 
 def _part(name: str, images: Images, build: Build) -> Finding:
     """Whether that part is here and starts, saying exactly what stopped it."""
-    wanted = silicon.SHARES_IMAGE.get(name, name)
+    wanted = chip.SHARES_IMAGE.get(name, name)
     if wanted not in images:
         return Finding(
             name,
@@ -126,7 +126,7 @@ def _part(name: str, images: Images, build: Build) -> Finding:
             " names",
         )
     try:
-        chip = build(name, images)
+        part = build(name, images)
     except Exception as trouble:
         return Finding(
             name,
@@ -135,7 +135,7 @@ def _part(name: str, images: Images, build: Build) -> Finding:
             "this is the part failing to start rather than a missing file; the line"
             " above is what it said",
         )
-    identity = getattr(chip, "identity", None)
+    identity = getattr(part, "identity", None)
     running = identity.part if identity is not None else wanted
     digest = _digest_of(wanted, images)
     return Finding(name, True, f"runs the {running} image{digest}")
@@ -183,7 +183,7 @@ def _reach(path: list[str] | None = None) -> list[str]:
     small leak, and this is the file that exists to notice small things.
     """
     path = sys.path if path is None else path
-    where = str(silicon.PROCESSOR)
+    where = str(chip.PROCESSOR)
     if where not in path:
         path.insert(0, where)
     return path
@@ -282,7 +282,7 @@ def examine(
     sees their own project's state before the state of the thing underneath it,
     and both are here because either can be the reason nothing works.
     """
-    held = silicon.available() if images is None else images
+    held = chip.available() if images is None else images
     found = [_python(), _package(), _processor(), _clocks()]
     found.extend(_part(name, held, build) for name in sorted(models.MODELS))
     found.append(_exchanges())

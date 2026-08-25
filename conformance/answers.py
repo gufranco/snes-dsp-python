@@ -37,11 +37,10 @@ from typing import Any, override
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import shapes as shapes_module
-from driven import BuildWatched, Watched
-
 import snesdsp
-from snesdsp import models, silicon
+from conformance import shapes as shapes_module
+from conformance.driven import BuildWatched, Watched
+from snesdsp import chip, models
 
 ROOT = Path(__file__).resolve().parent
 
@@ -108,13 +107,13 @@ class Checked:
 
 
 def _default_build(part: str) -> Watched:  # pragma: no cover
-    return snesdsp.Dsp(part)
+    return snesdsp.Chip(part)
 
 
 def _default_digest(part: str) -> str:  # pragma: no cover
     """The digest of the image that will answer, taken from the file itself."""
-    wanted = silicon.SHARES_IMAGE.get(part, part)
-    held = silicon.available()
+    wanted = chip.SHARES_IMAGE.get(part, part)
+    held = chip.available()
     if wanted not in held:
         raise WrongImage(f"no image for {wanted} is on this machine")
     return hashlib.sha256(Path(held[wanted][1]).read_bytes()).hexdigest()
@@ -244,7 +243,7 @@ def lines_for(found: "Checked") -> list[str]:
 
 def main(
     argv: Sequence[str] = (),
-    why_not: Callable[[], str | None] = silicon.why_not,
+    why_not: Callable[[], str | None] = chip.why_not,
     build: BuildWatched = _default_build,
     shapes_for: Callable[[str], list[dict[str, Any]]] = _default_shapes,
     digest: Callable[[str], str] = _default_digest,

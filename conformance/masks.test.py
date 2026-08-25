@@ -8,7 +8,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import masks
+from conformance import masks
 
 
 def loaded(where: Path) -> dict[str, Any]:

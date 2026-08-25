@@ -6,8 +6,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import against_cartridges
-import shapes
+from conformance import against_cartridges, shapes
 
 
 class Talkative:
@@ -287,7 +286,7 @@ class EntryTest(unittest.TestCase):
             )
 
     def test_every_part_with_its_own_image_has_exchanges_recorded(self) -> None:
-        import shapes as recorded
+        from conformance import shapes as recorded
 
         for part in ("dsp1", "dsp2", "dsp3", "dsp4"):
             self.assertTrue(recorded.interesting(recorded.recorded(part)), part)

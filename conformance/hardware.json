@@ -6,22 +6,28 @@
       "hardware.json and the sibling packages it points at, for anything a manufacturer printed",
       "conformance/divergences.json, for what a behavioural model answers instead, recorded rather than followed"
     ],
-    "why": "A reimplementation of a masked program is a reimplementation of somebody's reading of it. Running the program removes the reading. What running it cannot remove is everything around the program: the port decode, the pacing, the read semantics and the boot handshake, and those are what this file is about."
+    "why": "A reimplementation of a masked program is a reimplementation of somebody's reading of it. Running the program removes the reading. What running it cannot remove is everything around the program: the port decode, the pacing, the read semantics and the boot handshake, and those are what this file is about.",
+    "comparedAgainst": {
+      "runner": "conformance/against_cartridges.py",
+      "what": "Exchanges read out of 36 retail cartridges, each confirmed by digest before a byte of it was disassembled, replayed against the part and compared answer for answer. Nothing here is compared against a model of the same part written by the same hand."
+    }
   },
   "facts": {
     "ratedClock": {
       "value": 8300000,
       "verified": true,
       "quote": "The external clock frequency (8.3 MHz maximum) remains the same as for 7720/77C20 while the internal instruction execution speed is doubled.",
-      "source": "NEC uPD77C25/uPD77P25 Data Sheet, pinned in nec-upd7725-python/conformance/hardware.json",
-      "note": "A property of the silicon. It is the ceiling, never the rate any board actually clocked."
+      "source": "necDataSheet",
+      "note": "A property of the silicon. It is the ceiling, never the rate any board actually clocked.",
+      "page": 1
     },
     "instructionsPerClock": {
       "value": 1,
       "verified": true,
       "quote": "All instructions execute in one instruction cycle",
-      "source": "NEC uPD77C25/uPD77P25 Data Sheet, pinned in nec-upd7725-python/conformance/hardware.json",
-      "note": "This is why counting instructions is counting cycles, and why this package needs no per-instruction table."
+      "source": "necDataSheet",
+      "note": "This is why counting instructions is counting cycles, and why this package needs no per-instruction table.",
+      "page": 1
     },
     "cartridgeOscillatorHz": {
       "value": 7600000,
@@ -43,6 +49,15 @@
       "verified": true,
       "source": "snes-mapper-python/conformance/hardware.json, derived there from the two bus speeds Nintendo's Map Mode table prints",
       "note": "Both figures come from the document by arithmetic shown in that file. The third figure that package carries, for the controller-port region, is unverified and is not used here."
+    },
+    "resetLine": {
+      "value": "the processor restarts at address zero with its program intact",
+      "quote": "The 2048 x 24-bit words of instruction ROM are addressed by the 11-bit program counter that can be modified by an external reset, interrupt, call, jump or return instruction.",
+      "page": 1,
+      "source": "necDataSheet",
+      "note": "Why a reset here cannot reach the program. The microcode is masked into the part, so what a reset moves is the counter and the state around it. This member's reset rebuilds the processor and reloads the same image, which is the same outcome by a different route: the image is what the mask holds.",
+      "appliesTo": ["dsp1", "dsp1a", "dsp1b", "dsp2", "dsp3", "dsp4"],
+      "verified": true
     }
   },
   "notStated": [
@@ -50,5 +65,15 @@
     "How many of its own instructions a driver puts between two accesses. That is a property of each game, and the floor used here comes from what one store to a long address costs rather than from any document.",
     "The port decode above the status bit. That a coprocessor answers across a window rather than at one address follows from the bit being the only one examined, and no document on this machine states it.",
     "The boot handshake. How long an image spends setting itself up before it will answer is a property of each image, and the limit used here is a bound rather than a documented figure."
-  ]
+  ],
+  "documents": {
+    "necDataSheet": {
+      "publisher": "NEC Electronics Inc.",
+      "title": "uPD7725/uPD96050 Digital Signal Processor data sheet",
+      "readOn": "2026-08-20",
+      "file": "upd7725.pdf",
+      "through": "nec-upd7725-96050-python",
+      "note": "Not read here. Every fact about the processor underneath these parts is recorded in that member and reached through the submodule rather than repeated, because a fact repeated in two records is a fact that can disagree with itself. The sibling is named so nobody mistakes a reading done there for a reading done here."
+    }
+  }
 }

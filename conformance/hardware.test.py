@@ -116,12 +116,12 @@ class StandingTest(unittest.TestCase):
 
         self.assertIn("load-bearing", crystal["why"])
 
-    def test_three_of_the_five_facts_are_documented(self) -> None:
+    def test_four_of_the_six_facts_are_documented(self) -> None:
         facts = declared()["facts"]
 
         verified = [name for name, fact in facts.items() if fact["verified"]]
 
-        self.assertEqual(len(verified), 3)
+        self.assertEqual(len(verified), 4)
 
     def test_a_faster_oscillator_would_change_what_the_part_gets_done(self) -> None:
         master_clocks = timing.LONG_STORE_CYCLES * timing.SLOW_ACCESS

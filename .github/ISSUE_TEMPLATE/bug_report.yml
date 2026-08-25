@@ -56,9 +56,9 @@ body:
       description: Python we can run as it stands, with no editing.
       render: python
       placeholder: |
-        from snesdsp import Dsp
+        from snesdsp import Chip
 
-        chip = Dsp("dsp1")
+        chip = Chip("dsp1")
         chip.write(0x28)
     validations:
       required: true

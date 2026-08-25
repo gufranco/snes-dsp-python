@@ -97,8 +97,7 @@ class Recorded:
 
 
 def _default_confirm(image: bytes) -> object:  # pragma: no cover
-    sys.path.insert(0, str(ROOT / "conformance"))
-    import cartridges
+    from conformance import cartridges
 
     return cartridges.identify(image)
 

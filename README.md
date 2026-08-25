@@ -25,12 +25,12 @@
   <a href="https://github.com/gufranco/snes-dsp-python/issues">Issues</a>
 </p>
 
-**6** parts across **5** microcodes · **1** processor underneath them all · **0** commands described by hand · paced at **7.6 MHz** against the console's own clock · **112** exchanges read out of **36** real cartridges · **375** tests · **100%** statement and branch coverage · **strict** types throughout · every image confirmed by **SHA-256** before a byte of it runs
+**6** parts across **5** microcodes · **1** processor underneath them all · **0** commands described by hand · **112** exchanges read out of **36** real cartridges compared, **0** failures · **773** tests · **100%** statement and branch coverage · **strict** types throughout · every image confirmed by **SHA-256** before a byte of it runs · no dependencies
 
 ```python
-from snesdsp import Dsp
+from snesdsp import Chip
 
-chip = Dsp("dsp2")
+chip = Chip("dsp2")
 
 chip.write(0x09)
 for byte in (0x02, 0x00, 0x03, 0x00):
@@ -43,8 +43,46 @@ for byte in (0x02, 0x00, 0x03, 0x00):
 
 ---
 
-## The problem
+## Install
+```bash
+git clone --recurse-submodules https://github.com/gufranco/snes-dsp-python.git
+cd snes-dsp-python
+```
 
+Python 3.12 or newer, and the submodule. Nothing else.
+
+The submodule sits at the repository root as
+[`nec-upd7725-python/`](https://github.com/gufranco/nec-upd7725-python), named
+after itself rather than buried under a generic folder, because it is the
+processor every one of these parts is built on and anybody browsing this should
+see that immediately. Without it nothing here can run at all.
+
+The microcode is a separate matter and is not carried here. Where to put a copy
+you already own is under [the microcode you supply](#the-microcode-you-supply).
+
+## The interface
+Everything a caller touches. Nothing else is public.
+
+| Name | What it is |
+|:--|:--|
+| `Chip(model, **options)` | A part of that model, running its own microcode |
+| `describe(model)` | What the catalogue holds about one part, without building it |
+| `MODELS` | Every part there is, by the name it is known as |
+| `SHARES_MICROCODE` | Which parts run the same program as which other part |
+| `available()` | Every part there is an image for on this machine |
+| `why_not()` | Why the backend cannot run, or nothing when it can |
+| `MASTER_CLOCK`, `DSP_CLOCK` | The console's oscillator and the part's own |
+| `clock_of(model)`, `steps_for(model, ticks)` | The rate a part runs at, and how far a span of console time carries it |
+| `GAP` | How long the console leaves the part between accesses |
+| `UnknownModelError` | No part goes by that name |
+| `NoFirmware` | The microcode this part runs was not supplied |
+| `NeverReady` | The part was asked for an answer and never produced one |
+
+`Chip` takes the model first, which is the argument every member of the family
+takes first. The name is the kind rather than the chip, so a traceback says what
+sort of thing it was rather than which of four parts happened to raise.
+
+## The problem
 The DSP-1, DSP-2, DSP-3 and DSP-4 are not four chips. They are one chip, a NEC
 uPD77C25, with four different programs masked into it, which is why they answer
 completely unrelated commands while being the same silicon underneath.
@@ -61,7 +99,6 @@ written down where they differed. Two of those differences were in a reference
 implementation the whole scene works from.
 
 ## The solution
-
 Run the program instead.
 
 Given the microcode, there is nothing left to derive. The answer to every
@@ -81,7 +118,6 @@ It does not fall back to a guess, because an answer that did not come from the
 part is worse than no answer.
 
 ## Why there is no model here
-
 This used to be roughly twelve thousand lines: four command sets, the tables they
 worked from, four corpora recorded from other implementations, and a switch that
 chose between running the part and describing it. All of it is gone.
@@ -94,92 +130,7 @@ the only reason a corpus was needed at all.
 What is left is the part catalogue, the port layer, and the arrangement that
 loads an image and drives it.
 
-## Quick start
-
-### Prerequisites
-
-| Tool | Version | Install |
-|:-----|:--------|:--------|
-| Python | 3.12, 3.13 or 3.14 | [python.org](https://www.python.org/downloads/) |
-| Git | any | [git-scm.com](https://git-scm.com/) |
-
-### Setup
-
-```bash
-git clone --recurse-submodules https://github.com/gufranco/snes-dsp-python.git
-cd snes-dsp-python
-```
-
-The submodule sits at the repository root as
-[`nec-upd7725-python/`](https://github.com/gufranco/nec-upd7725-python), named
-after itself rather than buried under a generic folder, because it is the
-processor every one of these parts is built on and anybody browsing this should
-see that immediately. Without it nothing here can run at all.
-
-### Supply the microcode
-
-A copy of the microcode you already own goes in one of these, and the first one
-that has it wins:
-
-1. any directory named by `UPD7725_FIRMWARE_DIR`, several separated the way your
-   system separates a path
-2. the `firmware/` directory of the project this one sits inside, which is what a
-   parent project uses when it carries this as a submodule
-3. this project's own `firmware/` directory
-
-Nothing is downloaded and nothing is shipped. The files are named below so you
-can confirm the one you have is the one the part expects.
-
-### Verify
-
-```bash
-python3 -c "import snesdsp; print(sorted(snesdsp.available()) or snesdsp.why_not())"
-
-# ['dsp1', 'dsp1a', 'dsp1b', 'dsp2', 'dsp3', 'dsp4']
-```
-
-Without an image that prints the reason instead, naming where to put one.
-
-### When something is wrong
-
-```bash
-python3 -m snesdsp.doctor
-```
-
-It looks at this machine and prints what is actually there: the Python it is
-running on, whether the processor is checked out, which images are present and
-the SHA-256 of each one, whether every part starts, and the clocks it is pacing
-them at. Nothing is inferred and nothing is hidden. A check that fails says what
-it saw, and a check that itself throws is reported as what it threw rather than
-taking the report down with it.
-
-It then asks the same of the project underneath, and reports what comes back
-under that project's name. This package can be entirely well while the processor
-it runs on is missing, stale, or holding a different file, and a report that
-looked only here would come back clean on exactly the machine where it is not.
-
-```text
-snesdsp 3.0.0 on 3.13.0, Linux
-
-  ok    python: 3.13.0 on Linux x86_64
-  ok    processor: nec-upd7725-python is checked out
-  ok    timing: part 7600000 Hz, console 21477273 Hz, 14 instructions between accesses
-     !  dsp2: no image for dsp2
-         put a copy you own in snes-dsp-python/firmware, in the firmware
-         directory of the project this one sits inside, or anywhere
-         UPD7725_FIRMWARE_DIR names
-  ok    nec-upd7725-python / upd7725: version 1.1.0
-  ok    nec-upd7725-python / image dsp1: upd7725, dsp1.bin, sha256 5f2e5ed0...
-
-  1 of 23 checks did not pass
-```
-
-Paste all of it into an issue. Most of what gets reported here is one of three
-things and they look identical from outside; that output is what tells everybody
-which.
-
 ## The microcode you supply
-
 Every image is identified before a byte of it is executed. SHA-256 decides; the
 other values are there so you can cross-check against a database that keys on
 them.
@@ -204,7 +155,6 @@ A file that does not match is refused rather than run, and the refusal says what
 was computed so you can search for it.
 
 ## Driving it the way a console does
-
 A part is only half of an exchange. The other half is when the console next
 speaks to it, and that is not a number this package gets to choose.
 
@@ -225,9 +175,9 @@ A caller who knows how long their console actually spent says so, and the
 conversion is done for them:
 
 ```python
-from snesdsp import Dsp, MASTER_CLOCK
+from snesdsp import Chip, MASTER_CLOCK
 
-chip = Dsp("dsp1")
+chip = Chip("dsp1")
 chip.elapsed(MASTER_CLOCK // 60)
 ```
 
@@ -238,6 +188,9 @@ address, and the part decides from the lowest bit of that address whether the
 access was the data port or the status register.
 
 ```python
+from snesdsp import Chip
+
+chip = Chip("dsp1")
 chip.write_bus(0x3F8000, 0x09)
 chip.read_bus(0x3F8001)
 ```
@@ -250,7 +203,6 @@ whoever calls this, because every caller that reimplements it is a caller that
 can get it the wrong way round.
 
 ## Driving every part
-
 Six parts, two ways of being spoken to, and one example each. Every output below
 was taken from a run against the part's own microcode rather than written down
 from a document.
@@ -262,9 +214,9 @@ same way. This is the multiply, and it is the one command whose result can be
 checked without knowing anything about the part.
 
 ```python
-from snesdsp import Dsp
+from snesdsp import Chip
 
-chip = Dsp("dsp1")
+chip = Chip("dsp1")
 chip.write(0x00)
 for value in (0x4000, 0x2000):
     chip.write(value & 0xFF)
@@ -281,7 +233,9 @@ The same part on a smaller die, carrying the same program. Ask for it by name an
 it runs the DSP-1's image, which is the only image there is.
 
 ```python
-chip = Dsp("dsp1a")
+from snesdsp import Chip
+
+chip = Chip("dsp1a")
 chip.identity.part
 ```
 
@@ -294,7 +248,9 @@ The last mask, which corrected an arithmetic fault. It carries its own image, an
 this one really is a different file.
 
 ```python
-chip = Dsp("dsp1b")
+from snesdsp import Chip
+
+chip = Chip("dsp1b")
 chip.identity.part
 ```
 
@@ -308,7 +264,9 @@ Same shape of exchange, a different program. Command `0x09` multiplies, and this
 one is plain integer rather than fixed point.
 
 ```python
-chip = Dsp("dsp2")
+from snesdsp import Chip
+
+chip = Chip("dsp2")
 chip.write(0x09)
 for value in (0x0002, 0x0003):
     chip.write(value & 0xFF)
@@ -326,7 +284,9 @@ having been given a word, the part answers with it, and goes on answering with i
 for as long as anybody keeps reading.
 
 ```python
-chip = Dsp("dsp3")
+from snesdsp import Chip
+
+chip = Chip("dsp3")
 for byte in (0x1C, 0x00):
     chip.write(byte)
 for byte in (0x34, 0x12, 0x78, 0x56):
@@ -344,7 +304,9 @@ A road renderer, driven as a stream: a command word, then parameters, then it
 answers a batch at a time rather than once.
 
 ```python
-chip = Dsp("dsp4")
+from snesdsp import Chip
+
+chip = Chip("dsp4")
 chip.write(0x01)
 chip.write(0x00)
 for value in (0x0001, 0x0002, 0x0003, 0x0004):
@@ -358,7 +320,6 @@ keeps answering, which is what a part that draws one scanline batch after anothe
 does.
 
 ## The family
-
 | Part | What it does | Image it runs |
 |:--|:--|:--|
 | DSP-1 | Fixed-point three dimensional maths, in more cartridges than the rest together | its own |
@@ -368,12 +329,23 @@ does.
 | DSP-3 | Decompression and a search across a hex grid | its own |
 | DSP-4 | Draws a road, one scanline batch at a time | its own |
 
+Each answers to more than one name, so a caller writing what a manual or a board
+silkscreen calls the part gets the part rather than a refusal:
+
+| Name | Also answers to |
+|:--|:--|
+| `dsp1` | `dsp-1`, `upd77c25dsp1`, `nintendodsp1` |
+| `dsp1a` | `dsp-1a`, `upd77c25dsp1a`, `nintendodsp1a` |
+| `dsp1b` | `dsp-1b`, `upd77c25dsp1b`, `nintendodsp1b` |
+| `dsp2` | `dsp-2`, `upd77c25dsp2`, `nintendodsp2` |
+| `dsp3` | `dsp-3`, `upd77c25dsp3`, `nintendodsp3` |
+| `dsp4` | `dsp-4`, `upd77c25dsp4`, `nintendodsp4` |
+
 Three of those are one part masked three times. Two programs, three parts: the
 DSP-1A carries the DSP-1's program, so no DSP-1A image exists to find and none is
 needed. It is still a part in its own right and is answered as one.
 
-## What is checked without one
-
+## Is it right
 A machine holding no microcode still checks everything this package can get
 wrong, because the part-specific knowledge is no longer in the code.
 
@@ -448,8 +420,8 @@ reported as asked out of order rather than counted as silence.
 Every other exchange, on all four parts, gets an answer.
 
 ```bash
-python3 conformance/against_cartridges.py dsp1
-python3 conformance/record.py            # re-read every cartridge on this machine
+python3 -m conformance.against_cartridges dsp1
+python3 -m conformance.record            # re-read every cartridge on this machine
 ```
 
 ### What each part answered, kept
@@ -460,8 +432,8 @@ keyed to the digest of the image that said it and to the payload seed that
 produced it:
 
 ```bash
-python3 conformance/answers.py --take    # record what every part answers now
-python3 conformance/answers.py           # check that it still answers that
+python3 -m conformance.answers --take    # record what every part answers now
+python3 -m conformance.answers           # check that it still answers that
 ```
 
 | Part | Exchanges recorded |
@@ -488,8 +460,8 @@ every command byte is swept across sixteen argument sets, six words each, and
 every case where the two part company is pinned:
 
 ```bash
-python3 conformance/masks.py --sweep     # find them
-python3 conformance/masks.py             # re-derive the ones pinned
+python3 -m conformance.masks --sweep     # find them
+python3 -m conformance.masks             # re-derive the ones pinned
 ```
 
 Across 256 commands and 16 argument sets it found one command, reached through six
@@ -498,7 +470,7 @@ differs at all, which is what a corrected fault should look like rather than a
 different program. A case that quietly becomes agreement fails as loudly as one
 that changes value: two images agreeing everywhere are one image under two names.
 
-## What each piece of evidence is worth
+### What each piece of evidence is worth
 
 Not all of it is worth the same, and a project that lists its checks without
 saying so invites a reader to assume the strongest applies to everything.
@@ -520,13 +492,28 @@ carrying sixteen is a widely copied mistake rather than a second opinion.
 The short form: the manufacturer decides what the part is, the part's own program
 decides what it does, and an emulator decides neither.
 
-## Project structure
+**Open questions** are listed with the measurement that would close each one: [`OPEN-QUESTIONS.md`](OPEN-QUESTIONS.md). Where two sources part, both are kept in [`conformance/divergences.json`](conformance/divergences.json) with what would settle it.
+
+## Working on it
+```bash
+python -m coverage erase
+for file in $(find snesdsp conformance -name '*.test.py' | sort); do
+  python -m coverage run -a "$file"
+done
+python -m coverage report
+```
+
+`python3 snesdsp/doctor.py` says what is actually on this machine: the parts, which image each wants, and whether the microcode this repository cannot carry is present and whole. It is run as a file rather than with `-m` so that it still runs when the package itself will not import, which is the case it exists for.
+
+[`AGENTS.md`](AGENTS.md) is the document for an agent working here. [`FAMILY.md`](FAMILY.md) is the standard this repository shares with the rest of the family, kept identical in every member.
+
+### Project structure
 
 ```text
 snesdsp/
   __init__.py     the package, and the part chosen at construction
   models.py       which parts exist, what they answer to, which image each runs
-  silicon.py      loading an image and driving the part it belongs to
+  chip.py         loading an image and driving the part it belongs to
   timing.py       the two oscillators, and how long the console leaves the part
   doctor.py       what is actually on this machine, printed for a bug report
   version.py      rewritten by the release job and by nothing else
@@ -547,7 +534,7 @@ nec-upd7725-python/  the processor all of these are, as a submodule at the root
 Each module has its tests beside it as `<module>.test.py`, so a module and the
 cases that pin its behaviour are read together.
 
-## Tests
+### Tests
 
 ```bash
 for f in snesdsp/*.test.py conformance/*.test.py; do python3 "$f"; done
@@ -556,7 +543,7 @@ for f in snesdsp/*.test.py conformance/*.test.py; do python3 "$f"; done
 | Area | File | What it pins |
 |:--|:--|:--|
 | The catalogue | [`snesdsp/models.test.py`](snesdsp/models.test.py) | Every part, its names, its image, and that the image is declared with a digest |
-| The part | [`snesdsp/silicon.test.py`](snesdsp/silicon.test.py) | Loading, the handshake, the pacing, the bus decode, reading, refusing |
+| The part | [`snesdsp/chip.test.py`](snesdsp/chip.test.py) | Loading, the handshake, the pacing, the bus decode, reading, refusing |
 | Timing | [`snesdsp/timing.test.py`](snesdsp/timing.test.py) | The clocks, the conversion, and that the gap is derived rather than chosen |
 | The doctor | [`snesdsp/doctor.test.py`](snesdsp/doctor.test.py) | Every check it makes, and that a check which throws is reported rather than swallowed |
 | Cartridge exchanges | [`conformance/shapes.test.py`](conformance/shapes.test.py) | Reading a driver's accesses, replaying them, the payloads they are filled with |
@@ -573,7 +560,7 @@ Coverage is enforced at 100% of statements and branches by
 [`pyproject.toml`](pyproject.toml), so a new branch without a test fails the
 build rather than quietly lowering the number.
 
-## Development
+### Development
 
 | Command | Description |
 |:--|:--|
@@ -582,17 +569,17 @@ build rather than quietly lowering the number.
 | `python3 -m coverage run -a <file>` | Run one test file under coverage |
 | `python3 -m coverage report` | Coverage, which fails below 100% |
 | `python3 -m snesdsp.doctor` | Say what is on this machine, for a bug report |
-| `python3 conformance/against_cartridges.py <part>` | Drive a part with real cartridge exchanges |
+| `python3 -m conformance.against_cartridges <part>` | Drive a part with real cartridge exchanges |
 | `mypy` | Types, at strict, with every optional error class on |
-| `python3 conformance/documented.py` | Run every example in this README against the parts |
-| `python3 conformance/record.py` | Re-read every cartridge on this machine |
-| `python3 conformance/answers.py` | Check every part still answers what it answered |
-| `python3 conformance/masks.py` | Re-derive where the DSP-1 masks disagree |
-| `python3 conformance/stack.py` | Measure how deep the microcode drives the stack, about twenty minutes |
+| `python3 -m conformance.documented` | Run every example in this README against the parts |
+| `python3 -m conformance.record` | Re-read every cartridge on this machine |
+| `python3 -m conformance.answers` | Check every part still answers what it answered |
+| `python3 -m conformance.masks` | Re-derive where the DSP-1 masks disagree |
+| `python3 -m conformance.stack` | Measure how deep the microcode drives the stack, about twenty minutes |
 | `pnpm install` | Install the JSON formatter |
 | `pnpm run format:check` | Check that every JSON file is formatted, which CI also does |
 
-## Project conventions
+### Project conventions
 
 | Convention | Source |
 |:--|:--|
@@ -602,7 +589,7 @@ build rather than quietly lowering the number.
 | Tests | Beside the module, named `<module>.test.py` |
 | Types | [mypy](https://mypy.readthedocs.io/) at strict, configured in [`pyproject.toml`](pyproject.toml) |
 
-## Reporting something
+### Reporting something
 
 | Need | Where |
 |:--|:--|
@@ -613,13 +600,13 @@ build rather than quietly lowering the number.
 Never attach microcode or a cartridge to a report, and never link to somewhere
 either can be downloaded. A SHA-256 identifies both, and it is all anybody needs.
 
-## Versioning
+### Versioning
 
 This project follows [Semantic Versioning](https://semver.org/). Every release is
 tagged. See [releases](https://github.com/gufranco/snes-dsp-python/releases) for
 the changelog and upgrade notes.
 
-## FAQ
+### FAQ
 
 <details>
 <summary><strong>Why will it not work without a firmware image?</strong></summary>
@@ -662,7 +649,7 @@ carries. Only the DSP-1B changed the program.
 
 </details>
 
-## Contributing
+### Contributing
 
 Measurements first. If you have a part, a cartridge, or a machine this has not
 been run against, the most useful thing you can send is a run and what it found,
@@ -674,12 +661,37 @@ this project is discussed.
 Never attach a copyrighted image or a game, and never link to somewhere one can
 be downloaded. A digest identifies a file without carrying it.
 
-## Citing this
+## References
+This repository carries no documents and no microcode. Every claim is traced to
+something published elsewhere, listed here so a reader can fetch the same file
+and check the same page. Each row gives the page count and the first sixteen
+characters of the file's SHA-256, because vendor links move and a link that has
+rotted into a different revision is easy to follow without noticing. Compute the
+full digest with `shasum -a 256 <file>`.
 
+Every manufacturer document below is copyrighted and not redistributable, which
+is why none is in this repository. Individual sentences are quoted in
+[`conformance/hardware.json`](conformance/hardware.json) with the page they came
+from.
+
+| Document | Date | Pages | SHA-256 | Redistributable |
+|:---------|:-----|------:|:--------|:----------------|
+| NEC, *uPD7725/uPD96050 Digital Signal Processor* data sheet | undated | 44 | see [nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python) | No |
+
+The processor underneath every part here has its own repository, and every fact
+about it is recorded there rather than repeated here. Repeating it is how two
+copies of one fact start disagreeing.
+
+| Source | Used for |
+|:-------|:---------|
+| [nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python) | The processor itself: its data sheet, its record, its divergences and its corpus |
+| [snes-driver-python](https://github.com/gufranco/snes-driver-python) | Reading a cartridge's own code to find what it says to its coprocessor |
+| Retail cartridges a reader already owns | The exchanges in [`conformance/dsp*answers.json`](conformance), each confirmed by digest before a byte of it is read |
+
+## Citing this
 [CITATION.cff](CITATION.cff) is kept in step with the released version by the
 same script that stamps the package, so the version it names is the version that
 shipped. GitHub renders it as a Cite this repository button.
 
 ## License
-
 [MIT](LICENSE)

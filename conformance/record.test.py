@@ -8,7 +8,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import record
+from conformance import record
 
 
 class Complaint(Exception):

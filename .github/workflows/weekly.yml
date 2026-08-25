@@ -95,7 +95,7 @@ jobs:
       - name: No microcode reaches past the stack the part has
         run: |
           set +e
-          python conformance/stack.py
+          python -m conformance.stack
           status=$?
           set -e
           if [ "${status}" -eq 2 ]; then
@@ -111,7 +111,7 @@ jobs:
       - name: The documented examples still give what they say
         run: |
           set +e
-          python conformance/documented.py
+          python -m conformance.documented
           status=$?
           set -e
           if [ "${status}" -eq 2 ]; then

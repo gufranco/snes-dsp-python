@@ -1,6 +1,6 @@
 """Which parts this package covers, and what each one is.
 
-The DSP-1, DSP-2, DSP-3 and DSP-4 are one piece of silicon, a NEC uPD77C25, with
+The DSP-1, DSP-2, DSP-3 and DSP-4 are one piece of chip, a NEC uPD77C25, with
 different microcode masked into it. That is why they answer completely different
 commands while being the same part underneath, and it is why this file describes
 them rather than implementing them: what a part does is the program it carries,
@@ -21,6 +21,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, override
 
+from snesdsp.errors import UnknownModelError
+
 if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Iterable
 
@@ -39,12 +41,10 @@ for it at all.
 """
 
 
-class UnknownModelError(Exception):
-    pass
-
-
 class Model:
     """One part: what it is, what it holds, and how to build it."""
+
+    __slots__ = ("aliases", "name", "summary")
 
     def __init__(self, name: str, summary: str, aliases: Iterable[str] = ()) -> None:
         self.name = name

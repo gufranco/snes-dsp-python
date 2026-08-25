@@ -1,4 +1,5 @@
 __pycache__/
+*.pyc
 .ruff_cache/
 .mypy_cache/
 .coverage
@@ -7,19 +8,19 @@ node_modules/
 dist/
 build/
 *.egg-info/
+.venv/
+venv/
+uv.lock
 .DS_Store
 
-# Firmware images belong to whoever wrote them. A copy you already own goes
-# here, and nothing in it is ever committed.
-firmware/*
-!firmware/README.md
+docs/
+specs/
+
 *.rom
 *.bin
-
-# Cartridges belong to whoever made them. A copy you already own goes here,
-# under whatever name it already has, and nothing in it is ever committed.
-cartridges/*
-!cartridges/README.md
 *.sfc
 *.smc
-docs/
+firmware/*
+!firmware/README.md
+cartridges/*
+!cartridges/README.md

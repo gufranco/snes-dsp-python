@@ -33,7 +33,7 @@ from typing import override
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from driven import Watched
+from conformance.driven import Watched
 
 ROOT = Path(__file__).resolve().parent
 
@@ -151,7 +151,7 @@ def commanded(payload: Sequence[Sequence[int]], command: int) -> list[list[int]]
 
 
 def drive(
-    chip: Watched, steps: "Iterable[Step]", payload: Iterable[Sequence[int]]
+    part: Watched, steps: "Iterable[Step]", payload: Iterable[Sequence[int]]
 ) -> list[list[int]]:
     """One shape through one part, returning everything it said back.
 
@@ -164,11 +164,11 @@ def drive(
     for step in steps:
         if step.what == WRITE:
             for byte in next(giving):
-                chip.write(byte)
+                part.write(byte)
         elif step.what == READ:
-            said.append([chip.read() for _ in range(step.width)])
+            said.append([part.read() for _ in range(step.width)])
         else:
-            said.append([chip.read_status() for _ in range(step.width)])
+            said.append([part.read_status() for _ in range(step.width)])
     return said
 
 

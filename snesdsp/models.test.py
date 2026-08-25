@@ -6,7 +6,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import snesdsp
-from snesdsp import models, silicon
+from snesdsp import chip, errors, models
 
 EVERY_PART = {"dsp1", "dsp1a", "dsp1b", "dsp2", "dsp3", "dsp4"}
 
@@ -53,11 +53,11 @@ class NamingTest(unittest.TestCase):
         self.assertEqual(models.describe("DSP3").name, "dsp3")
 
     def test_a_name_no_part_answers_to_is_refused(self) -> None:
-        with self.assertRaises(models.UnknownModelError):
+        with self.assertRaises(errors.UnknownModelError):
             models.describe("dsp9")
 
     def test_and_the_refusal_names_what_there_is(self) -> None:
-        with self.assertRaises(models.UnknownModelError) as raised:
+        with self.assertRaises(errors.UnknownModelError) as raised:
             models.describe("dsp9")
 
         for name in EVERY_PART:
@@ -124,8 +124,8 @@ class BuildingTest(unittest.TestCase):
         self.assertTrue(raised.exception)
 
     def test_a_name_no_part_answers_to_is_refused_before_any_image_is_looked_for(self) -> None:
-        with self.assertRaises(models.UnknownModelError):
-            snesdsp.Dsp("dsp9")
+        with self.assertRaises(errors.UnknownModelError):
+            snesdsp.Chip("dsp9")
 
     def test_the_default_part_is_one_the_catalogue_knows(self) -> None:
         self.assertIn(snesdsp.DEFAULT_MODEL, models.MODELS)
@@ -135,8 +135,8 @@ class BuildingTest(unittest.TestCase):
         self.assertNotIn("MODELLED", snesdsp.__all__)
 
 
-def _refused_or_built(name: str) -> "silicon.Silicon":
-    return snesdsp.Dsp(name)
+def _refused_or_built(name: str) -> "chip.Chip":
+    return snesdsp.Chip(name)
 
 
 if __name__ == "__main__":

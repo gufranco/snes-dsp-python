@@ -26,6 +26,8 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, override
 
+from snesdsp.errors import NeverReady, NoFirmware
+
 if TYPE_CHECKING:  # pragma: no cover
     from types import ModuleType
 
@@ -89,14 +91,6 @@ routines. That is the difference the two images already measured disagree on.
 """
 
 
-class NoFirmware(Exception):
-    pass
-
-
-class NeverReady(Exception):
-    pass
-
-
 def _processor() -> tuple[ModuleType, ModuleType, ModuleType] | None:
     """The processor package, or nothing when the submodule is absent."""
     if str(PROCESSOR) not in sys.path:
@@ -139,7 +133,7 @@ def why_not(held: dict[str, tuple[Any, Path]] | None = None) -> str | None:
     return None
 
 
-class Silicon:
+class Chip:
     """A part driven by running the program inside it.
 
     An image can be supplied rather than found on disk. That is what a caller with
@@ -154,6 +148,23 @@ class Silicon:
     part wants attention, and how many bytes sit behind it is not something the
     console is ever told.
     """
+
+    __slots__ = (
+        "_boot",
+        "_fill",
+        "_firmware",
+        "_image",
+        "_models",
+        "_ports",
+        "console",
+        "core",
+        "gap",
+        "identity",
+        "model",
+        "part",
+        "patience",
+        "processor",
+    )
 
     def __init__(
         self,
@@ -196,10 +207,36 @@ class Silicon:
         self.gap = gap
 
         self._ports = ports
-        self.chip = models.describe(identity.processor).build(fill=fill)
-        firmware.load(self.chip, image, identity)
-        self.console = ports.Console(self.chip)
-        self.step(boot)
+        self._firmware = firmware
+        self._models = models
+        self._fill = fill
+        self._image = image
+        self._boot = boot
+        self._start()
+
+    def _start(self) -> None:
+        """Build the processor, load the program into it, and boot it.
+
+        Separate from the constructor because a reset does exactly this and
+        nothing else: the part comes back up holding what a part holds at power
+        on, with the same program in it.
+        """
+        identity = self.identity
+        self.core = self._models.describe(identity.processor).build(fill=self._fill)
+        self._firmware.load(self.core, self._image, identity)
+        self.console = self._ports.Console(self.core)
+        self.step(self._boot)
+
+    def reset(self) -> Chip:
+        """Take the part back to where the console's reset line leaves it.
+
+        The processor restarts at address zero with its program intact, which is
+        what the reset pin does on the part underneath: the microcode is masked
+        in, so nothing a reset does can reach it. The part is handed back so a
+        caller can build and reset in one expression.
+        """
+        self._start()
+        return self
 
     @property
     def clock(self) -> int:
@@ -213,9 +250,9 @@ class Silicon:
     def step(self, count: int | None = None) -> None:
         """Run the part for a while, which is what the console's silence is."""
         for _ in range(self.gap if count is None else count):
-            self.chip.step()
+            self.core.step()
 
-    def elapsed(self, master_clocks: int) -> Silicon:
+    def elapsed(self, master_clocks: int) -> Chip:
         """Run the part for as long as the console spent, in the console's clocks.
 
         What an emulator calls instead of guessing. The conversion is the two
@@ -231,7 +268,7 @@ class Silicon:
             return self.read_status()
         return self.read()
 
-    def write_bus(self, address: int, value: int) -> Silicon:
+    def write_bus(self, address: int, value: int) -> Chip:
         """One byte in, to whichever side of the part the address names."""
         if address >> STATUS_BIT & 1:
             self.console.write(self._ports.STATUS, value & 0xFF)
@@ -243,7 +280,7 @@ class Silicon:
     @property
     def asking(self) -> bool:
         """Whether the part is waiting on the console rather than working."""
-        return bool(self.chip.registers.sr.rqm)
+        return bool(self.core.registers.sr.rqm)
 
     @property
     def pending_output(self) -> int:
@@ -260,7 +297,7 @@ class Silicon:
         for _ in range(self.patience):
             if self.asking:
                 return True
-            self.chip.step()
+            self.core.step()
         return False
 
     def settle(self) -> None:
@@ -309,4 +346,4 @@ class Silicon:
 
     @override
     def __repr__(self) -> str:
-        return f"<{self.part} on silicon, {self.processor}>"
+        return f"<Chip {self.part} on {self.processor}>"

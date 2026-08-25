@@ -41,11 +41,10 @@ from typing import override
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import shapes
-from driven import BuildWatched, Watched
-
 import snesdsp
-from snesdsp import silicon
+from conformance import shapes
+from conformance.driven import BuildWatched, Watched
+from snesdsp import chip
 
 DEFAULT_PART = "dsp3"
 
@@ -120,7 +119,7 @@ class Played:
 
 
 def _silicon(part: str) -> Watched:  # pragma: no cover
-    return snesdsp.Dsp(part)
+    return snesdsp.Chip(part)
 
 
 class Spoke:
@@ -225,7 +224,7 @@ def lines_for(found: "Sequence[Played]", part: str) -> list[str]:
 
 def main(
     argv: Sequence[str],
-    why_not: Callable[[], str | None] = silicon.why_not,
+    why_not: Callable[[], str | None] = chip.why_not,
     build: BuildWatched = _silicon,
     say: Callable[[str], object] = print,
 ) -> int:

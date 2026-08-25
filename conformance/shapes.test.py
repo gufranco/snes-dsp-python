@@ -8,7 +8,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import shapes
+from conformance import shapes
 
 
 def a_file(held: Any) -> Path:
@@ -227,38 +227,38 @@ class Recorder:
 
 class DriveTest(unittest.TestCase):
     def test_every_written_byte_reaches_the_part_in_order(self) -> None:
-        chip = Recorder()
+        part = Recorder()
 
-        shapes.drive(chip, shapes.parse("write1 write2"), [[0x11], [0x22, 0x33]])
+        shapes.drive(part, shapes.parse("write1 write2"), [[0x11], [0x22, 0x33]])
 
-        self.assertEqual(chip.given, [0x11, 0x22, 0x33])
+        self.assertEqual(part.given, [0x11, 0x22, 0x33])
 
     def test_a_read_gives_back_as_many_bytes_as_it_is_wide(self) -> None:
-        chip = Recorder([1, 2, 3])
+        part = Recorder([1, 2, 3])
 
-        said = shapes.drive(chip, shapes.parse("write1 read2"), [[0]])
+        said = shapes.drive(part, shapes.parse("write1 read2"), [[0]])
 
         self.assertEqual(said, [[1, 2]])
 
     def test_a_poll_reads_the_status_rather_than_taking_a_byte(self) -> None:
-        chip = Recorder([9])
+        part = Recorder([9])
 
-        said = shapes.drive(chip, shapes.parse("write1 poll1"), [[0]])
+        said = shapes.drive(part, shapes.parse("write1 poll1"), [[0]])
 
-        self.assertEqual(chip.polls, 1)
+        self.assertEqual(part.polls, 1)
         self.assertEqual(said, [[0x80]])
 
     def test_what_comes_back_is_one_run_per_read_and_poll(self) -> None:
-        chip = Recorder([1, 2, 3, 4])
+        part = Recorder([1, 2, 3, 4])
 
-        said = shapes.drive(chip, shapes.parse("write1 read2 poll1 read2"), [[0]])
+        said = shapes.drive(part, shapes.parse("write1 read2 poll1 read2"), [[0]])
 
         self.assertEqual(len(said), 3)
 
     def test_a_shape_with_nothing_to_say_says_nothing(self) -> None:
-        chip = Recorder()
+        part = Recorder()
 
-        self.assertEqual(shapes.drive(chip, shapes.parse("write1"), [[0]]), [])
+        self.assertEqual(shapes.drive(part, shapes.parse("write1"), [[0]]), [])
 
 
 if __name__ == "__main__":

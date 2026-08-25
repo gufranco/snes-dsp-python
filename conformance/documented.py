@@ -16,9 +16,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from driven import BuildIdentified, Driven
-
-from snesdsp import Dsp, silicon
+from conformance.driven import BuildIdentified, Driven
+from snesdsp import Chip, chip
 
 Documented = Sequence[tuple[str, Callable[[BuildIdentified], str], str]]
 """Each README example: what it is called, how to run it, what the README says."""
@@ -103,7 +102,7 @@ DOCUMENTED = (
 )
 
 
-def run(build: BuildIdentified = Dsp, documented: Documented = DOCUMENTED) -> Found:
+def run(build: BuildIdentified = Chip, documented: Documented = DOCUMENTED) -> Found:
     """Each example, what the README says it gives, and what it gave here."""
     return tuple((name, wanted, example(build)) for name, example, wanted in documented)
 
@@ -131,8 +130,8 @@ def lines_for(found: Found) -> list[str]:
 
 def main(
     argv: Sequence[str] = (),
-    why_not: Callable[[], str | None] = silicon.why_not,
-    build: BuildIdentified = Dsp,
+    why_not: Callable[[], str | None] = chip.why_not,
+    build: BuildIdentified = Chip,
     documented: Documented = DOCUMENTED,
     say: Callable[[str], object] = print,
 ) -> int:

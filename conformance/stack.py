@@ -40,10 +40,9 @@ from typing import TYPE_CHECKING, Any, Protocol, override, runtime_checkable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import shapes
-
 import snesdsp
-from snesdsp import silicon
+from conformance import shapes
+from snesdsp import chip
 
 if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Callable, Iterable, Sequence
@@ -107,7 +106,7 @@ def _processor_of(chip: object) -> Counted:
     usually just the processor. Both are watched the same way, and asking for the
     inner one first means neither has to pretend to be the other.
     """
-    found = getattr(chip, "chip", chip)
+    found = getattr(chip, "core", chip)
     assert isinstance(found, Counted), f"{type(found).__name__} cannot be stepped and watched"
     return found
 
@@ -116,13 +115,13 @@ class _Watching:
     """Drives a part and follows its stack pointer through every instruction."""
 
     def __init__(self, chip: object) -> None:
-        self.chip = chip
+        self.core = chip
         self.deepest = 0
         self.moves = 0
         self._install()
 
     def _install(self) -> None:
-        core = _processor_of(self.chip)
+        core = _processor_of(self.core)
         registers = core.registers
         stepped = core.step
 
@@ -137,25 +136,25 @@ class _Watching:
         core.step = watched  # type: ignore[method-assign]
 
     def write(self, value: int) -> None:
-        self.chip.write(value)  # type: ignore[attr-defined]
+        self.core.write(value)  # type: ignore[attr-defined]
 
     def read(self) -> int:
-        found = self.chip.read()  # type: ignore[attr-defined]
+        found = self.core.read()  # type: ignore[attr-defined]
         assert isinstance(found, int)
         return found
 
     def read_status(self) -> int:
-        found = self.chip.read_status()  # type: ignore[attr-defined]
+        found = self.core.read_status()  # type: ignore[attr-defined]
         assert isinstance(found, int)
         return found
 
 
 def _default_build(part: str) -> object:  # pragma: no cover
-    return snesdsp.Dsp(part)
+    return snesdsp.Chip(part)
 
 
 def why_not() -> str | None:  # pragma: no cover
-    return silicon.why_not()
+    return chip.why_not()
 
 
 def _default_shapes(part: str) -> Sequence[tuple[Sequence[object], int]]:  # pragma: no cover

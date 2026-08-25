@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from snesdsp import models, timing
+from snesdsp import errors, models, timing
 
 
 class ClockTest(unittest.TestCase):
@@ -18,7 +18,7 @@ class ClockTest(unittest.TestCase):
         self.assertEqual(rates, {timing.DSP_CLOCK})
 
     def test_a_part_nobody_names_is_refused(self) -> None:
-        with self.assertRaises(models.UnknownModelError):
+        with self.assertRaises(errors.UnknownModelError):
             timing.clock_of("nonsense")
 
     def test_the_rate_is_the_one_the_cartridge_oscillator_runs_at(self) -> None:

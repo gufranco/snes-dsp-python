@@ -33,10 +33,9 @@ from typing import Any, override
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from driven import Build, Driven
-
 import snesdsp
-from snesdsp import silicon
+from conformance.driven import Build, Driven
+from snesdsp import chip
 
 ROOT = Path(__file__).resolve().parent
 
@@ -120,16 +119,16 @@ ARGUMENTS = argument_sets()
 
 
 def _default_build(part: str) -> Driven:  # pragma: no cover
-    return snesdsp.Dsp(part)
+    return snesdsp.Chip(part)
 
 
 def _default_available() -> set[str]:  # pragma: no cover
-    return set(silicon.available())
+    return set(chip.available())
 
 
 def _default_digest(part: str) -> str:  # pragma: no cover
-    wanted = silicon.SHARES_IMAGE.get(part, part)
-    held = silicon.available()
+    wanted = chip.SHARES_IMAGE.get(part, part)
+    held = chip.available()
     if wanted not in held:
         return "no image on this machine"
     return hashlib.sha256(Path(held[wanted][1]).read_bytes()).hexdigest()

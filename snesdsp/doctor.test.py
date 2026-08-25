@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from snesdsp import doctor, silicon
+from snesdsp import chip, doctor, errors
 
 
 def an_image(part: str = "dsp1") -> "dict[str, tuple[str, Path]]":
@@ -171,7 +171,7 @@ class PresentImageTest(unittest.TestCase):
         self.assertIn(digest, " ".join(one.detail for one in found))
 
     def test_the_build_it_uses_by_default_is_the_one_that_runs_the_microcode(self) -> None:
-        with self.assertRaises(silicon.NoFirmware):
+        with self.assertRaises(errors.NoFirmware):
             doctor._default_build("dsp1", {})
 
 
@@ -209,7 +209,7 @@ class DigestTest(unittest.TestCase):
     def _catalogue(self, where: Path) -> "dict[str, tuple[object, Path]]":
         import sys as system
 
-        system.path.insert(0, str(silicon.PROCESSOR))
+        system.path.insert(0, str(chip.PROCESSOR))
         from upd7725 import firmware
 
         return {"dsp1": (firmware.Identity("dsp1", "upd7725", "MADE UP", 8, 8), where)}
@@ -307,15 +307,15 @@ class ReachTest(unittest.TestCase):
     def test_a_path_without_it_gains_it(self) -> None:
         found = doctor._reach([])
 
-        self.assertEqual(found, [str(silicon.PROCESSOR)])
+        self.assertEqual(found, [str(chip.PROCESSOR)])
 
     def test_a_path_that_already_has_it_is_left_alone(self) -> None:
-        found = doctor._reach([str(silicon.PROCESSOR), "somewhere else"])
+        found = doctor._reach([str(chip.PROCESSOR), "somewhere else"])
 
         self.assertEqual(len(found), 2)
 
     def test_by_default_it_works_on_the_real_one(self) -> None:
-        self.assertIn(str(silicon.PROCESSOR), doctor._reach())
+        self.assertIn(str(chip.PROCESSOR), doctor._reach())
 
 
 class CorpusTest(unittest.TestCase):
