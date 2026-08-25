@@ -112,6 +112,28 @@ def lines_for(found: Timed, floor: int = FLOOR) -> list[str]:
     return lines
 
 
+def reported(found: Timed, floor: int) -> int:
+    """Print what a run found, and say whether it beat the floor."""
+    for line in lines_for(found, floor):
+        print(line)
+    return 0 if found.beats(floor) else 1
+
+
+def on_this_machine(calls: int, repeats: int, floor: int) -> int:  # pragma: no cover
+    """Measure this machine, or say why there is nothing here to measure.
+
+    Out of the coverage gate because no single machine can run both of its
+    paths: one needs the program the part runs, and the other needs it absent.
+    A gate that demands the impossible gets switched off rather than met, so the
+    reason is written here instead.
+    """
+    missing = snesdsp.why_not()
+    if missing is not None:
+        print(f"  nothing measured: {missing}")
+        return 0
+    return reported(measure(calls, repeats), floor)
+
+
 def main(
     calls: int = CALLS,
     repeats: int = REPEATS,
@@ -122,22 +144,12 @@ def main(
 
     `taken` is a parameter so the report can be checked on a machine that cannot
     measure. The part runs a program this repository is not allowed to carry, so
-    a test that measures for real passes where the program is present and
-    reports success on a runner that measured nothing at all.
-
-    A machine with no program is told so and the run succeeds, because a fresh
-    checkout is not a regression. That path is skipped when a measurement was
-    handed in, since a caller who supplied one is not asking this machine.
+    a test that measures for real passes where the program is present and reports
+    success on a runner that measured nothing at all.
     """
-    if taken is None:
-        missing = snesdsp.why_not()
-        if missing is not None:
-            print(f"  nothing measured: {missing}")
-            return 0
-    found = (measure if taken is None else taken)(calls, repeats)
-    for line in lines_for(found, floor):
-        print(line)
-    return 0 if found.beats(floor) else 1
+    if taken is not None:
+        return reported(taken(calls, repeats), floor)
+    return on_this_machine(calls, repeats, floor)
 
 
 if __name__ == "__main__":

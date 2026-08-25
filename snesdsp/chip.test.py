@@ -343,6 +343,27 @@ class SuppliedImageTest(unittest.TestCase):
     def test_it_carries_the_same_name_field_the_models_do(self) -> None:
         self.assertEqual(self._built().model, "made-up")
 
+    def test_a_reset_hands_the_part_back(self) -> None:
+        """So a caller can build and reset in one expression, as the family does."""
+        built = self._built()
+
+        self.assertIs(built.reset(), built)
+
+    def test_and_leaves_it_running_the_same_program(self) -> None:
+        """The microcode is masked in, so nothing a reset does can reach it.
+
+        Checked here rather than on a real part, because a machine with no
+        microcode is what a runner is and the reset has to be covered on one.
+        """
+        built = self._built()
+        built.step(200)
+        before = built.identity
+
+        built.reset()
+
+        self.assertIs(built.identity, before)
+        self.assertEqual(built.core.registers.pc, self._built().core.registers.pc)
+
     def test_it_prints_as_the_part_and_how_it_is_run(self) -> None:
         self.assertIn("Chip", repr(self._built()))
 
