@@ -106,6 +106,11 @@ exclude_also = [
   # there is nothing behind it left to exercise. Importing the module to cover
   # the guard would run the tool rather than test it.
   'if __name__ == "__main__":',
+  # The doctor puts its own repository on the import path so that it still runs
+  # when the package will not import, which is the case it exists for. A suite
+  # that imports the doctor has already put it there, so the branch the guard
+  # takes when running as a file is one no test can be in.
+  'if str\(ROOT\) not in sys\.path:',
   # A type checking block never runs, by definition. Python 3.14 drops it before
   # coverage can see it and earlier versions do not, so leaving it in would make
   # the gate mean one thing on the newest runtime and another on the oldest

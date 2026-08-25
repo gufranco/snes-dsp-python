@@ -116,50 +116,6 @@
         }
       ],
       "badDumps": []
-    },
-    {
-      "part": "st010",
-      "processor": "upd96050",
-      "summary": "The ST010, which does navigation maths for a racing cartridge.",
-      "bytes": 53248,
-      "programWords": 16384,
-      "dataWords": 2048,
-      "accepted": [
-        {
-          "revision": "ST010",
-          "sha256": "55c697e864562445621cdf8a7bf6e84ae91361e393d382a3704e9aa55559041e",
-          "crc32": "8d136190",
-          "md5": "a1728c31df22b93e4bdae73718ba27a2",
-          "sha1": "75a3e5b5564ea251060dd35bff3dc468d4429e77",
-          "provenance": {
-            "kind": "localCopy",
-            "verifiedOn": "2026-08-20"
-          }
-        }
-      ],
-      "badDumps": []
-    },
-    {
-      "part": "st011",
-      "processor": "upd96050",
-      "summary": "The ST011, which plays shogi.",
-      "bytes": 53248,
-      "programWords": 16384,
-      "dataWords": 2048,
-      "accepted": [
-        {
-          "revision": "ST011",
-          "sha256": "651b82a1e26c4fa8dd549e91e7f923012ed2ca54c1d9fd858655ab30679c2f0e",
-          "crc32": "750c6012",
-          "md5": "2c56baddba22c6649c95c4c3b13adce3",
-          "sha1": "b2fdfa3edf08f76dbd30a0a4d3d0ef1e3d3f6905",
-          "provenance": {
-            "kind": "localCopy",
-            "verifiedOn": "2026-08-20"
-          }
-        }
-      ],
-      "badDumps": []
     }
   ],
   "provenance": {

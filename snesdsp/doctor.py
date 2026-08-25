@@ -31,16 +31,19 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, override
 
-from . import chip, models, timing
-from .version import VERSION
+ROOT = Path(__file__).resolve().parent.parent
+
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from snesdsp import chip, models, timing  # noqa: E402
+from snesdsp.version import VERSION  # noqa: E402
 
 if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Callable, Iterable, Sequence
 
     Images = dict[str, tuple[Any, Path]]
     Build = Callable[[str, Images], object]
-
-ROOT = Path(__file__).resolve().parent.parent
 
 EXCHANGES = ROOT / "conformance"
 

@@ -58,8 +58,18 @@ class ManifestTest(unittest.TestCase):
     def test_the_manifest_names_every_part_the_package_can_run(self) -> None:
         named = {entry["part"] for entry in firmware.manifest()["artifacts"]}
 
-        self.assertIn("st011", named)
-        self.assertIn("dsp1", named)
+        self.assertEqual(named, {"dsp1", "dsp1b", "dsp2", "dsp3", "dsp4"})
+
+    def test_and_nothing_another_member_is_responsible_for(self) -> None:
+        """The manifest split when this layer moved out of the processor package.
+
+        It named seven modules across two vendors, and a package that knows the
+        name of somebody else's cartridge is a catalogue wearing the wrong name.
+        Two of the seven belong to the Seta member and are not here.
+        """
+        named = {entry["part"] for entry in firmware.manifest()["artifacts"]}
+
+        self.assertEqual(named & {"st010", "st011"}, set())
 
     def test_each_part_names_the_processor_it_runs_on(self) -> None:
         for entry in firmware.manifest()["artifacts"]:
