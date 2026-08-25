@@ -4,5 +4,5 @@ contact_links:
     url: https://github.com/gufranco/snes-dsp-python#faq
     about: Not from here, and nobody here will tell you. Dump it from hardware you own.
   - name: The processor underneath
-    url: https://github.com/gufranco/nec-upd7725-python
+    url: https://github.com/gufranco/nec-upd7725-96050-python
     about: Every part here is that processor with a different program masked into it.

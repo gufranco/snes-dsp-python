@@ -1,5 +1,5 @@
 {
-  "note": "Facts about the boards these parts sit on, and the standing of each. The parts themselves are documented in nec-upd7725-python and the console bus in snes-mapper-python; nothing is copied from either, because a fact in two files is a fact that will drift. What is here is what belongs to neither: the crystal on the cartridge, and what follows from it.",
+  "note": "Facts about the boards these parts sit on, and the standing of each. The parts themselves are documented in nec-upd7725-96050-python and the console bus in snes-mapper-python; nothing is copied from either, because a fact in two files is a fact that will drift. What is here is what belongs to neither: the crystal on the cartridge, and what follows from it.",
   "authority": {
     "order": [
       "the microcode, which is the part: this package runs the program masked into the silicon rather than a description of it",

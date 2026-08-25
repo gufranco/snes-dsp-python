@@ -81,11 +81,7 @@ class DeclaredImageTest(unittest.TestCase):
     def _manifest(self) -> "dict[str, Any]":
         import json
 
-        where = (
-            Path(__file__).resolve().parent.parent
-            / "nec-upd7725-python"
-            / "artifacts.manifest.json"
-        )
+        where = Path(__file__).resolve().parent / "artifacts.manifest.json"
         held = json.loads(where.read_text())
         assert isinstance(held, dict), f"{where} does not hold an object"
         return held

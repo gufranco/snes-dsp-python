@@ -30,7 +30,14 @@ from typing import Any
 
 from . import chip as chip
 from .chip import available, why_not
-from .errors import NeverReady, NoFirmware, UnknownModelError
+from .errors import (
+    Corrupt,
+    NeverReady,
+    NoFirmware,
+    UnknownModelError,
+    Unrecognised,
+    WrongShape,
+)
 from .models import MODELS, SHARES_MICROCODE, Model, describe
 from .timing import DSP_CLOCK, GAP, MASTER_CLOCK, clock_of, steps_for
 from .version import VERSION
@@ -68,10 +75,13 @@ __all__ = [
     "MODELS",
     "SHARES_MICROCODE",
     "Chip",
+    "Corrupt",
     "Model",
     "NeverReady",
     "NoFirmware",
     "UnknownModelError",
+    "Unrecognised",
+    "WrongShape",
     "__version__",
     "available",
     "clock_of",

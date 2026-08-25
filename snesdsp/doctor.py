@@ -46,7 +46,7 @@ EXCHANGES = ROOT / "conformance"
 
 OLDEST_PYTHON = (3, 12)
 
-PROCESSOR_NAME = "nec-upd7725-python"
+PROCESSOR_NAME = "nec-upd7725-96050-python"
 """What the project underneath is called, which is what its findings are filed under."""
 
 

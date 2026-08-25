@@ -25,7 +25,7 @@
   <a href="https://github.com/gufranco/snes-dsp-python/issues">Issues</a>
 </p>
 
-**6** parts across **5** microcodes · **1** processor underneath them all · **0** commands described by hand · **112** exchanges read out of **36** real cartridges compared, **0** failures · **773** tests · **100%** statement and branch coverage · **strict** types throughout · every image confirmed by **SHA-256** before a byte of it runs · no dependencies
+**6** parts across **5** microcodes · **1** processor underneath them all · **0** commands described by hand · **112** exchanges read out of **36** real cartridges compared, **0** failures · **829** tests · **100%** statement and branch coverage · **strict** types throughout · every image confirmed by **SHA-256** before a byte of it runs · no dependencies
 
 ```python
 from snesdsp import Chip
@@ -52,7 +52,7 @@ cd snes-dsp-python
 Python 3.12 or newer, and the submodule. Nothing else.
 
 The submodule sits at the repository root as
-[`nec-upd7725-python/`](https://github.com/gufranco/nec-upd7725-python), named
+[`nec-upd7725-96050-python/`](https://github.com/gufranco/nec-upd7725-96050-python), named
 after itself rather than buried under a generic folder, because it is the
 processor every one of these parts is built on and anybody browsing this should
 see that immediately. Without it nothing here can run at all.
@@ -351,13 +351,13 @@ wrong, because the part-specific knowledge is no longer in the code.
 
 | Layer | What is checked | Needs an image |
 |:--|:--|:--:|
-| The processor | Every instruction, in [`nec-upd7725-python`](https://github.com/gufranco/nec-upd7725-python) | No |
+| The processor | Every instruction, in [`nec-upd7725-96050-python`](https://github.com/gufranco/nec-upd7725-96050-python) | No |
 | The port | The handshake, the pacing, the status register and the bus decode, driven by a program of zeroes | No |
 | Timing | That the pacing follows from the two oscillators rather than from a chosen number | No |
 | Identity | That every part names an image with a deciding digest, so a supplied file is confirmed rather than trusted | No |
 | The catalogue | Every part, every name it answers to, and which image each runs | No |
 | Every annotation | `mypy` at strict, plus every optional error class the version has | No |
-| The documented widths | Every width, size and depth against the manufacturer's own datasheet, in the processor's [`conformance/hardware.json`](https://github.com/gufranco/nec-upd7725-python/blob/main/conformance/hardware.json) | No |
+| The documented widths | Every width, size and depth against the manufacturer's own datasheet, in the processor's [`conformance/hardware.json`](https://github.com/gufranco/nec-upd7725-96050-python/blob/main/conformance/hardware.json) | No |
 | The parts | Driven through the exchanges a real cartridge makes with them | Yes |
 | What each part answers | Re-derived and compared against what it answered when the corpus was taken | Yes |
 | The DSP-1B correction | The pinned divergences between the two masks, re-derived | Yes |
@@ -528,7 +528,7 @@ conformance/
   stack.py        how deep the shipped microcode drives the return stack
   divergences.json where this and a behavioural model answer differently
   driven.py       what these runs need a part to be, which is less than a part is
-nec-upd7725-python/  the processor all of these are, as a submodule at the root
+nec-upd7725-96050-python/  the processor all of these are, as a submodule at the root
 ```
 
 Each module has its tests beside it as `<module>.test.py`, so a module and the

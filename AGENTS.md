@@ -151,7 +151,7 @@ conformance/
   quotes.py       looks for every quoted sentence in the document it cites
   speed.py        the throughput floor
   documented.py   every example the readme prints, run against the parts
-nec-upd7725-python/  the processor all of these are, as a submodule at the root
+nec-upd7725-96050-python/  the processor all of these are, as a submodule at the root
 ```
 
 ## Things that will bite you

@@ -93,6 +93,8 @@ class Counted(Protocol):
 
     registers: Any
 
+    on_cycle: Any
+
     def step(self) -> None:
         """One instruction."""
         ...
@@ -121,19 +123,27 @@ class _Watching:
         self._install()
 
     def _install(self) -> None:
+        """Follow the pointer from the cycle hook rather than by replacing `step`.
+
+        The processor declares its attributes, so a method cannot be swapped out
+        from here at all, and swapping one out was never the right shape: it left
+        a part behaving differently while it was being measured. The hook the
+        part already publishes is called on every cycle it spends, which is at
+        least as often as every instruction, and reading a register there changes
+        nothing about what the part does.
+        """
         core = _processor_of(self.core)
         registers = core.registers
-        stepped = core.step
+        held = [registers.sp]
 
         def watched() -> None:
-            before = registers.sp
-            stepped()
             after = registers.sp
-            if after != before:
+            if after != held[0]:
                 self.moves += 1
+                held[0] = after
             self.deepest = max(self.deepest, after)
 
-        core.step = watched  # type: ignore[method-assign]
+        core.on_cycle = watched
 
     def write(self, value: int) -> None:
         self.core.write(value)  # type: ignore[attr-defined]

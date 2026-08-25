@@ -11,14 +11,14 @@ from snesdsp import chip, errors, timing
 PRESENT = chip.available()
 
 
-def a_processor_that_is_there() -> tuple[ModuleType, ModuleType, ModuleType]:
-    """Three module-shaped stand-ins rather than three Nones.
+def a_processor_that_is_there() -> tuple[ModuleType, ModuleType]:
+    """Two module-shaped stand-ins rather than two Nones.
 
-    The real function hands back three modules or nothing at all, and a state it
+    The real function hands back both modules or nothing at all, and a state it
     cannot produce is not a state worth asking it about.
     """
     held = ModuleType("held")
-    return held, held, held
+    return held, held
 
 
 def a_submodule_that_is_absent(modules: dict[str, Any]) -> None:
@@ -138,26 +138,38 @@ class BusTest(unittest.TestCase):
         import sys as system
 
         system.path.insert(0, str(chip.PROCESSOR))
-        from upd7725 import firmware
+        from snesdsp import firmware
 
         identity = firmware.Identity("made-up", "upd7725", "MADE UP", 2048, 1024)
         image = bytes(2048 * 3 + 1024 * 2)
         return chip.Chip("made-up", image=image, identity=identity, boot=64, **options)
 
     def test_an_even_address_is_the_data_port(self) -> None:
-        part = self._built()
+        """Two parts rather than one, because reading advances the one that answered.
 
-        self.assertEqual(part.read_bus(0x00C000), part.read())
+        Asking the same part twice compares its first answer with its second,
+        which are the same only while the part is inert. A part running a real
+        program is not, so each side gets its own part in the same state.
+        """
+        through_the_bus = self._built().read_bus(0x00C000)
+
+        directly = self._built().read()
+
+        self.assertEqual(through_the_bus, directly)
 
     def test_an_odd_address_is_the_status_register(self) -> None:
-        part = self._built()
+        through_the_bus = self._built().read_bus(0x00C001)
 
-        self.assertEqual(part.read_bus(0x00C001), part.read_status())
+        directly = self._built().read_status()
+
+        self.assertEqual(through_the_bus, directly)
 
     def test_only_the_lowest_bit_decides(self) -> None:
-        part = self._built()
+        high = self._built().read_bus(0x3F8000)
 
-        self.assertEqual(part.read_bus(0x3F8000), part.read_bus(0x008000))
+        low = self._built().read_bus(0x008000)
+
+        self.assertEqual(high, low)
 
     def test_a_write_to_an_even_address_reaches_the_data_port(self) -> None:
         part = self._built()
@@ -189,7 +201,7 @@ class PacingTest(unittest.TestCase):
         import sys as system
 
         system.path.insert(0, str(chip.PROCESSOR))
-        from upd7725 import firmware
+        from snesdsp import firmware
 
         identity = firmware.Identity("made-up", "upd7725", "MADE UP", 2048, 1024)
         image = bytes(2048 * 3 + 1024 * 2)
@@ -239,7 +251,7 @@ class StatusTest(unittest.TestCase):
         import sys as system
 
         system.path.insert(0, str(chip.PROCESSOR))
-        from upd7725 import firmware
+        from snesdsp import firmware
 
         identity = firmware.Identity("made-up", "upd7725", "MADE UP", 2048, 1024)
         image = bytes(2048 * 3 + 1024 * 2)
@@ -276,7 +288,7 @@ class FoundOnDiskTest(unittest.TestCase):
         import tempfile
 
         system.path.insert(0, str(chip.PROCESSOR))
-        from upd7725 import firmware
+        from snesdsp import firmware
 
         identity = firmware.Identity("dsp1", "upd7725", "MADE UP", 2048, 1024)
         where = Path(tempfile.mkdtemp()) / "made-up.bin"
@@ -316,7 +328,7 @@ class SuppliedImageTest(unittest.TestCase):
         import sys as system
 
         system.path.insert(0, str(chip.PROCESSOR))
-        from upd7725 import firmware
+        from snesdsp import firmware
 
         identity = firmware.Identity("made-up", "upd7725", "MADE UP", 2048, 1024)
         image = bytes(2048 * 3 + 1024 * 2)

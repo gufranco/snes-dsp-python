@@ -28,6 +28,8 @@ from typing import TYPE_CHECKING, Any, override
 
 from snesdsp.errors import NeverReady, NoFirmware
 
+from . import firmware
+
 if TYPE_CHECKING:  # pragma: no cover
     from types import ModuleType
 
@@ -35,7 +37,7 @@ from . import timing
 
 ROOT = Path(__file__).resolve().parent.parent
 
-PROCESSOR = ROOT / "nec-upd7725-python"
+PROCESSOR = ROOT / "nec-upd7725-96050-python"
 
 BOOT_STEPS = 20000
 """Instructions to run before the part is spoken to.
@@ -91,15 +93,15 @@ routines. That is the difference the two images already measured disagree on.
 """
 
 
-def _processor() -> tuple[ModuleType, ModuleType, ModuleType] | None:
+def _processor() -> tuple[ModuleType, ModuleType] | None:
     """The processor package, or nothing when the submodule is absent."""
     if str(PROCESSOR) not in sys.path:
-        sys.path.insert(0, str(PROCESSOR))
+        sys.path.append(str(PROCESSOR))
     try:
-        from upd7725 import firmware, models, ports
+        from upd7725 import models, ports
     except ImportError:
         return None
-    return firmware, models, ports
+    return models, ports
 
 
 def available(held: dict[str, tuple[Any, Path]] | None = None) -> dict[str, tuple[Any, Path]]:
@@ -112,7 +114,7 @@ def available(held: dict[str, tuple[Any, Path]] | None = None) -> dict[str, tupl
         found = _processor()
         if found is None:
             return {}
-        held = {identity.part: (identity, path) for identity, path in found[0].search()}
+        held = {identity.part: (identity, path) for identity, path in firmware.search()}
     held = dict(held)
     for part, shared in SHARES_IMAGE.items():
         if shared in held:
@@ -152,7 +154,6 @@ class Chip:
     __slots__ = (
         "_boot",
         "_fill",
-        "_firmware",
         "_image",
         "_models",
         "_ports",
@@ -181,7 +182,7 @@ class Chip:
         if found is None:
             raise NoFirmware(WHY_NOT_PROCESSOR)
 
-        firmware, models, ports = found
+        models, ports = found
 
         if image is None:
             images = available(images)
@@ -207,7 +208,6 @@ class Chip:
         self.gap = gap
 
         self._ports = ports
-        self._firmware = firmware
         self._models = models
         self._fill = fill
         self._image = image
@@ -223,8 +223,9 @@ class Chip:
         """
         identity = self.identity
         self.core = self._models.describe(identity.processor).build(fill=self._fill)
-        self._firmware.load(self.core, self._image, identity)
-        self.console = self._ports.Console(self.core)
+        firmware.load(self.core, self._image, identity)
+        self.core.reset()
+        self.console = self._ports.Host(self.core)
         self.step(self._boot)
 
     def reset(self) -> Chip:

@@ -1,5 +1,6 @@
 import sys
 import unittest
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -9,6 +10,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from conformance import shapes, stack
 
 
+def nothing() -> None:
+    """What a stand-in announces its cycles to before a watcher is installed.
+
+    A no-op rather than None, because the real part's hook is optional and these
+    stand-ins exist to be watched: giving them a hook that is always callable
+    removes a branch that could never be taken here and would read as untested
+    coverage.
+    """
+
+
 class Calling:
     """A part whose stack pointer walks up to a chosen depth and back."""
 
@@ -16,12 +27,18 @@ class Calling:
         self.part = part
         self.deepest = deepest
         self.registers = _Registers()
+        self.on_cycle: Callable[[], None] = nothing
         self._walk = [deepest, 0]
         self._at = 0
 
     def step(self) -> None:
         self.registers.sp = self._walk[self._at % len(self._walk)]
         self._at += 1
+        self._spend()
+
+    def _spend(self) -> None:
+        """Announce a cycle the way the real part does, so a watcher sees it."""
+        self.on_cycle()
 
     def write(self, value: int) -> None:
         self.step()
@@ -46,9 +63,10 @@ class _Flat:
     def __init__(self, part: str = "dsp1") -> None:
         self.part = part
         self.registers = _Registers()
+        self.on_cycle: Callable[[], None] = nothing
 
     def step(self) -> None:
-        return None
+        self.on_cycle()
 
     def write(self, value: int) -> None:
         self.step()

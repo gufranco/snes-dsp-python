@@ -41,3 +41,30 @@ class NeverReady(Exception):
     happened. The message carries the number of steps that were spent, which is
     the figure a reader needs to tell a slow answer from no answer at all.
     """
+
+
+class Unrecognised(Exception):
+    """The image was read and matches nothing in the manifest.
+
+    The furthest-from-actionable of the refusals, and the one whose message works
+    hardest: it prints the digest that was computed so a reader can search for
+    it, rather than only saying that it did not match.
+    """
+
+
+class Corrupt(Exception):
+    """The image matches a dump the manifest records as bad.
+
+    Distinct from `Unrecognised` because the answer is different. This one says
+    the reader has a known-broken copy rather than an unknown one, which turns a
+    search into a re-download.
+    """
+
+
+class WrongShape(Exception):
+    """The image is not a whole number of words of the width the part reads.
+
+    Raised before anything is loaded, because a program store filled from a
+    truncated image would run and would run wrongly, which is worse than
+    refusing.
+    """

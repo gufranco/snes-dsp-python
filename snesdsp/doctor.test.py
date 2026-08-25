@@ -210,7 +210,7 @@ class DigestTest(unittest.TestCase):
         import sys as system
 
         system.path.insert(0, str(chip.PROCESSOR))
-        from upd7725 import firmware
+        from snesdsp import firmware
 
         return {"dsp1": (firmware.Identity("dsp1", "upd7725", "MADE UP", 8, 8), where)}
 
