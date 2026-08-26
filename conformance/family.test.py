@@ -52,6 +52,15 @@ calling itself something else.
 CLOCKED = KIND == "Clocked part"
 
 PACKAGE: Any = snesdsp
+"""The package under test, deliberately untyped.
+
+What a member publishes depends on what it models: a clocked part has a `Cpu`,
+a `Memory` and a `RunLimit`, and a board, a format or a tool has none of them.
+A checker cannot know which of those it is looking at, so naming the attributes
+here would make it refuse a repository the standard never asked for one from.
+The checks that reach for those attributes are skipped on members without them,
+and every assertion below is made against the value at run time.
+"""
 
 A_MODEL = sorted(PACKAGE.MODELS)[0] if hasattr(PACKAGE, "MODELS") else ""
 """One model, named rather than defaulted.
@@ -63,15 +72,6 @@ standard has to reach the package the way the standard says a caller does.
 
 A member that publishes no catalogue models a format or a tool and never reaches
 the checks that use this, so it gets an empty name rather than an import error.
-"""
-"""The package under test, deliberately untyped.
-
-What a member publishes depends on what it models: a clocked part has a `Cpu`,
-a `Memory` and a `RunLimit`, and a board, a format or a tool has none of them.
-A checker cannot know which of those it is looking at, so naming the attributes
-here would make it refuse a repository the standard never asked for one from.
-The checks that reach for those attributes are skipped on members without them,
-and every assertion below is made against the value at run time.
 """
 
 
