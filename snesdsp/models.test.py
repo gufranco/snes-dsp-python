@@ -16,26 +16,26 @@ class CatalogueTest(unittest.TestCase):
         self.assertEqual(set(models.MODELS), EVERY_PART)
 
     def test_a_part_says_what_it_is(self) -> None:
-        self.assertTrue(models.describe("dsp2").summary)
+        self.assertTrue(models.lookup("dsp2").summary)
 
     def test_and_which_image_it_runs(self) -> None:
-        self.assertEqual(models.describe("dsp2").image, "dsp2")
+        self.assertEqual(models.lookup("dsp2").image, "dsp2")
 
     def test_a_part_that_carries_another_part_program_says_so(self) -> None:
-        self.assertEqual(models.describe("dsp1a").image, "dsp1")
+        self.assertEqual(models.lookup("dsp1a").image, "dsp1")
 
     def test_and_is_still_a_part_in_its_own_right(self) -> None:
-        self.assertEqual(models.describe("dsp1a").name, "dsp1a")
+        self.assertEqual(models.lookup("dsp1a").name, "dsp1a")
 
     def test_a_part_prints_as_itself_and_the_image_it_runs(self) -> None:
-        printed = repr(models.describe("dsp1a"))
+        printed = repr(models.lookup("dsp1a"))
 
         self.assertIn("dsp1a", printed)
         self.assertIn("dsp1", printed)
 
     def test_every_part_carries_a_summary(self) -> None:
         for name in models.MODELS:
-            self.assertTrue(models.describe(name).summary, name)
+            self.assertTrue(models.lookup(name).summary, name)
 
     def test_no_two_parts_share_a_name(self) -> None:
         self.assertEqual(len(models.MODELS), len(set(models.MODELS)))
@@ -43,28 +43,28 @@ class CatalogueTest(unittest.TestCase):
 
 class NamingTest(unittest.TestCase):
     def test_a_part_is_found_by_its_name(self) -> None:
-        self.assertEqual(models.describe("dsp3").name, "dsp3")
+        self.assertEqual(models.lookup("dsp3").name, "dsp3")
 
     def test_and_by_any_name_it_is_also_known_by(self) -> None:
-        for alias in models.describe("dsp1").aliases:
-            self.assertEqual(models.describe(alias).name, "dsp1")
+        for alias in models.lookup("dsp1").aliases:
+            self.assertEqual(models.lookup(alias).name, "dsp1")
 
     def test_the_name_is_read_without_regard_to_case(self) -> None:
-        self.assertEqual(models.describe("DSP3").name, "dsp3")
+        self.assertEqual(models.lookup("DSP3").name, "dsp3")
 
     def test_a_name_no_part_answers_to_is_refused(self) -> None:
         with self.assertRaises(errors.UnknownModelError):
-            models.describe("dsp9")
+            models.lookup("dsp9")
 
     def test_and_the_refusal_names_what_there_is(self) -> None:
         with self.assertRaises(errors.UnknownModelError) as raised:
-            models.describe("dsp9")
+            models.lookup("dsp9")
 
         for name in EVERY_PART:
             self.assertIn(name, str(raised.exception))
 
     def test_no_alias_belongs_to_two_parts(self) -> None:
-        seen = [alias for name in models.MODELS for alias in models.describe(name).aliases]
+        seen = [alias for name in models.MODELS for alias in models.lookup(name).aliases]
 
         self.assertEqual(len(seen), len(set(seen)))
 
@@ -90,7 +90,7 @@ class DeclaredImageTest(unittest.TestCase):
         declared = {one["part"] for one in self._manifest()["artifacts"]}
 
         for name in models.MODELS:
-            self.assertIn(models.describe(name).image, declared, name)
+            self.assertIn(models.lookup(name).image, declared, name)
 
     def test_every_declared_image_carries_a_deciding_digest(self) -> None:
         for one in self._manifest()["artifacts"]:
@@ -107,7 +107,7 @@ class DeclaredImageTest(unittest.TestCase):
         declared = {one["part"]: one["processor"] for one in self._manifest()["artifacts"]}
 
         for name in models.MODELS:
-            self.assertEqual(declared[models.describe(name).image], "upd7725", name)
+            self.assertEqual(declared[models.lookup(name).image], "upd7725", name)
 
 
 class BuildingTest(unittest.TestCase):
@@ -124,7 +124,7 @@ class BuildingTest(unittest.TestCase):
             snesdsp.Chip("dsp9")
 
     def test_the_default_part_is_one_the_catalogue_knows(self) -> None:
-        self.assertIn(snesdsp.DEFAULT_MODEL, models.MODELS)
+        self.assertIn("dsp1", models.MODELS)
 
     def test_the_package_offers_no_way_to_ask_for_anything_but_the_part(self) -> None:
         self.assertNotIn("backend", snesdsp.__all__)
@@ -133,6 +133,28 @@ class BuildingTest(unittest.TestCase):
 
 def _refused_or_built(name: str) -> "chip.Chip":
     return snesdsp.Chip(name)
+
+
+class NamingNoneTest(unittest.TestCase):
+    """That leaving the model out is refused, and refused usefully."""
+
+    def test_building_without_naming_a_model_is_refused(self) -> None:
+        with self.assertRaises(errors.UnknownModelError):
+            snesdsp.Chip()
+
+    def test_and_the_refusal_names_every_model_there_is(self) -> None:
+        with self.assertRaises(errors.UnknownModelError) as caught:
+            snesdsp.Chip()
+
+        missing = [name for name in snesdsp.MODELS if name not in str(caught.exception)]
+
+        self.assertEqual(missing, [])
+
+    def test_nothing_named_describe_is_published(self) -> None:
+        self.assertFalse(hasattr(snesdsp, "describe"))
+
+    def test_and_no_default_model_is_published_either(self) -> None:
+        self.assertFalse(hasattr(snesdsp, "DEFAULT_MODEL"))
 
 
 if __name__ == "__main__":

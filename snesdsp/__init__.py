@@ -29,6 +29,7 @@ back to a guess.
 from typing import Any
 
 from . import chip as chip
+from . import models as models
 from .chip import available, why_not
 from .errors import (
     Corrupt,
@@ -38,16 +39,14 @@ from .errors import (
     Unrecognised,
     WrongShape,
 )
-from .models import MODELS, SHARES_MICROCODE, Model, describe
+from .models import MODELS, SHARES_MICROCODE, Model
 from .timing import DSP_CLOCK, GAP, MASTER_CLOCK, clock_of, steps_for
 from .version import VERSION
 
 __version__ = VERSION
 
-DEFAULT_MODEL = "dsp1"
 
-
-def Chip(model: str = DEFAULT_MODEL, **options: "Any") -> chip.Chip:  # noqa: N802
+def Chip(model: str | None = None, **options: "Any") -> chip.Chip:  # noqa: N802
     """A chip of the named model, sharing one interface across the family.
 
     The model comes first because it is the thing a caller always knows. There
@@ -64,11 +63,10 @@ def Chip(model: str = DEFAULT_MODEL, **options: "Any") -> chip.Chip:  # noqa: N8
     somewhere else, because an answer that did not come from the part is worse
     than none.
     """
-    return chip.Chip(describe(model).name, **options)
+    return chip.Chip(models.lookup(model).name, **options)
 
 
 __all__ = [
-    "DEFAULT_MODEL",
     "DSP_CLOCK",
     "GAP",
     "MASTER_CLOCK",
@@ -85,7 +83,6 @@ __all__ = [
     "__version__",
     "available",
     "clock_of",
-    "describe",
     "steps_for",
     "why_not",
 ]

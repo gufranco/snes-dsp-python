@@ -447,7 +447,7 @@ class IdentityTest(unittest.TestCase):
 
 class LoadTest(unittest.TestCase):
     def test_a_loaded_image_fills_the_program_store(self) -> None:
-        chip = upd_models.describe("upd7725").build(fill=0)
+        chip = upd_models.lookup("upd7725").build(fill=0)
         image = bytes(range(256)) * 32 + bytes(2048)
 
         firmware.load(chip, image[: 2048 * 3] + image[: 1024 * 2])
@@ -455,7 +455,7 @@ class LoadTest(unittest.TestCase):
         self.assertEqual(chip.stores.program[0], 0x000102)
 
     def test_and_the_table_after_it(self) -> None:
-        chip = upd_models.describe("upd7725").build(fill=0)
+        chip = upd_models.lookup("upd7725").build(fill=0)
         program = bytes(2048 * 3)
         table = bytes([0xAA, 0xBB]) * 1024
 
@@ -464,7 +464,7 @@ class LoadTest(unittest.TestCase):
         self.assertEqual(chip.stores.table[0], 0xAABB)
 
     def test_an_image_that_does_not_match_the_processor_is_refused(self) -> None:
-        chip = upd_models.describe("upd7725").build(fill=0)
+        chip = upd_models.lookup("upd7725").build(fill=0)
 
         with self.assertRaises(errors.WrongShape):
             firmware.load(chip, bytes(53248))

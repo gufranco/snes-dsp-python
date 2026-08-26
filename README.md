@@ -4,7 +4,7 @@ The NEC uPD77C25 as Nintendo shipped it, running the microcode you supply rather
 
 [![CI](https://github.com/gufranco/snes-dsp-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/snes-dsp-python/actions/workflows/ci.yml)
 
-**6** parts across **5** microcodes, **1** processor underneath them all, **0** commands described by hand, **112** exchanges read out of **36** real cartridges compared, **0** failures, **849** tests, **100%** statement and branch coverage, **strict** types throughout, every image confirmed by **SHA-256** before a byte of it runs, no dependencies
+**6** parts across **5** microcodes, **1** processor underneath them all, **0** commands described by hand, **112** exchanges read out of **36** real cartridges compared, **0** failures, **853** tests, **100%** statement and branch coverage, **strict** types throughout, every image confirmed by **SHA-256** before a byte of it runs, no dependencies
 
 ```python
 from snesdsp import Chip
@@ -44,7 +44,7 @@ Everything a caller touches. Nothing else is public.
 | Name | What it is |
 |:--|:--|
 | `Chip(model, **options)` | A part of that model, running its own microcode |
-| `describe(model)` | What the catalogue holds about one part, without building it |
+| `MODELS` | Every part this package covers, by the name it goes by |
 | `MODELS` | Every part there is, by the name it is known as |
 | `SHARES_MICROCODE` | Which parts run the same program as which other part |
 | `available()` | Every part there is an image for on this machine |

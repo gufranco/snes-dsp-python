@@ -37,7 +37,7 @@ be quietly generous in exactly the situation where a game depends on catching th
 part before it has finished.
 """
 
-from .models import describe
+from . import models
 
 NTSC_COLOURBURST = 3579545.4545454545
 """The colour carrier an NTSC console is built around, in hertz."""
@@ -82,7 +82,7 @@ marking would settle it.
 
 def clock_of(part: str) -> int:
     """The rate that part's oscillator runs at, refusing a name nobody answers to."""
-    describe(part)
+    models.lookup(part)
     return DSP_CLOCK
 
 

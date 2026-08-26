@@ -222,7 +222,7 @@ class Chip:
         on, with the same program in it.
         """
         identity = self.identity
-        self.core = self._models.describe(identity.processor).build(fill=self._fill)
+        self.core = self._models.lookup(identity.processor).build(fill=self._fill)
         firmware.load(self.core, self._image, identity)
         self.core.reset()
         self.console = self._ports.Host(self.core)
