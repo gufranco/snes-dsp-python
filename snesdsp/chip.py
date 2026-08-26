@@ -76,7 +76,7 @@ WHY_NOT_PROCESSOR = (
 WHY_NOT_FIRMWARE = (
     "no firmware image was found: this backend runs the part's own microcode, and"
     " that microcode belongs to whoever made the part, so a copy you already own"
-    " goes in the firmware directory or wherever UPD7725_FIRMWARE_DIR points"
+    " goes in the firmware directory or wherever SNES_DSP_FIRMWARE_DIR points"
 )
 
 

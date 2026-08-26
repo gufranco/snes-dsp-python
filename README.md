@@ -4,7 +4,7 @@ The NEC uPD77C25 as Nintendo shipped it, running the microcode you supply rather
 
 [![CI](https://github.com/gufranco/snes-dsp-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/snes-dsp-python/actions/workflows/ci.yml)
 
-**6** parts across **5** microcodes, **0** commands described by hand, **112** exchanges read out of **36** real cartridges compared, **0** failures, **853** tests, **100%** statement and branch coverage, no dependencies
+**6** parts across **5** microcodes, **0** commands described by hand, **112** exchanges read out of **36** real cartridges compared, **0** failures, **856** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from snesdsp import Chip
@@ -44,8 +44,9 @@ Everything a caller touches. Nothing else is public.
 | Name | What it is |
 |:--|:--|
 | `Chip(model, **options)` | A part of that model, running its own microcode |
+| `Chip(model, image=...)` | The same, with the bytes handed straight in and no directory searched |
 | `MODELS` | Every part this package covers, by the name it goes by |
-| `MODELS` | Every part there is, by the name it is known as |
+| `Model` | One entry of that catalogue: its name, its aliases and what it is |
 | `SHARES_MICROCODE` | Which parts run the same program as which other part |
 | `available()` | Every part there is an image for on this machine |
 | `why_not()` | Why the backend cannot run, or nothing when it can |
@@ -120,6 +121,19 @@ them.
 | `dsp2` | 8,192 | `f0221c90` | `5efbdf96ed0652790855225964f3e90e6a4d466cfa64df25b110933c6cf94ea1` |
 | `dsp3` | 8,192 | `e3b54e6a` | `2e635f72e4d4681148bc35429421c9b946e4f407590e74e31b93b8987b63ba90` |
 | `dsp4` | 8,192 | `ca09e176` | `63ede17322541c191ed1fdf683872554a0a57306496afc43c59de7c01a6e764a` |
+
+A copy you already own goes in `firmware/` in this project, or in the `firmware/`
+of the project this one sits inside when it is checked out as a submodule, or in
+any directory named by `SNES_DSP_FIRMWARE_DIR`. That variable is read first and
+may name more than one directory at once, separated the way the operating system
+separates a path. `UPD7725_FIRMWARE_DIR` is read after it and still works: this
+member and [snes-st-python](https://github.com/gufranco/snes-st-python) shared
+that one name until somebody wanted to point them at two different sets. Nothing
+is downloaded.
+
+A caller who already holds the bytes hands them straight over as
+`Chip("dsp1", image=...)`, and then no directory is searched at all and no
+variable is read.
 
 Confirm one you hold:
 

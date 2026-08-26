@@ -158,6 +158,17 @@ nec-upd7725-96050-python/  the processor all of these are, as a submodule at the
 
 ## Things that will bite you
 
+- **The directory variable is `SNES_DSP_FIRMWARE_DIR`, and the old shared one
+  still works.** `UPD7725_FIRMWARE_DIR` named this member's images and
+  snes-st-python's at once, so a caller holding both sets could point at only
+  one of them. It is now read after this member's own name rather than instead
+  of it. A test pins both halves: the old name still finds a directory, and the
+  new one wins when both are set.
+- **The search order lives in three members and nothing holds them together.**
+  `directories` in `firmware.py` is byte-identical here, in the other microcode
+  member and in `sony-s-smp-python`, because no package is a dependency of all
+  three. The recipe for diffing a copy against a sibling is in that function's
+  own docstring. Change one and change the other two in the same task.
 - **The submodule is not optional.** Without it nothing here can run, and the
   refusal says so rather than falling back to a guess.
 - **A part cannot be built without an image.** `Chip("dsp1")` raises `NoFirmware`

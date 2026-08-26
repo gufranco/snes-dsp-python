@@ -512,7 +512,7 @@ class FoundTest(unittest.TestCase):
         self.assertEqual(list(firmware.found(where, {"artifacts": []})), [])
 
     def test_the_directory_comes_from_the_environment_when_one_is_named(self) -> None:
-        self.assertEqual(firmware.directory({"UPD7725_FIRMWARE_DIR": "/x"}), Path("/x"))
+        self.assertEqual(firmware.directory({firmware.DIRECTORY_VARIABLE: "/x"}), Path("/x"))
 
     def test_and_from_the_repository_when_none_is(self) -> None:
         self.assertEqual(firmware.directory({}).name, "firmware")
@@ -531,24 +531,39 @@ class SearchPathTest(unittest.TestCase):
         self.assertLess(found.index(firmware.ALONGSIDE), found.index(firmware.DEFAULT_DIRECTORY))
 
     def test_a_named_directory_is_looked_at_before_either(self) -> None:
-        found = firmware.directories({"UPD7725_FIRMWARE_DIR": "/x"})
+        found = firmware.directories({firmware.DIRECTORY_VARIABLE: "/x"})
 
         self.assertEqual(found[0], Path("/x"))
 
     def test_more_than_one_can_be_named_at_once(self) -> None:
-        found = firmware.directories({"UPD7725_FIRMWARE_DIR": f"/x{os.pathsep}/y"})
+        found = firmware.directories({firmware.DIRECTORY_VARIABLE: f"/x{os.pathsep}/y"})
 
         self.assertEqual(found[:2], (Path("/x"), Path("/y")))
 
     def test_an_empty_entry_between_two_names_is_passed_over(self) -> None:
-        found = firmware.directories({"UPD7725_FIRMWARE_DIR": f"/x{os.pathsep}{os.pathsep}/y"})
+        found = firmware.directories({firmware.DIRECTORY_VARIABLE: f"/x{os.pathsep}{os.pathsep}/y"})
 
         self.assertEqual(found[:2], (Path("/x"), Path("/y")))
 
     def test_no_directory_appears_twice(self) -> None:
-        found = firmware.directories({"UPD7725_FIRMWARE_DIR": str(firmware.DEFAULT_DIRECTORY)})
+        found = firmware.directories({firmware.DIRECTORY_VARIABLE: str(firmware.DEFAULT_DIRECTORY)})
 
         self.assertEqual(len(found), len(set(found)))
+
+    def test_the_name_this_member_used_to_share_still_works(self) -> None:
+        found = firmware.directories({firmware.SHARED_DIRECTORY_VARIABLE: "/x"})
+
+        self.assertEqual(found[0], Path("/x"))
+
+    def test_but_the_members_own_name_is_looked_at_first(self) -> None:
+        found = firmware.directories(
+            {firmware.SHARED_DIRECTORY_VARIABLE: "/shared", firmware.DIRECTORY_VARIABLE: "/mine"}
+        )
+
+        self.assertEqual(found[:2], (Path("/mine"), Path("/shared")))
+
+    def test_the_two_names_are_not_the_same_name(self) -> None:
+        self.assertNotEqual(firmware.DIRECTORY_VARIABLE, firmware.SHARED_DIRECTORY_VARIABLE)
 
     def test_searching_finds_an_image_in_any_of_them(self) -> None:
         first = Path(tempfile.mkdtemp())

@@ -42,7 +42,18 @@ ROOT = Path(__file__).resolve().parent.parent
 
 MANIFEST = Path(__file__).resolve().parent / "artifacts.manifest.json"
 
-DIRECTORY_VARIABLE = "UPD7725_FIRMWARE_DIR"
+DIRECTORY_VARIABLE = "SNES_DSP_FIRMWARE_DIR"
+
+SHARED_DIRECTORY_VARIABLE = "UPD7725_FIRMWARE_DIR"
+"""The name this member used before it had one of its own.
+
+It still works and is still read, after the member's own name. It was shared
+with snes-st-python, which reads a different vendor's images for a different
+part, so a caller who owns both sets had one variable and needed two.
+"""
+
+DIRECTORY_VARIABLES = (DIRECTORY_VARIABLE, SHARED_DIRECTORY_VARIABLE)
+"""Every variable naming a directory, most specific first."""
 
 DEFAULT_DIRECTORY = ROOT / "firmware"
 
@@ -114,17 +125,35 @@ def directory(environment: Mapping[str, str] | None = None) -> Path:
 
 
 def directories(environment: Mapping[str, str] | None = None) -> tuple[Path, ...]:
-    """Every place images are looked for, in the order they are looked at.
+    """Every place an image is looked for, in the order they are looked at.
 
     Whatever was named comes first, then the project this package sits inside if
     it is a submodule of one, then this package itself. More than one can be
     named at once, separated the way the operating system separates a path.
-    """
-    named = (environment if environment is not None else os.environ).get(DIRECTORY_VARIABLE, "")
-    wanted = [Path(where) for where in named.split(os.pathsep) if where]
-    wanted += [ALONGSIDE, DEFAULT_DIRECTORY]
 
-    seen = []
+    `DIRECTORY_VARIABLES` is read in order, so a member that shares a variable
+    with a sibling reads its own name first and the shared one after it. A
+    caller who has set only the shared name keeps working; a caller who sets
+    both points the two members at different directories, which is the whole
+    reason the member's own name exists.
+
+    This function is one rule with a copy in every member that reads an image it
+    does not carry, because no package is a dependency of all of them. The
+    copies are byte-identical below the constants and are meant to stay that
+    way, so a diff against a sibling is the check:
+
+        cut='/^def directories/,/^    return tuple(seen)/p'
+        diff <(sed -n "$cut" mine/firmware.py) <(sed -n "$cut" theirs/firmware.py)
+    """
+    held = environment if environment is not None else os.environ
+    wanted = [
+        Path(where)
+        for variable in DIRECTORY_VARIABLES
+        for where in held.get(variable, "").split(os.pathsep)
+        if where
+    ]
+    wanted += [ALONGSIDE, DEFAULT_DIRECTORY]
+    seen: list[Path] = []
     for where in wanted:
         if where not in seen:
             seen.append(where)
