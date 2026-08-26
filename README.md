@@ -1,31 +1,10 @@
-<div align="center">
+# SNES DSP Family
 
-<h1>SNES DSP Family</h1>
-
-<strong>The NEC uPD77C25 as Nintendo shipped it, running the microcode you supply rather than a description of it.</strong>
-
-<br>
-<br>
+The NEC uPD77C25 as Nintendo shipped it, running the microcode you supply rather than a description of it.
 
 [![CI](https://github.com/gufranco/snes-dsp-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/snes-dsp-python/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-100%25%20statement%20%2B%20branch-brightgreen)](#tests)
-[![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)](pyproject.toml)
-[![Types](https://img.shields.io/badge/mypy-strict-blue)](pyproject.toml)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-</div>
-
-<p align="center">
-  <a href="#quick-start">Quick start</a> &nbsp;|&nbsp;
-  <a href="#the-family">The family</a> &nbsp;|&nbsp;
-  <a href="#why-there-is-no-model-here">Why there is no model</a> &nbsp;|&nbsp;
-  <a href="#the-microcode-you-supply">The microcode you supply</a> &nbsp;|&nbsp;
-  <a href="#driving-it-the-way-a-console-does">Driving it</a> &nbsp;|&nbsp;
-  <a href="#what-is-checked-without-one">What is checked without one</a> &nbsp;|&nbsp;
-  <a href="https://github.com/gufranco/snes-dsp-python/issues">Issues</a>
-</p>
-
-**6** parts across **5** microcodes · **1** processor underneath them all · **0** commands described by hand · **112** exchanges read out of **36** real cartridges compared, **0** failures · **849** tests · **100%** statement and branch coverage · **strict** types throughout · every image confirmed by **SHA-256** before a byte of it runs · no dependencies
+**6** parts across **5** microcodes, **1** processor underneath them all, **0** commands described by hand, **112** exchanges read out of **36** real cartridges compared, **0** failures, **849** tests, **100%** statement and branch coverage, **strict** types throughout, every image confirmed by **SHA-256** before a byte of it runs, no dependencies
 
 ```python
 from snesdsp import Chip
@@ -41,7 +20,6 @@ for byte in (0x02, 0x00, 0x03, 0x00):
 # [6, 0, 0, 0]
 ```
 
----
 
 ## Install
 ```bash
