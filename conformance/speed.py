@@ -90,7 +90,7 @@ def measure(calls: int = CALLS, repeats: int = REPEATS) -> Timed:  # pragma: no 
     machine that has one runs a path a machine without one cannot, and a gate
     that demands the impossible gets switched off rather than met.
     """
-    part = snesdsp.Chip(MODEL)
+    part = snesdsp.Chip(MODEL).reset()
     seconds = []
     for _ in range(repeats):
         started = time.perf_counter()
