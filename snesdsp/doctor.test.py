@@ -2,6 +2,7 @@ import sys
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from typing import NoReturn
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -136,17 +137,30 @@ class PresentImageTest(unittest.TestCase):
 
         return dict.fromkeys(models.MODELS, ("identity", where))
 
-    def _nameless(self, _part: str, _images: object) -> object:
-        return SimpleNamespace(identity=None)
+    def _nameless(self, _part: str, _images: object) -> doctor.Restartable:
+        return SimpleNamespace(identity=None, reset=lambda: None)
 
-    def _named(self, _part: str, _images: object) -> object:
-        return SimpleNamespace(identity=SimpleNamespace(part="dsp1b"))
+    def _named(self, _part: str, _images: object) -> doctor.Restartable:
+        return SimpleNamespace(identity=SimpleNamespace(part="dsp1b"), reset=lambda: None)
+
+    def _will_not_reset(self, _part: str, _images: object) -> doctor.Restartable:
+        def refuse() -> NoReturn:
+            raise RuntimeError("the pin did nothing")
+
+        return SimpleNamespace(identity=None, reset=refuse)
 
     def test_a_part_that_starts_is_reported_as_running_something(self) -> None:
         found = doctor.examine(images=self._held(self._made_up()), build=self._nameless)
 
         parts = [one for one in found if one.name.startswith("dsp")]
         self.assertTrue(all(one.ok for one in parts))
+
+    def test_a_part_that_starts_and_will_not_reset_is_reported_as_broken(self) -> None:
+        """The reset is driven here, so a part that refuses it cannot report as running."""
+        found = doctor.examine(images=self._held(self._made_up()), build=self._will_not_reset)
+
+        parts = [one for one in found if one.name.startswith("dsp")]
+        self.assertTrue(all(not one.ok for one in parts))
 
     def test_and_says_which_image_it_is_running(self) -> None:
         found = doctor.examine(images=self._held(self._made_up()), build=self._named)
@@ -179,7 +193,7 @@ class ExplodingTest(unittest.TestCase):
     """That a check which itself goes wrong is shown rather than swallowed."""
 
     def test_a_check_that_raises_becomes_an_unhealthy_finding(self) -> None:
-        def boom(_part: str, _images: object) -> object:
+        def boom(_part: str, _images: object) -> NoReturn:
             raise Complaint("the part exploded")
 
         found = doctor.examine(images=an_image(), build=boom)
@@ -187,7 +201,7 @@ class ExplodingTest(unittest.TestCase):
         self.assertTrue(any(not one.ok for one in found))
 
     def test_and_the_report_carries_what_it_said(self) -> None:
-        def boom(_part: str, _images: object) -> object:
+        def boom(_part: str, _images: object) -> NoReturn:
             raise Complaint("the part exploded")
 
         found = doctor.examine(images=an_image(), build=boom)
@@ -195,7 +209,7 @@ class ExplodingTest(unittest.TestCase):
         self.assertIn("the part exploded", "\n".join(one.report for one in found))
 
     def test_and_names_the_kind_of_failure_it_was(self) -> None:
-        def boom(_part: str, _images: object) -> object:
+        def boom(_part: str, _images: object) -> NoReturn:
             raise Complaint("the part exploded")
 
         found = doctor.examine(images=an_image(), build=boom)

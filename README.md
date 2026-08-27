@@ -4,7 +4,7 @@ The NEC uPD77C25 as Nintendo shipped it, running the microcode you supply rather
 
 [![CI](https://github.com/gufranco/snes-dsp-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/snes-dsp-python/actions/workflows/ci.yml)
 
-**6** parts across **5** microcodes, **0** commands described by hand, **112** exchanges read out of **36** real cartridges compared, **0** failures, **856** tests, **100%** statement and branch coverage, no dependencies
+**6** parts across **5** microcodes, **0** commands described by hand, **112** exchanges read out of **36** real cartridges compared, **0** failures, **857** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from snesdsp import Chip

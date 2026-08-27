@@ -29,7 +29,7 @@ import json
 import platform
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, override
+from typing import TYPE_CHECKING, Any, Protocol, override
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -39,11 +39,18 @@ if str(ROOT) not in sys.path:
 from snesdsp import chip, models, timing  # noqa: E402
 from snesdsp.version import VERSION  # noqa: E402
 
+
+class Restartable(Protocol):
+    """A part the console's reset line can reach."""
+
+    def reset(self) -> object: ...
+
+
 if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Callable, Iterable, Sequence
 
     Images = dict[str, tuple[Any, Path]]
-    Build = Callable[[str, Images], object]
+    Build = Callable[[str, Images], Restartable]
 
 EXCHANGES = ROOT / "conformance"
 
@@ -117,7 +124,13 @@ def _default_build(part: str, images: Images) -> chip.Chip:
 
 
 def _part(name: str, images: Images, build: Build) -> Finding:
-    """Whether that part is here and starts, saying exactly what stopped it."""
+    """Whether that part is here, starts and resets, saying what stopped it.
+
+    The reset is driven rather than described. It restarts the processor at
+    address zero with the microcode still masked in, which is what the pin does
+    on the part underneath and the state a cartridge finds it in on every boot,
+    so a report that only built the part had not touched that path.
+    """
     wanted = chip.SHARES_IMAGE.get(name, name)
     if wanted not in images:
         return Finding(
@@ -130,6 +143,7 @@ def _part(name: str, images: Images, build: Build) -> Finding:
         )
     try:
         part = build(name, images)
+        part.reset()
     except Exception as trouble:
         return Finding(
             name,
@@ -141,7 +155,7 @@ def _part(name: str, images: Images, build: Build) -> Finding:
     identity = getattr(part, "identity", None)
     running = identity.part if identity is not None else wanted
     digest = _digest_of(wanted, images)
-    return Finding(name, True, f"runs the {running} image{digest}")
+    return Finding(name, True, f"runs and resets the {running} image{digest}")
 
 
 def _digest_of(wanted: str, images: Images | None) -> str:
