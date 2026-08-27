@@ -137,13 +137,13 @@ def directories(environment: Mapping[str, str] | None = None) -> tuple[Path, ...
     both points the two members at different directories, which is the whole
     reason the member's own name exists.
 
-    This function is one rule with a copy in every member that reads an image it
+    This function is one rule with a copy in every member that reads a file it
     does not carry, because no package is a dependency of all of them. The
     copies are byte-identical below the constants and are meant to stay that
     way, so a diff against a sibling is the check:
 
         cut='/^def directories/,/^    return tuple(seen)/p'
-        diff <(sed -n "$cut" mine/firmware.py) <(sed -n "$cut" theirs/firmware.py)
+        diff <(sed -n "$cut" mine/thing.py) <(sed -n "$cut" theirs/thing.py)
     """
     held = environment if environment is not None else os.environ
     wanted = [

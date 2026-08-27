@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -290,6 +291,46 @@ class OnDiskTest(unittest.TestCase):  # pragma: no cover
 
         for _, path in PRESENT:
             self.assertIn(path.name, named)
+
+
+class SharedDirectoryRuleTest(unittest.TestCase):
+    """The rule every member of this family uses to find a file it does not carry.
+
+    Byte-identical in all of them, so these check the behaviour that identity is
+    supposed to guarantee rather than the text of one copy.
+    """
+
+    def test_the_project_above_is_looked_at_before_the_package_itself(self) -> None:
+        """Vendored, the parent owns the library, which is what ALONGSIDE is for."""
+        found = cartridges.directories({})
+
+        self.assertLess(
+            found.index(cartridges.ALONGSIDE), found.index(cartridges.DEFAULT_DIRECTORY)
+        )
+
+    def test_a_named_directory_is_looked_at_before_either(self) -> None:
+        found = cartridges.directories({cartridges.DIRECTORY_VARIABLE: "/x"})
+
+        self.assertEqual(found[0], Path("/x"))
+
+    def test_more_than_one_can_be_named_at_once(self) -> None:
+        found = cartridges.directories({cartridges.DIRECTORY_VARIABLE: f"/x{os.pathsep}/y"})
+
+        self.assertEqual(found[:2], (Path("/x"), Path("/y")))
+
+    def test_an_empty_entry_between_two_names_is_passed_over(self) -> None:
+        found = cartridges.directories(
+            {cartridges.DIRECTORY_VARIABLE: f"/x{os.pathsep}{os.pathsep}/y"}
+        )
+
+        self.assertEqual(found[:2], (Path("/x"), Path("/y")))
+
+    def test_no_directory_appears_twice(self) -> None:
+        found = cartridges.directories(
+            {cartridges.DIRECTORY_VARIABLE: str(cartridges.DEFAULT_DIRECTORY)}
+        )
+
+        self.assertEqual(len(found), len(set(found)))
 
 
 if __name__ == "__main__":
