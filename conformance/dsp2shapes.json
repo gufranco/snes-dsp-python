@@ -47,7 +47,7 @@
       "cartridges": 3
     },
     {
-      "shape": "write1 write1 write1 write1 write1 write1 write1 poll1",
+      "shape": "write1 write1 write1 write1 write1 write1 write1 poll1 write1",
       "seen": 3,
       "cartridges": 3
     },
@@ -93,12 +93,12 @@
     },
     {
       "shape": "write1",
-      "seen": 109,
+      "seen": 133,
       "cartridges": 3
     },
     {
       "shape": "poll1",
-      "seen": 73,
+      "seen": 46,
       "cartridges": 3
     },
     {
