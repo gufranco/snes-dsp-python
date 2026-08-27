@@ -105,6 +105,22 @@ among them.
 code, which would make the disagreement matter, or establishing that it is never
 sent, which would make it moot.
 
+**Why that is not a matter of looking.** It was tried on 2026-08-27. The
+cartridge is here and
+[snes-driver-python](https://github.com/gufranco/snes-driver-python) finds 282
+places in it that reach the part, so the sites are not the problem. What that
+package records is the shape of each conversation, the widths and the order of
+reads, writes and polls, and never the value a write carries: a `Step` holds
+what, width, address and bank. So it can say that this routine writes nine bytes
+and reads eight, and it cannot say which command those bytes are.
+
+Settling this therefore needs that package to report written values, which means
+tracking the immediate an instruction loaded before the store that reaches the
+window. That is a feature of the reader rather than a fact about this part, and
+it is worth naming here so the next reader does not spend an afternoon expecting
+to grep for it. Scanning the image for a load of `0x1c` near a store to the port
+is not the same thing and would not be evidence.
+
 ## Where coverage is uneven rather than absent
 
 ### What the parts answer to commands no shipped game sends.
