@@ -9,6 +9,9 @@
     {
       "part": "dsp3",
       "command": "0x1c",
+      "status": "open",
+      "severity": "low",
+      "packageFollows": "microcode",
       "observedOn": "2026-08-20",
       "thisProject": {
         "sends": ["0x1c", "0x00", "0x34", "0x12", "0x78", "0x56"],
