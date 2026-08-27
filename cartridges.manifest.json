@@ -1,5 +1,6 @@
 {
   "note": "What each retail cartridge that drives one of these parts is, so a copy you already own can be confirmed before it is read. Nothing here is any part of one: a digest identifies a file and no set of digests reconstructs anything.",
+  "decides": "sha256 decides. The size rejects a wrong file for one stat call, and crc32, md5 and sha1 are published beside it so a copy can be cross-checked against a catalogue that keys on any of them. None of those three decides anything on its own: crc32 is a 32-bit error code, and md5 and sha1 are both collision-broken.",
   "canonical": {
     "digest": "sha256 decides. crc32, md5 and sha1 are published beside it so a copy can be cross-checked against a database that keys on one of those, and none of them decides anything alone: crc32 is a 32-bit error code, and md5 and sha1 are both collision-broken.",
     "why": "A cartridge is read here for one thing: the routine inside it that drives the part. That routine states how many bytes go each way and how wide each transfer is, which is written down nowhere else.",

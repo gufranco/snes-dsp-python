@@ -333,5 +333,24 @@ class SharedDirectoryRuleTest(unittest.TestCase):
         self.assertEqual(len(found), len(set(found)))
 
 
+class DecidingDigestTest(unittest.TestCase):
+    """That the manifest tells a reader which of its four digests decides.
+
+    The reader already knows: `DECIDES` names it and nothing else is compared
+    against. A person cross-checking a copy reads the manifest rather than the
+    module, so the manifest has to say it too, and this is what keeps the two
+    from drifting apart.
+    """
+
+    def held(self) -> str:
+        return str(cartridges.manifest()["decides"])
+
+    def test_the_manifest_names_the_digest_that_decides(self) -> None:
+        self.assertIn(cartridges.DECIDES, self.held())
+
+    def test_and_says_the_others_decide_nothing(self) -> None:
+        self.assertIn("decides anything on its own", self.held())
+
+
 if __name__ == "__main__":
     unittest.main()
