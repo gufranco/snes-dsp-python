@@ -15,16 +15,22 @@ body:
     attributes:
       label: What the doctor says
       description: |
-        Run `python3 -m snesdsp.doctor` from the repository and paste all of it,
-        including any line that did not pass. Do not trim it: the lines that
-        failed are the ones worth reading.
-      render: text
-      placeholder: |
-        snesdsp 2.1.0 on 3.13.0, Linux
+        Run this from the repository and paste every line, including the ones
+        that did not pass. Those are the ones worth reading, so do not trim it.
 
-          ok    python: 3.13.0 on Linux x86_64
-             !  dsp2: no image for dsp2
-                 put a copy you own in ...
+        macOS and Linux:
+
+            python3 -m snesdsp.doctor
+
+        Windows, whichever of these resolves:
+
+            python -m snesdsp.doctor
+            py -3 -m snesdsp.doctor
+
+        It reports the machine as well as the package, so most answers are in
+        there already. If it will not run at all, say so here and paste whatever
+        it printed instead.
+      render: text
     validations:
       required: true
 

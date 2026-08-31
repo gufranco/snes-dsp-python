@@ -33,6 +33,8 @@ from typing import TYPE_CHECKING, Any, Protocol, override
 
 ROOT = Path(__file__).resolve().parent.parent
 
+from snesdsp import environment  # noqa: E402
+
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -313,6 +315,10 @@ def report(found: Sequence[Finding]) -> list[str]:
     """The lines a person pastes into an issue."""
     unwell = [one for one in found if not one.ok]
     lines = [f"snesdsp {VERSION} on {platform.python_version()}, {platform.system()}", ""]
+    lines.append("  the machine")
+    lines.extend(environment.lines(ROOT))
+    lines.append("")
+    lines.append("  this package")
     lines.extend(one.report for one in found)
     lines.append("")
     if unwell:
