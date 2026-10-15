@@ -119,10 +119,10 @@ the case it exists for.
 ## Conventions that are not negotiable
 
 - Python only, standard library only, no dependencies.
-- No comments in source. Reasoning goes in docstrings, and a step that would need
+- No comments in source, and a docstring counts as one. A step that would need
   a comment is a step that should be a named function.
-- Tests sit beside the module they cover as `<module>.test.py`. Arrange, blank
-  line, one act, blank line, assert, with no section labels.
+- Tests sit beside the module they cover as `<module>.test.py`. Arrange, act
+  and assert, each block opened by its bare marker.
 - 100% statement and branch coverage, enforced. `mypy` at strict, with every
   optional error class on.
 - Everything a caller can catch is defined once, in `snesdsp/errors.py`, and
@@ -167,8 +167,15 @@ nec-upd7725-96050-python/  the processor all of these are, as a submodule at the
 - **The search order lives in three members and nothing holds them together.**
   `directories` in `firmware.py` is byte-identical here, in the other microcode
   member and in `sony-s-smp-python`, because no package is a dependency of all
-  three. The recipe for diffing a copy against a sibling is in that function's
-  own docstring. Change one and change the other two in the same task.
+  three. The copies are byte-identical from `def directories` to
+  `return tuple(seen)`, so a diff against a sibling is the check:
+
+  ```sh
+  cut='/^def directories/,/^    return tuple(seen)/p'
+  diff <(sed -n "$cut" mine/firmware.py) <(sed -n "$cut" theirs/firmware.py)
+  ```
+
+  Change one and change the other two in the same task.
 - **The submodule is not optional.** Without it nothing here can run, and the
   refusal says so rather than falling back to a guess.
 - **A part cannot be built without an image.** `Chip("dsp1")` raises `NoFirmware`
