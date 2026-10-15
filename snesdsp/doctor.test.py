@@ -10,17 +10,10 @@ from snesdsp import chip, doctor, errors
 
 
 def an_image(part: str = "dsp1") -> "dict[str, tuple[str, Path]]":
-    """One part held, named the way the loader names what it found."""
     return {part: (f"identity-of-{part}", Path(f"{part}.bin"))}
 
 
 def advice_from(found: "doctor.Finding") -> str:
-    """What a failing check says to do about it, insisting that it says something.
-
-    A check that fails without advice is a check that tells somebody there is a
-    problem and nothing else, so the absence is worth failing on here rather
-    than being papered over with an empty string.
-    """
     assert found.advice is not None, f"{found.name} failed without saying what to do"
     return found.advice
 
@@ -116,15 +109,6 @@ class RunTest(unittest.TestCase):
 
 
 class PresentImageTest(unittest.TestCase):
-    """That a part which starts is examined on machines holding no microcode.
-
-    Nobody who does not already own these parts can put one on a machine, so the
-    build holds nothing and most machines that ever run this report hold nothing
-    either. Leaving the started-part checks to whatever happens to be lying
-    around means they run where it is convenient and nowhere else, and a check
-    that only runs on one laptop is not a check.
-    """
-
     def _made_up(self) -> Path:
         import tempfile
 
@@ -156,7 +140,6 @@ class PresentImageTest(unittest.TestCase):
         self.assertTrue(all(one.ok for one in parts))
 
     def test_a_part_that_starts_and_will_not_reset_is_reported_as_broken(self) -> None:
-        """The reset is driven here, so a part that refuses it cannot report as running."""
         found = doctor.examine(images=self._held(self._made_up()), build=self._will_not_reset)
 
         parts = [one for one in found if one.name.startswith("dsp")]
@@ -190,8 +173,6 @@ class PresentImageTest(unittest.TestCase):
 
 
 class ExplodingTest(unittest.TestCase):
-    """That a check which itself goes wrong is shown rather than swallowed."""
-
     def test_a_check_that_raises_becomes_an_unhealthy_finding(self) -> None:
         def boom(_part: str, _images: object) -> NoReturn:
             raise Complaint("the part exploded")
@@ -218,8 +199,6 @@ class ExplodingTest(unittest.TestCase):
 
 
 class DigestTest(unittest.TestCase):
-    """The line that settles which file somebody actually has."""
-
     def _catalogue(self, where: Path) -> "dict[str, tuple[object, Path]]":
         import sys as system
 
@@ -252,14 +231,6 @@ class DigestTest(unittest.TestCase):
 
 
 class BeneathTest(unittest.TestCase):
-    """That what this is built on is examined too, and under its own name.
-
-    A package can be entirely well while the thing underneath it is missing,
-    stale, or holding a different file. A doctor that looks only at its own
-    project reports that everything is fine on exactly the machine where it is
-    not, which is the failure this is here to prevent.
-    """
-
     def test_the_processor_underneath_is_examined_as_well(self) -> None:
         names = [one.name for one in doctor.examine()]
 
@@ -316,8 +287,6 @@ class BeneathTest(unittest.TestCase):
 
 
 class ReachTest(unittest.TestCase):
-    """That the project underneath is made importable, and only once."""
-
     def test_a_path_without_it_gains_it(self) -> None:
         found = doctor._reach([])
 
@@ -333,8 +302,6 @@ class ReachTest(unittest.TestCase):
 
 
 class CorpusTest(unittest.TestCase):
-    """The three corpora this package is settled against, reported as what is here."""
-
     def _empty(self) -> Path:
         import tempfile
 

@@ -1,22 +1,3 @@
-"""Which parts this package covers, and what each one is.
-
-The DSP-1, DSP-2, DSP-3 and DSP-4 are one piece of chip, a NEC uPD77C25, with
-different microcode masked into it. That is why they answer completely different
-commands while being the same part underneath, and it is why this file describes
-them rather than implementing them: what a part does is the program it carries,
-and the program is run rather than restated.
-
-So a part here is three things. What it is, so a reader knows which cartridge it
-came out of. What it answers to, so a name written any of the ways people write
-it finds the right one. And which image it runs, which is usually its own.
-
-The DSP-1 was masked three times. The DSP-1, the DSP-1A and the DSP-1B are three
-parts and two programs: the DSP-1A is a die shrink of the DSP-1 carrying the same
-program and data ROM, and the DSP-1B is the one that corrected an arithmetic
-fault Pilotwings had come to depend on. Saying which shares which is more honest
-than collapsing the middle one into the first or refusing to name it at all.
-"""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, override
@@ -28,22 +9,9 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 SHARES_MICROCODE = {"dsp1a": "dsp1"}
-"""Parts whose program is another part's, so their behaviour is that part's.
-
-The DSP-1 was masked three times and only twice did the program change. The
-DSP-1A is a die shrink of the DSP-1 with the same program and data ROM; the
-DSP-1B is the one that corrected an arithmetic fault, which Pilotwings had come
-to depend on for its attract sequence.
-
-So this is three parts and two programs, and saying which shares which is more
-honest than either collapsing the middle one into the first or refusing to answer
-for it at all.
-"""
 
 
 class Model:
-    """One part: what it is, what it holds, and how to build it."""
-
     __slots__ = ("aliases", "name", "summary")
 
     def __init__(self, name: str, summary: str, aliases: Iterable[str] = ()) -> None:
@@ -53,7 +21,6 @@ class Model:
 
     @property
     def image(self) -> str:
-        """The name of the image this part runs, which may be another part's."""
         return SHARES_MICROCODE.get(self.name, self.name)
 
     @override
@@ -136,19 +103,6 @@ def _normalise(name: str) -> str:
 
 
 def lookup(name: str | None) -> Model:
-    """The model of that name, however it happens to be written.
-
-    Naming nothing is refused rather than filled in. A default would be the one
-    implicit thing in the call that builds a part, and it is worst where it looks
-    most harmless: a caller who learns to leave the model out against a member
-    covering one part writes the same call against a member covering sixteen.
-    The refusal names every model there is, so somebody who did not know what to
-    pass learns it here rather than from the source.
-
-    Not exported from the package. What a caller wants is the part, and the part
-    carries its own model; handing back a description of a part nobody built
-    reads like a test fixture rather than an interface.
-    """
     if name is None:
         raise UnknownModelError(
             "no model was named, and this package will not choose one for you."

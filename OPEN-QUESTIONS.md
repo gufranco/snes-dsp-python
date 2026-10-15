@@ -149,6 +149,14 @@ So the boundary is visible rather than implied:
   chosen, and a test asserts the derivation rather than the number.
 - **Everything about the processor.** Settled in the member that models it,
   against NEC's own data sheet.
+- **That four return-stack levels are enough for every shipped program.**
+  [`conformance/stack.py`](conformance/stack.py) drove every recorded part
+  under all 256 command bytes: 15,104 exchanges and 33,734 movements of the
+  pointer. The DSP-4 reached slot 1, the DSP-1 and DSP-2 slot 2, and the DSP-3
+  slot 3, the last of four. Nothing went past it, so four instead of the
+  sixteen most implementations carry changes no exchange a cartridge makes.
+  What the silicon does on a fifth call stays unmeasured, because no shipped
+  program makes one.
 
 ## What is deliberately not modelled
 

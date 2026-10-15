@@ -17,8 +17,6 @@ class Complaint(Exception):
 
 
 class Puppet:
-    """A part that answers by counting, so a corpus can be checked without one."""
-
     def __init__(self, first: int = 0x10) -> None:
         self.next = first
         self.written: list[int] = []
@@ -42,12 +40,6 @@ def puppets(first: int = 0x10) -> Any:
 
 
 def a_digest(_part: str) -> str:
-    """A digest that names no real image.
-
-    Every test supplies one. Reaching for the digest of a file on disk would make
-    the test pass on a machine holding that file and fail on one that does not,
-    which is not a test of anything in this module.
-    """
     return "abc123"
 
 
@@ -60,8 +52,6 @@ def some_shapes(*held: Any) -> list[dict[str, Any]]:
 
 
 class TakingTest(unittest.TestCase):
-    """What a part said, taken in a form that can be written down and compared."""
-
     def test_every_exchange_is_recorded_under_its_shape(self) -> None:
         found = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest)
 
@@ -129,8 +119,6 @@ class TakingTest(unittest.TestCase):
 
 
 class FamilyTest(unittest.TestCase):
-    """Which part's shapes drive another, and why that is what finds a divergence."""
-
     def test_a_part_with_its_own_shapes_uses_them(self) -> None:
         self.assertEqual(answers.shapes_named("dsp2"), "dsp2")
 
@@ -162,8 +150,6 @@ class FamilyTest(unittest.TestCase):
 
 
 class CheckingTest(unittest.TestCase):
-    """A corpus against the part on this machine, which is the whole point."""
-
     def _corpus(self, **held: Any) -> dict[str, Any]:
         found = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest)
         found.update(held)

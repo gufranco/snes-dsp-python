@@ -1,38 +1,3 @@
-"""Drive a part through the exchanges a real cartridge has with it.
-
-Running a part's microcode is only half of getting it right. The other half is
-sending it what a console sends: these parts have no framing, so a byte means
-whatever the state left by the bytes before it decides, and a sequence no game
-ever sent asks a question nobody has an answer for.
-
-What a game sends is not something to derive. It is written down in the game, as
-ordinary 65816 code, and `snes-driver-python` reads it out by disassembling the
-routine rather than running it. What comes back is a shape: the accesses a
-routine makes, in order, with the width of each and no payload attached. Those
-shapes are recorded beside this, with the digests of the cartridge they came from
-and none of its bytes.
-
-This plays them at the part and prints what it said. It is not a comparison
-against anything written down, because there is nothing left to compare against:
-the part is the authority. What it catches is the part not answering at all,
-which is what a broken port layer, a wrong image or a mis-paced read looks like.
-
-A shape carries no payload, so the bytes that fill it are generated, and the
-first of them is a command the part may not have. Most of the 256 possible bytes
-are not commands on these parts, and a part answering nothing to one of those has
-not been shown to answer nothing: it has been asked a question it does not have.
-So a shape that says nothing is asked again under every command byte in turn, and
-is reported as silent only when all 256 leave it silent. Which command made it
-speak is printed, because a shape that answers under one byte and no other is
-worth knowing about even when it is not a fault.
-
-Needs an image, so on a machine without one it says so and stops rather than
-reporting a pass.
-
-Usage:
-    python3 conformance/against_cartridges.py [part]
-"""
-
 import sys
 from collections.abc import Callable, Iterable, Sequence
 from pathlib import Path
@@ -51,7 +16,6 @@ DEFAULT_PART = "dsp3"
 SHOWN = 8
 
 COMMANDS = range(0x100)
-"""Every byte the first write could carry, since the shape does not say which."""
 
 
 class Usage(Exception):
@@ -59,12 +23,6 @@ class Usage(Exception):
 
 
 class Played:
-    """One shape, and everything the part said while it was played.
-
-    Named for the run rather than for the part: this holds what came back, and
-    the thing that came back is not something anybody can drive.
-    """
-
     def __init__(
         self,
         shape: str,
@@ -80,13 +38,6 @@ class Played:
 
     @property
     def unprompted(self) -> bool:
-        """Whether this shape reads before it has written anything.
-
-        On a console such a read follows an earlier exchange and is answered by
-        what that exchange left behind. Played on its own at a part that has just
-        booted there is nothing behind it, and no command byte can change that:
-        the read happens before the command does.
-        """
         for kind in self.kinds_in_order:
             if kind == shapes.WRITE:
                 return False
@@ -96,16 +47,6 @@ class Played:
 
     @property
     def answered(self) -> bool:
-        """Whether anything came back from the data port that was not a zero.
-
-        The data port only. A part that is doing nothing still has a status
-        register, and a register that reads as ready is not an answer: counting
-        it would let a part that computes nothing look like one that does.
-
-        A part answering nothing but zeroes to every exchange a real game makes
-        is not answering. It is the shape a wrong image, an unbooted part and a
-        port read at the wrong moment all take.
-        """
         return any(
             byte
             for kind, run in zip(self.kinds, self.said, strict=False)
@@ -123,8 +64,6 @@ def _silicon(part: str) -> Watched:  # pragma: no cover
 
 
 class Spoke:
-    """A command byte that got an answer, and the answer it got."""
-
     def __init__(self, command: int, said: Sequence[Sequence[int]]) -> None:
         self.command = command
         self.said = said
@@ -141,12 +80,6 @@ def speaking(
     payload: Sequence[Sequence[int]],
     commands: Iterable[int] = COMMANDS,
 ) -> "Spoke | None":
-    """The first command byte under which that shape gets an answer, if any.
-
-    Everything but the first byte is left as it was, so the only thing that
-    changes between attempts is the command. A shape with nothing to write cannot
-    carry a command and cannot be swept, which is not the same as being silent.
-    """
     steps = tuple(steps)
     kinds = [one.what for one in steps if one.what in (shapes.READ, shapes.POLL)]
     if not payload:
@@ -161,7 +94,6 @@ def speaking(
 def driven(
     part: str = DEFAULT_PART, build: BuildWatched = _silicon, seed: int | None = None
 ) -> "list[Played]":
-    """Every recorded shape for that part, played at a freshly started one."""
     held = shapes.interesting(shapes.recorded(part))
     if not held:
         raise Usage(f"no cartridge exchanges are recorded for {part}")
@@ -182,7 +114,6 @@ def driven(
 
 
 def report(found: "Sequence[Played]") -> list[str]:
-    """The lines a person reads, one exchange at a time."""
     said = []
     for one in found[:SHOWN]:
         under = "" if one.command is None else f" (only under command {one.command:#04x})"
@@ -191,17 +122,14 @@ def report(found: "Sequence[Played]") -> list[str]:
 
 
 def silent(found: "Iterable[Played]") -> "list[Played]":
-    """Every exchange the part answered nothing to, having been asked in order."""
     return [one for one in found if not one.answered and not one.unprompted]
 
 
 def unprompted(found: "Iterable[Played]") -> "list[Played]":
-    """Every exchange whose first read comes before its first write."""
     return [one for one in found if one.unprompted]
 
 
 def lines_for(found: "Sequence[Played]", part: str) -> list[str]:
-    """What the run says about one part."""
     quiet = silent(found)
     lines = [f"  {part}: {len(found)} exchanges a real cartridge makes, played at the part"]
     lines.extend(report(found))

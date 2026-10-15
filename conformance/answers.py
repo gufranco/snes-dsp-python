@@ -1,31 +1,3 @@
-"""What each part answers, written down, so nothing here can quietly change it.
-
-Running the part's own microcode makes the values right by construction. That is
-the whole argument of this package, and it has one hole in it: the microcode is
-not the only thing between a caller and an answer. The port decode is here, the
-pacing is here, the read semantics are here, the boot handshake is here. Any of
-those can change what comes back while the microcode stays byte for byte the same,
-and nothing would notice.
-
-So this takes what the parts answer today and keeps it. A later run re-derives
-every answer and compares. Change the gap between accesses, or make a read wait
-where it used to take whatever was latched, and the comparison names the exchange
-and both bytes rather than leaving it to be found by someone playing a game.
-
-Three things make the corpus honest.
-
-The payloads are generated from a seed recorded in the file, so a run repeats
-exactly and no byte of anybody's cartridge is needed to reproduce it. The shapes
-come from the cartridge corpus, so what is pinned is what games actually send.
-And the digest of the microcode that answered is recorded: a corpus taken against
-one image and checked against another is refused rather than reported as a
-disagreement, because two different images are entitled to answer differently.
-
-What is stored is the output of a computation on inputs generated here. It is a
-few hundred bytes per part, sampled from a function over a space of 2^128 or more,
-and it reconstructs nothing: the program that produced it stays where it was.
-"""
-
 import hashlib
 import json
 import random
@@ -47,14 +19,6 @@ ROOT = Path(__file__).resolve().parent
 PARTS = tuple(sorted(models.MODELS))
 
 DRIVEN_LIKE = {"dsp1a": "dsp1", "dsp1b": "dsp1"}
-"""Which part's shapes drive another, where two parts answer the same protocol.
-
-The DSP-1A is a die shrink of the DSP-1 and the DSP-1B is a later mask of it. All
-three take the same commands in the same order, so all three are driven through
-the shapes the DSP-1 games use. That is not a convenience: driving them through
-one set of shapes is what makes their answers comparable, and comparing their
-answers is the only way to see where the DSP-1B's correction actually lands.
-"""
 
 NOTE = (
     "What this part answered when driven through the exchanges real cartridges make."
@@ -75,8 +39,6 @@ class WrongImage(Exception):
 
 
 class Checked:
-    """What a corpus and the part on this machine had to say to each other."""
-
     def __init__(
         self,
         part: str,
@@ -93,12 +55,6 @@ class Checked:
 
     @property
     def agrees(self) -> bool:
-        """Whether the part still answers what it answered, and still answers it all.
-
-        An exchange that has gone missing counts against agreement. It means the
-        cartridge corpus lost a shape the part used to be driven through, and a
-        smaller sweep passing is not the same thing as the same sweep passing.
-        """
         return not self.disagreements and not self.vanished
 
     @override
@@ -111,7 +67,6 @@ def _default_build(part: str) -> Watched:  # pragma: no cover
 
 
 def _default_digest(part: str) -> str:  # pragma: no cover
-    """The digest of the image that will answer, taken from the file itself."""
     wanted = chip.SHARES_IMAGE.get(part, part)
     held = chip.available()
     if wanted not in held:
@@ -120,7 +75,6 @@ def _default_digest(part: str) -> str:  # pragma: no cover
 
 
 def shapes_named(part: str) -> str:
-    """Whose shapes drive that part, which is its own unless it shares a protocol."""
     return DRIVEN_LIKE.get(part, part)
 
 
@@ -138,7 +92,6 @@ def _default_shapes(part: str) -> list[dict[str, Any]]:
 def _exchanges(
     part: str, build: BuildWatched, held: Iterable[Mapping[str, Any]], chance: random.Random
 ) -> list[dict[str, Any]]:
-    """Every shape that both gives and takes, played once at a freshly started part."""
     found: list[dict[str, Any]] = []
     for one in held:
         steps = shapes_module.parse(one["shape"])
@@ -160,7 +113,6 @@ def take(
     digest: Callable[[str], str] = _default_digest,
     rolls: Callable[[int], random.Random] = shapes_module.rolls,
 ) -> dict[str, Any]:
-    """Everything that part answers today, in a form that can be written down."""
     held = _default_shapes(part) if shapes is None else shapes
     return {
         "note": NOTE,
@@ -178,7 +130,6 @@ def check(
     digest: Callable[[str], str] = _default_digest,
     rolls: Callable[[int], random.Random] = shapes_module.rolls,
 ) -> "Checked":
-    """A corpus against the part on this machine, refusing if the image differs."""
     part = corpus["part"]
     wanted = corpus["image"]["sha256"]
     found = digest(part)
@@ -209,14 +160,12 @@ def check(
 
 
 def store(corpus: Mapping[str, Any], where: Path = ROOT) -> Path:
-    """One corpus written where its part names."""
     path = Path(where) / f"{corpus['part']}answers.json"
     path.write_text(json.dumps(corpus, indent=2) + "\n")
     return path
 
 
 def load(part: str, where: Path = ROOT) -> dict[str, Any] | None:
-    """That part's corpus, or nothing when none has been taken."""
     path = Path(where) / f"{part}answers.json"
     if not path.exists():
         return None
@@ -228,7 +177,6 @@ def load(part: str, where: Path = ROOT) -> dict[str, Any] | None:
 
 
 def lines_for(found: "Checked") -> list[str]:
-    """What a comparison found, in the order somebody reading it wants it."""
     said = [f"  {found.part}: {found.checked} exchanges re-derived and compared"]
     for shape, wanted, got in found.disagreements:
         said.append(f"       ! {shape}")
@@ -251,7 +199,6 @@ def main(
     parts: Sequence[str] = PARTS,
     say: Callable[[str], object] = print,
 ) -> int:
-    """Take a corpus, or check one, depending on what was asked for."""
     reason = why_not()
     if reason:
         say(f"  nothing to run: {reason}")

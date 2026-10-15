@@ -10,8 +10,6 @@ from snesdsp import chip
 
 
 class ContractTest(unittest.TestCase):
-    """What a conformance run needs a part to be."""
-
     def test_the_real_part_is_something_a_console_could_drive(self) -> None:
         self.assertTrue(issubclass(chip.Chip, driven.Driven))
 
@@ -31,8 +29,6 @@ class ContractTest(unittest.TestCase):
 
 
 class PolledTest(unittest.TestCase):
-    """A part a console polls rather than only feeds."""
-
     def test_the_real_part_can_be_polled(self) -> None:
         self.assertTrue(issubclass(chip.Chip, driven.Watched))
 
@@ -47,8 +43,6 @@ class PolledTest(unittest.TestCase):
 
 
 class IdentifiedTest(unittest.TestCase):
-    """A part that says which image it is running."""
-
     def test_something_with_only_the_two_ports_does_not(self) -> None:
         self.assertNotIsInstance(_Byte(), driven.Identified)
 
@@ -56,20 +50,11 @@ class IdentifiedTest(unittest.TestCase):
         self.assertIsInstance(_Identified(), driven.Identified)
 
     def test_the_real_part_is_checked_by_the_type_checker_rather_than_here(self) -> None:
-        """A protocol carrying a field has no runtime subclass check, by language rule.
-
-        The real part is checked against this contract where the README examples
-        hand it over, which the type checker reads. Asserting it here would need a
-        built part, and building one needs an image the machine may not hold: a
-        check that only runs where a file happens to be is not a check.
-        """
         with self.assertRaises(TypeError):
             issubclass(chip.Chip, driven.Identified)  # type: ignore[misc]
 
 
 class StandInTest(unittest.TestCase):
-    """The stand-ins themselves, since a double nobody drives proves nothing."""
-
     def test_one_that_is_written_to_holds_what_it_was_given(self) -> None:
         held = _Byte()
 

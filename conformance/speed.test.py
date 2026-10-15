@@ -14,13 +14,6 @@ from conformance import speed  # noqa: E402
 
 
 class TimedTest(unittest.TestCase):
-    """That a run is reported by its median rather than its mean.
-
-    One scheduling hiccup on a shared runner moves a mean and moves a median
-    much less, and the difference between the two is larger than any change to
-    this code worth arguing about.
-    """
-
     def test_the_median_is_the_middle_reading(self) -> None:
         found = speed.Timed("step", 100, [0.4, 0.1, 0.2])
 
@@ -42,7 +35,6 @@ class TimedTest(unittest.TestCase):
         self.assertFalse(found.beats(1000))
 
     def test_a_run_that_took_no_time_is_not_read_as_infinitely_fast(self) -> None:
-        """A clock too coarse to see the work is a reading, not a result."""
         found = speed.Timed("step", 100, [0.0])
 
         self.assertEqual(found.rate(), 0.0)
@@ -72,12 +64,6 @@ class MainTest(unittest.TestCase):
         return code, captured.getvalue()
 
     def measuring(self, rate: float) -> object:
-        """A stand-in measurement, so the report is checked on every machine.
-
-        Calling the real one needs the program the part runs, which this
-        repository is not allowed to carry, so a test that measures for real
-        passes here and reports success on a runner that measured nothing.
-        """
         return lambda calls, repeats: speed.Timed("step", int(rate), [1.0])
 
     def test_a_run_that_beats_the_floor_reports_success(self) -> None:
@@ -87,13 +73,6 @@ class MainTest(unittest.TestCase):
         self.assertIn("step", output)
 
     def test_a_machine_with_no_microcode_measures_nothing_and_says_so(self) -> None:
-        """A runner without an image is not a runner that is too slow.
-
-        The whole family reports what it could not check rather than passing
-        quietly, and a floor is no different: with nothing to run there is
-        nothing to time, and returning a failure would make every fresh checkout
-        look like a regression.
-        """
         real = snesdsp.why_not
         snesdsp.why_not = lambda *_, **__: "no image is on this machine"
         try:
@@ -111,20 +90,6 @@ class MainTest(unittest.TestCase):
         self.assertIn("below", output)
 
     def test_a_run_at_exactly_the_shipped_floor_is_not_below_it(self) -> None:
-        """The shipped number, held to something that does not involve timing.
-
-        Whether the floor is beaten on a given machine is not asked in this file,
-        and deliberately. This file runs under the coverage tracer, which costs
-        about ten times what the measured call does, so a floor assertion taken
-        here measures the tracer: it passed on a fast desktop and failed on a
-        hosted runner, which is one reading arriving at two answers. That
-        question is settled by running the module uninstrumented, in its own job,
-        outside the coverage step.
-
-        What is left for the shipped number here is that it is usable: positive,
-        printable, and on the passing side of a comparison that is inclusive at
-        the boundary rather than one step off it.
-        """
         exactly = speed.Timed("at the floor", speed.FLOOR, [1.0])
 
         self.assertGreater(speed.FLOOR, 0)
@@ -133,13 +98,6 @@ class MainTest(unittest.TestCase):
 
 
 class OnThisMachineTest(unittest.TestCase):
-    """The path that needs the program, run wherever the program happens to be.
-
-    Both outcomes are correct and which one happens is a property of the machine,
-    so what is asserted is that the run succeeded and said something, rather than
-    which of the two it said.
-    """
-
     def test_a_run_with_nothing_handed_in_reports_and_succeeds(self) -> None:
         captured = io.StringIO()
         with contextlib.redirect_stdout(captured):

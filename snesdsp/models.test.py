@@ -70,14 +70,6 @@ class NamingTest(unittest.TestCase):
 
 
 class DeclaredImageTest(unittest.TestCase):
-    """That every part names an image the processor will recognise and confirm.
-
-    This is what a machine with no microcode can still check, and it is the check
-    that matters most: a user who supplies a file gets it identified by digest
-    before a byte of it is run, so a wrong file is refused rather than executed.
-    A part whose image nobody declared would be accepted on trust.
-    """
-
     def _manifest(self) -> "dict[str, Any]":
         import json
 
@@ -111,8 +103,6 @@ class DeclaredImageTest(unittest.TestCase):
 
 
 class BuildingTest(unittest.TestCase):
-    """What the package hands back, which is a part rather than a description."""
-
     def test_asking_for_a_part_asks_for_its_microcode(self) -> None:
         with self.assertRaises((snesdsp.NoFirmware, Exception)) as raised:
             _refused_or_built("dsp9")
@@ -136,8 +126,6 @@ def _refused_or_built(name: str) -> "chip.Chip":
 
 
 class NamingNoneTest(unittest.TestCase):
-    """That leaving the model out is refused, and refused usefully."""
-
     def test_building_without_naming_a_model_is_refused(self) -> None:
         with self.assertRaises(errors.UnknownModelError):
             snesdsp.Chip()

@@ -11,8 +11,6 @@ from conformance import documented
 
 
 class Puppet:
-    """A part that answers whatever it was handed, so the plumbing can be checked."""
-
     def __init__(self, answers: Sequence[int] = (), part: str = "dsp1") -> None:
         self.answers = list(answers)
         self.written: list[int] = []

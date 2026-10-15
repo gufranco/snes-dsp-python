@@ -1,15 +1,3 @@
-"""Every example printed in the README, run against the parts themselves.
-
-A number in a document is a claim about the code, and the only ones worth
-printing are the ones something checks. These are the snippets a reader will copy
-out of the README, in the order they appear there, each paired with the answer
-the README says they give.
-
-Without microcode this reports that it had nothing to run rather than passing,
-because a documentation check that quietly skips is how documentation goes stale
-in the first place.
-"""
-
 import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -20,10 +8,8 @@ from conformance.driven import BuildIdentified, Driven
 from snesdsp import Chip, chip
 
 Documented = Sequence[tuple[str, Callable[[BuildIdentified], str], str]]
-"""Each README example: what it is called, how to run it, what the README says."""
 
 Found = tuple[tuple[str, str, str], ...]
-"""Each example after running: its name, what the README says, what it gave."""
 
 
 def _word(chip: Driven, value: int) -> None:
@@ -103,12 +89,10 @@ DOCUMENTED = (
 
 
 def run(build: BuildIdentified = Chip, documented: Documented = DOCUMENTED) -> Found:
-    """Each example, what the README says it gives, and what it gave here."""
     return tuple((name, wanted, example(build)) for name, example, wanted in documented)
 
 
 def disagreements(found: Found) -> Found:
-    """The rows where the document and the part do not say the same thing."""
     return tuple(one for one in found if one[1] != one[2])
 
 

@@ -1,27 +1,3 @@
-"""Look at this machine and say what is actually here, so a report can be believed.
-
-Most of what goes wrong with this package is not a defect in it. It is a missing
-submodule, an image that is not the one the part expects, or a Python that is too
-old, and every one of those looks identical from the outside: it does not work.
-Somebody reporting that has no way to tell which, and somebody reading the report
-has no way to ask without a round trip.
-
-So this looks, and prints what it found in a form that can be pasted into an
-issue as it stands.
-
-Two rules shape it, and they are the whole point.
-
-Nothing is hidden. A check that fails says what it saw, and a check that itself
-throws is caught and reported as what it threw, named by its type. Swallowing
-either would leave a report that says everything is fine on a machine where
-something is not, which is worse than no report.
-
-Nothing is inferred. Every line is something that was looked at on this machine
-just now: the version that is installed, the digest of the file that is present,
-whether the part actually started. A doctor that reports what ought to be true is
-a doctor nobody can use.
-"""
-
 from __future__ import annotations
 
 import hashlib
@@ -43,8 +19,6 @@ from snesdsp.version import VERSION  # noqa: E402
 
 
 class Restartable(Protocol):
-    """A part the console's reset line can reach."""
-
     def reset(self) -> object: ...
 
 
@@ -59,12 +33,9 @@ EXCHANGES = ROOT / "conformance"
 OLDEST_PYTHON = (3, 12)
 
 PROCESSOR_NAME = "nec-upd7725-96050-python"
-"""What the project underneath is called, which is what its findings are filed under."""
 
 
 class Finding:
-    """One thing that was looked at, and what was there."""
-
     def __init__(self, name: str, ok: bool, detail: str, advice: str | None = None) -> None:
         self.name = name
         self.ok = ok
@@ -73,12 +44,10 @@ class Finding:
 
     @property
     def line(self) -> str:
-        """The one-line form, which is what a reader scans."""
         return f"  {'ok  ' if self.ok else '   !'}  {self.name}: {self.detail}"
 
     @property
     def report(self) -> str:
-        """The same, with what to do about it when there is something to do."""
         if self.ok or not self.advice:
             return self.line
         return f"{self.line}\n         {self.advice}"
@@ -126,13 +95,6 @@ def _default_build(part: str, images: Images) -> chip.Chip:
 
 
 def _part(name: str, images: Images, build: Build) -> Finding:
-    """Whether that part is here, starts and resets, saying what stopped it.
-
-    The reset is driven rather than described. It restarts the processor at
-    address zero with the microcode still masked in, which is what the pin does
-    on the part underneath and the state a cartridge finds it in on every boot,
-    so a report that only built the part had not touched that path.
-    """
     wanted = chip.SHARES_IMAGE.get(name, name)
     if wanted not in images:
         return Finding(
@@ -161,12 +123,6 @@ def _part(name: str, images: Images, build: Build) -> Finding:
 
 
 def _digest_of(wanted: str, images: Images | None) -> str:
-    """The digest of the file that is actually here, which is what settles a report.
-
-    Two people with the same part and different answers almost always have
-    different files, and this is the line that shows it in one glance rather than
-    after a round trip asking them to go and hash it.
-    """
     held = images.get(wanted) if isinstance(images, dict) else None
     if not isinstance(held, tuple) or len(held) != 2:
         return ""
@@ -178,14 +134,6 @@ def _digest_of(wanted: str, images: Images | None) -> str:
 
 
 def _default_beneath() -> list[Finding]:
-    """The doctor of the project this one is built on, asked in its own terms.
-
-    Recursive by construction: whatever that project examines, including anything
-    it is built on in turn, comes back with it. A package can be entirely well
-    while the thing underneath it is missing, stale, or holding a different file,
-    and a doctor that looked only at its own project would report a clean machine
-    in exactly that case.
-    """
     _reach()
     from upd7725 import doctor as underneath
 
@@ -194,13 +142,6 @@ def _default_beneath() -> list[Finding]:
 
 
 def _reach(path: list[str] | None = None) -> list[str]:
-    """Put the project underneath where it can be imported from, once.
-
-    It sits beside this package rather than inside it, so nothing has taught the
-    interpreter where it is. Adding it twice would be harmless and would still be
-    wrong: a path list that grows every time somebody asks for a report is a
-    small leak, and this is the file that exists to notice small things.
-    """
     path = sys.path if path is None else path
     where = str(chip.PROCESSOR)
     if where not in path:
@@ -209,7 +150,6 @@ def _reach(path: list[str] | None = None) -> list[str]:
 
 
 def _beneath(beneath: Callable[[], Iterable[Finding]]) -> list[Finding]:
-    """Everything the project underneath found, filed under its name."""
     try:
         found = list(beneath())
     except Exception as trouble:
@@ -230,7 +170,6 @@ def _beneath(beneath: Callable[[], Iterable[Finding]]) -> list[Finding]:
 
 
 def _exchanges(where: Path | str = EXCHANGES) -> Finding:
-    """The shapes real cartridges use, and how many games each part was read from."""
     found = []
     for path in sorted(Path(where).glob("*shapes.json")):
         part = path.stem.replace("shapes", "")
@@ -251,11 +190,6 @@ def _exchanges(where: Path | str = EXCHANGES) -> Finding:
 
 
 def _answers(where: Path | str = EXCHANGES) -> Finding:
-    """Whether what each part answers has been written down and can be compared.
-
-    A part whose answers are not pinned is a part where the pacing, the port
-    decode or the read semantics can change what comes back and nothing notices.
-    """
     found = sorted(one.stem.replace("answers", "") for one in Path(where).glob("*answers.json"))
     return Finding(
         "recorded answers",
@@ -266,7 +200,6 @@ def _answers(where: Path | str = EXCHANGES) -> Finding:
 
 
 def _masks(where: Path | str = EXCHANGES) -> Finding:
-    """Whether the DSP-1B's correction is demonstrated rather than described."""
     path = Path(where) / "dsp1masks.json"
     if not path.exists():
         return Finding(
@@ -295,12 +228,6 @@ def examine(
     build: Build = _default_build,
     beneath: Callable[[], Iterable[Finding]] = _default_beneath,
 ) -> list[Finding]:
-    """Everything worth looking at on this machine, in the order a reader wants it.
-
-    This package first, then what it is built on. A reader scanning the output
-    sees their own project's state before the state of the thing underneath it,
-    and both are here because either can be the reason nothing works.
-    """
     held = chip.available() if images is None else images
     found = [_python(), _package(), _processor(), _clocks()]
     found.extend(_part(name, held, build) for name in sorted(models.MODELS))
@@ -312,7 +239,6 @@ def examine(
 
 
 def report(found: Sequence[Finding]) -> list[str]:
-    """The lines a person pastes into an issue."""
     unwell = [one for one in found if not one.ok]
     lines = [f"snesdsp {VERSION} on {platform.python_version()}, {platform.system()}", ""]
     lines.append("  the machine")

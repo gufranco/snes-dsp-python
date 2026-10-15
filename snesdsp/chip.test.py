@@ -12,28 +12,15 @@ PRESENT = chip.available()
 
 
 def a_processor_that_is_there() -> tuple[ModuleType, ModuleType]:
-    """Two module-shaped stand-ins rather than two Nones.
-
-    The real function hands back both modules or nothing at all, and a state it
-    cannot produce is not a state worth asking it about.
-    """
     held = ModuleType("held")
     return held, held
 
 
 def a_submodule_that_is_absent(modules: dict[str, Any]) -> None:
-    """Record `upd7725` the way the import system records a module it cannot find.
-
-    An entry of None is that record, so this puts the interpreter in the state a
-    machine without the submodule is actually in rather than an approximation of
-    it.
-    """
     modules["upd7725"] = None
 
 
 class WithoutTest(unittest.TestCase):
-    """What the backend says when the things it needs are not there."""
-
     @override
     def setUp(self) -> None:
         self.real = chip._processor
@@ -125,15 +112,6 @@ class AvailabilityTest(unittest.TestCase):
 
 
 class BusTest(unittest.TestCase):
-    """The console's side of the wire, which is an address rather than a call.
-
-    A console does not call a method on a coprocessor. It reads and writes an
-    address, and the part decides from the lowest bit of it whether that was the
-    data port or the status register. Leaving that decode to whoever calls this
-    means every caller reimplements it, and one of them gets it the wrong way
-    round.
-    """
-
     def _built(self, **options: Any) -> "chip.Chip":
         import sys as system
 
@@ -145,12 +123,6 @@ class BusTest(unittest.TestCase):
         return chip.Chip("made-up", image=image, identity=identity, boot=64, **options)
 
     def test_an_even_address_is_the_data_port(self) -> None:
-        """Two parts rather than one, because reading advances the one that answered.
-
-        Asking the same part twice compares its first answer with its second,
-        which are the same only while the part is inert. A part running a real
-        program is not, so each side gets its own part in the same state.
-        """
         through_the_bus = self._built().read_bus(0x00C000)
 
         directly = self._built().read()
@@ -195,8 +167,6 @@ class BusTest(unittest.TestCase):
 
 
 class PacingTest(unittest.TestCase):
-    """That the part is left the time the console would have left it."""
-
     def _built(self, **options: Any) -> "chip.Chip":
         import sys as system
 
@@ -239,14 +209,6 @@ class PacingTest(unittest.TestCase):
 
 
 class StatusTest(unittest.TestCase):
-    """The register the console polls, which some parts are driven entirely by.
-
-    A part that answers a command and a count of words is driven by writing and
-    reading. A part that is clocked a word at a time is driven by watching this
-    instead, so a backend that cannot be polled cannot stand in for the model of
-    one.
-    """
-
     def _built(self) -> "chip.Chip":
         import sys as system
 
@@ -275,14 +237,6 @@ class StatusTest(unittest.TestCase):
 
 
 class FoundOnDiskTest(unittest.TestCase):
-    """The path that reads an image the search turned up.
-
-    A machine with real microcode takes this path and a hosted runner does not,
-    so the search is replaced rather than the file: the bytes are a program of
-    zeroes written to a temporary file, and everything from the lookup onwards is
-    the same code a real image goes through.
-    """
-
     def _catalogue(self) -> "dict[str, tuple[object, Path]]":
         import sys as system
         import tempfile
@@ -316,14 +270,6 @@ class FoundOnDiskTest(unittest.TestCase):
 
 
 class SuppliedImageTest(unittest.TestCase):
-    """Driving the backend with a program nobody owns.
-
-    Every check below runs on a machine with no microcode present, which is what
-    a hosted runner is. The image is zeroes: a real program is somebody else's
-    and cannot be here, and none of what is checked depends on the program doing
-    anything in particular.
-    """
-
     def _built(self, **options: Any) -> "chip.Chip":
         import sys as system
 
@@ -344,17 +290,11 @@ class SuppliedImageTest(unittest.TestCase):
         self.assertEqual(self._built().model, "made-up")
 
     def test_a_reset_hands_the_part_back(self) -> None:
-        """So a caller can build and reset in one expression, as the family does."""
         built = self._built()
 
         self.assertIs(built.reset(), built)
 
     def test_and_leaves_it_running_the_same_program(self) -> None:
-        """The microcode is masked in, so nothing a reset does can reach it.
-
-        Checked here rather than on a real part, because a machine with no
-        microcode is what a runner is and the reset has to be covered on one.
-        """
         built = self._built()
         built.step(200)
         before = built.identity

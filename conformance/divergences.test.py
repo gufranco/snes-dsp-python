@@ -28,8 +28,6 @@ def entry_for(part: str, command: str) -> dict[str, Any]:
 
 
 class RecordTest(unittest.TestCase):
-    """That a recorded divergence says enough for somebody to check it."""
-
     def test_every_entry_names_both_sides(self) -> None:
         for one in declared()["divergences"]:
             self.assertIn("thisProject", one)
@@ -70,13 +68,6 @@ class RecordTest(unittest.TestCase):
 
 
 class DivergenceTest(unittest.TestCase):  # pragma: no cover
-    """The divergence itself, on a machine holding the microcode.
-
-    Outside the coverage gate for the same reason every other artifact-dependent
-    test here is: it runs on one machine and not another. What it adds is that the
-    recorded answer is still the answer, so an entry cannot quietly go stale.
-    """
-
     def test_the_part_still_answers_what_was_recorded(self) -> None:
         if chip.why_not() is not None:
             self.skipTest("no microcode on this machine")

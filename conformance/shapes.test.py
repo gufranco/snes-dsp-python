@@ -207,8 +207,6 @@ class CommandedTest(unittest.TestCase):
 
 
 class Recorder:
-    """A stand-in part that writes down how it was driven."""
-
     def __init__(self, answers: Any = None) -> None:
         self.given: list[int] = []
         self.answers = list(answers or [])

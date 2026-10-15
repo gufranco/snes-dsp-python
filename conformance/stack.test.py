@@ -10,19 +10,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from conformance import shapes, stack
 
 
-def nothing() -> None:
-    """What a stand-in announces its cycles to before a watcher is installed.
-
-    A no-op rather than None, because the real part's hook is optional and these
-    stand-ins exist to be watched: giving them a hook that is always callable
-    removes a branch that could never be taken here and would read as untested
-    coverage.
-    """
+def nothing() -> None: ...
 
 
 class Calling:
-    """A part whose stack pointer walks up to a chosen depth and back."""
-
     def __init__(self, part: str = "dsp1", deepest: int = 2) -> None:
         self.part = part
         self.deepest = deepest
@@ -37,7 +28,6 @@ class Calling:
         self._spend()
 
     def _spend(self) -> None:
-        """Announce a cycle the way the real part does, so a watcher sees it."""
         self.on_cycle()
 
     def write(self, value: int) -> None:
@@ -58,8 +48,6 @@ class _Registers:
 
 
 class _Flat:
-    """A part whose stack never moves at all."""
-
     def __init__(self, part: str = "dsp1") -> None:
         self.part = part
         self.registers = _Registers()
@@ -84,8 +72,6 @@ def a_shape(shape: str = "write1 read1") -> Any:
 
 
 class WatchingTest(unittest.TestCase):
-    """Following the pointer while a part is driven."""
-
     def test_a_part_whose_pointer_never_moves_reports_no_movement(self) -> None:
         found = stack.watched(_Flat, "dsp1", a_shape(), [[1]])
 
@@ -121,8 +107,6 @@ class WatchingTest(unittest.TestCase):
 
 
 class SweepTest(unittest.TestCase):
-    """Every shape a cartridge uses, under every command byte."""
-
     def test_a_sweep_reports_the_deepest_slot_across_every_command(self) -> None:
         found = stack.sweep(
             "dsp1",
@@ -180,8 +164,6 @@ class SweepTest(unittest.TestCase):
 
 
 class WithinTest(unittest.TestCase):
-    """Whether what was measured fits the depth the manufacturer gives."""
-
     def test_a_sweep_that_stays_inside_the_depth_fits(self) -> None:
         found = stack.Measured("dsp1", deepest=3, moves=10, exchanges=4)
 
@@ -268,18 +250,6 @@ class EntryTest(unittest.TestCase):
 
 
 class RealPartTest(unittest.TestCase):  # pragma: no cover
-    """The real microcode, on a machine that has it.
-
-    Small on purpose. The full sweep is the runner, and it takes minutes; what
-    this pins is that the runner is wired to real parts rather than to stand-ins.
-
-    Outside the coverage gate, and it is the only thing here that is. A test whose
-    subject is a file nobody can distribute runs on one machine and not another,
-    so counting it would make the number mean something different depending on who
-    ran it. Everything it exercises is covered by the stand-ins as well; what this
-    adds is that the wiring reaches a real part, which no stand-in can show.
-    """
-
     def test_a_real_part_stays_inside_the_documented_depth(self) -> None:
         if stack.why_not() is not None:
             self.skipTest("no microcode on this machine")

@@ -10,8 +10,6 @@ from conformance import against_cartridges, shapes
 
 
 class Talkative:
-    """A stand-in part that always has something to say."""
-
     def __init__(self, part: str = "dsp3") -> None:
         self.part = part
         self.given: list[int] = []
@@ -27,8 +25,6 @@ class Talkative:
 
 
 class Mute:
-    """A stand-in part that answers every read with a zero."""
-
     def __init__(self, part: str = "dsp3") -> None:
         self.part = part
 
@@ -47,8 +43,6 @@ def build(part: str) -> Any:
 
 
 class OnlyForOneCommand:
-    """A stand-in that answers only when the first byte it was given is that one."""
-
     def __init__(self, part: str = "dsp3", speaks_on: int = 0x0B) -> None:
         self.part = part
         self.speaks_on = speaks_on
@@ -65,21 +59,11 @@ class OnlyForOneCommand:
 
 
 def _spoke(found: "against_cartridges.Spoke | None") -> "against_cartridges.Spoke":
-    """The command that answered, insisting that one did."""
     assert found is not None, "no command byte got an answer"
     return found
 
 
 class CommandSweepTest(unittest.TestCase):
-    """A shape that answered nothing, tried again across every command byte.
-
-    A payload is random bytes, so the first one is a random command, and on these
-    parts most of the 256 possible bytes are not commands at all. A shape that
-    says nothing under a random command has not been shown to say nothing: it has
-    been asked a question the part does not have. Only a shape that stays silent
-    for all 256 is silent.
-    """
-
     def _steps(self) -> Any:
         return shapes.parse("write1 write2 poll1 read2")
 
@@ -122,8 +106,6 @@ class CommandSweepTest(unittest.TestCase):
 
 
 class SweepInsideARunTest(unittest.TestCase):
-    """A run that meets a silent shape and asks again under every command."""
-
     def test_a_shape_silent_under_its_random_command_is_recovered(self) -> None:
         found = against_cartridges.driven(
             "dsp3", build=lambda part: OnlyForOneCommand(part, 0x0B), seed=7
@@ -148,15 +130,6 @@ class SweepInsideARunTest(unittest.TestCase):
 
 
 class UnpromptedTest(unittest.TestCase):
-    """A shape that reads before it writes, played at a part that has just booted.
-
-    On a console that read follows an earlier exchange, and it is answered by what
-    that exchange left behind. Played on its own at a fresh part there is nothing
-    behind it, so nothing comes back, and no command byte can change that: the
-    read happens before the command does. Counting that as the part failing to
-    answer would be counting the harness asking out of order.
-    """
-
     def test_a_shape_that_writes_first_is_prompted(self) -> None:
         found = against_cartridges.Played("write1 read1", [[1]], [shapes.READ])
 

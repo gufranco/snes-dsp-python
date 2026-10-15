@@ -22,19 +22,6 @@ def an_image(program_words: int = 2048, data_words: int = 1024, filler: int = 0x
 
 
 class ShippedManifestTest(unittest.TestCase):
-    """That the manifest travels with the package rather than beside it.
-
-    `identify` is the whole of the public reading interface and it cannot answer
-    anything without the manifest. Kept at the top of the repository the file is
-    not part of the distribution, so every install had an `identify` that raised
-    FileNotFoundError instead of naming the image, and the readme example that
-    calls it could not run for anybody who installed the package the way the
-    readme says to.
-
-    A test on the path is what catches that. Running `identify` from a checkout
-    passes either way, because from a checkout the file is there.
-    """
-
     def test_the_manifest_lives_inside_the_package(self) -> None:
         package = Path(firmware.__file__).resolve().parent
 
@@ -61,12 +48,6 @@ class ManifestTest(unittest.TestCase):
         self.assertEqual(named, {"dsp1", "dsp1b", "dsp2", "dsp3", "dsp4"})
 
     def test_and_nothing_another_member_is_responsible_for(self) -> None:
-        """The manifest split when this layer moved out of the processor package.
-
-        It named seven modules across two vendors, and a package that knows the
-        name of somebody else's cartridge is a catalogue wearing the wrong name.
-        Two of the seven belong to the Seta member and are not here.
-        """
         named = {entry["part"] for entry in firmware.manifest()["artifacts"]}
 
         self.assertEqual(named & {"st010", "st011"}, set())
@@ -201,7 +182,6 @@ class IdentifyTest(unittest.TestCase):
 
 
 def a_catalogue(image: bytes, part: str = "made-up", **extra: object) -> dict[str, Any]:
-    """A manifest holding one artifact, which is that image."""
     return {
         "artifacts": [
             {
@@ -218,14 +198,6 @@ def a_catalogue(image: bytes, part: str = "made-up", **extra: object) -> dict[st
 
 
 class RepairTest(unittest.TestCase):
-    """What can be done to a file the user already has.
-
-    Nothing here is ever suggested on a hunch. A transform is applied, its result
-    is hashed, and it is only named when the hash matches something published. So
-    a repair that is offered is a repair that works, and a file nothing helps gets
-    told that instead of being given a list of things to try.
-    """
-
     def test_a_file_carrying_a_copier_header_is_told_to_strip_it(self) -> None:
         image = an_image()
 
@@ -277,14 +249,6 @@ class RepairTest(unittest.TestCase):
 
 
 class BadDumpTest(unittest.TestCase):
-    """A damaged copy, told apart from a copy of the wrong thing.
-
-    Two different problems: a wrong file means go and find the right one, and a
-    damaged file means that copy is broken. The manifest carries no bad dumps
-    today because nobody has sent one, so what is pinned here is the mechanism
-    that will name one when somebody does.
-    """
-
     def test_a_declared_bad_dump_is_named_as_damaged(self) -> None:
         image = an_image()
         broken = an_image(filler=0x00)
@@ -326,8 +290,6 @@ class BadDumpTest(unittest.TestCase):
 
 
 class ProvenanceTest(unittest.TestCase):
-    """Where each published digest came from, which a digest alone does not say."""
-
     def test_every_accepted_revision_says_where_its_digest_came_from(self) -> None:
         for artifact in firmware.manifest()["artifacts"]:
             for accepted in artifact["accepted"]:
@@ -613,14 +575,6 @@ class SearchPathTest(unittest.TestCase):
 
 
 class DecidingDigestTest(unittest.TestCase):
-    """That the manifest tells a reader which of its four digests decides.
-
-    The reader already knows: `DECIDES` names it and nothing else is compared
-    against. A person cross-checking a copy reads the manifest rather than the
-    module, so the manifest has to say it too, and this is what keeps the two
-    from drifting apart.
-    """
-
     def held(self) -> str:
         return str(firmware.manifest()["decides"])
 

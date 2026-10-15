@@ -36,8 +36,6 @@ def a_manifest(*entries: Any) -> dict[str, Any]:
 
 
 class GroupingTest(unittest.TestCase):
-    """Which shapes belong to which part, and where each one came from."""
-
     def test_a_cartridge_contributes_its_shapes_to_its_own_part(self) -> None:
         found = record.gather(
             a_manifest(an_identity(part="dsp2")),
@@ -123,8 +121,6 @@ class PrintingTest(unittest.TestCase):
 
 
 class OrderTest(unittest.TestCase):
-    """The order shapes are written in, which decides what a cut sweep spends on."""
-
     def test_the_longest_shape_comes_first(self) -> None:
         found = record.gather(
             a_manifest(an_identity()),
@@ -195,8 +191,6 @@ class WritingTest(unittest.TestCase):
 
 
 class ReadingTest(unittest.TestCase):
-    """The step that opens a cartridge, which is the only reason one is opened."""
-
     def test_a_cartridge_that_is_not_on_this_machine_reads_as_nothing(self) -> None:
         self.assertIsNone(record.reading("nowhere.sfc", Path("/nowhere/at/all")))
 

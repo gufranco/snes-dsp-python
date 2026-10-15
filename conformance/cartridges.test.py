@@ -36,8 +36,6 @@ def a_catalogue(image: bytes, name: str = "made-up.sfc", **overrides: Any) -> di
 
 
 class ProvenanceTest(unittest.TestCase):
-    """Where each published digest came from, which a digest alone does not say."""
-
     def test_every_cartridge_says_where_its_digests_came_from(self) -> None:
         for one in cartridges.manifest()["cartridges"]:
             self.assertIn("provenance", one, one["name"])
@@ -207,15 +205,6 @@ class DirectoryTest(unittest.TestCase):
 
 
 class OnDiskAnywhereTest(unittest.TestCase):
-    """Walking a directory, using files this test makes and a catalogue to match.
-
-    None of this needs a cartridge, which is the point. The reading of a real
-    directory used to be outside the coverage gate because it ran one way on a
-    machine holding games and another way on a machine holding none, and no build
-    could exercise both. A directory the test fills and a catalogue the test
-    writes exercises both, on any machine.
-    """
-
     def _dir(self, *files: tuple[str, bytes]) -> Path:
         where = Path(tempfile.mkdtemp())
         for name, held in files:
@@ -274,14 +263,6 @@ class OnDiskAnywhereTest(unittest.TestCase):
 
 @unittest.skipUnless(PRESENT, cartridges.WHY_NOT)
 class OnDiskTest(unittest.TestCase):  # pragma: no cover
-    """The cartridges this machine actually holds, if it holds any.
-
-    Outside the coverage gate. A test whose subject is a file nobody can
-    distribute runs on one machine and not another, so counting it would make the
-    number mean something different depending on who ran it. The directory walk
-    itself is covered above, on any machine, by a directory the test fills.
-    """
-
     def test_every_cartridge_on_disk_matches_all_four_of_its_digests(self) -> None:
         for identity, path in PRESENT:
             self.assertTrue(identity.sha256, path)
@@ -294,14 +275,7 @@ class OnDiskTest(unittest.TestCase):  # pragma: no cover
 
 
 class SharedDirectoryRuleTest(unittest.TestCase):
-    """The rule every member of this family uses to find a file it does not carry.
-
-    Byte-identical in all of them, so these check the behaviour that identity is
-    supposed to guarantee rather than the text of one copy.
-    """
-
     def test_the_project_above_is_looked_at_before_the_package_itself(self) -> None:
-        """Vendored, the parent owns the library, which is what ALONGSIDE is for."""
         found = cartridges.directories({})
 
         self.assertLess(
@@ -334,14 +308,6 @@ class SharedDirectoryRuleTest(unittest.TestCase):
 
 
 class DecidingDigestTest(unittest.TestCase):
-    """That the manifest tells a reader which of its four digests decides.
-
-    The reader already knows: `DECIDES` names it and nothing else is compared
-    against. A person cross-checking a copy reads the manifest rather than the
-    module, so the manifest has to say it too, and this is what keeps the two
-    from drifting apart.
-    """
-
     def held(self) -> str:
         return str(cartridges.manifest()["decides"])
 

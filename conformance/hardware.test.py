@@ -1,16 +1,3 @@
-"""Hold this package's constants to the facts in hardware.json, and to their standing.
-
-Three of the five numbers this package times with are documented, two by NEC's
-data sheet through the processor package that pins it and one by Nintendo's own
-bus speeds through the mapper. Two are not, and one of those decides how many
-instructions the part runs between two console accesses, which is what decides
-whether a driver catches it before it has finished.
-
-The point of this file is that a reader cannot pick up the unverified ones as
-though they stood beside the others. Each is checked against the constant it
-governs, and each is checked against its own mark.
-"""
-
 import json
 import sys
 import unittest
@@ -109,8 +96,6 @@ class ConstantTest(unittest.TestCase):
 
 
 class StandingTest(unittest.TestCase):
-    """What rests on a number nobody printed, said out loud rather than implied."""
-
     def test_the_pacing_rests_on_the_unverified_oscillator(self) -> None:
         crystal = declared()["facts"]["cartridgeOscillatorHz"]
 

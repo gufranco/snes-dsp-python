@@ -12,11 +12,6 @@ from conformance import masks
 
 
 def loaded(where: Path) -> dict[str, Any]:
-    """What was pinned there, insisting that something was.
-
-    A store that wrote nothing reads back as None, and indexing that would fail
-    somewhere further down with a message about the wrong thing.
-    """
     held = masks.load(where)
     assert held is not None, f"nothing was written to {where}"
     return held
@@ -38,8 +33,6 @@ def a_finding(
 
 
 class SweepTest(unittest.TestCase):
-    """Searching for arguments where two masks of one part disagree."""
-
     def _build(self, differ_on: int | None = None) -> Any:
         def build(part: str) -> Any:
             return _Fixed(part, differ_on)
@@ -90,8 +83,6 @@ class SweepTest(unittest.TestCase):
 
 
 class _Fixed:
-    """A part whose answers depend on which mask it is, for one chosen command."""
-
     def __init__(self, part: str, differ_on: int | None) -> None:
         self.part = part
         self.differ_on = differ_on
@@ -107,8 +98,6 @@ class _Fixed:
 
 
 class CheckTest(unittest.TestCase):
-    """A pinned divergence against the parts on this machine."""
-
     def _build(self, first: int = 0x11, second: int = 0x22) -> Any:
         def build(part: str) -> Any:
             return _Answers(first if part == "dsp1" else second)
@@ -178,8 +167,6 @@ class PrintingTest(unittest.TestCase):
 
 
 class FirstDifferenceTest(unittest.TestCase):
-    """Where two answers part company, which is what a reader looks at first."""
-
     def test_two_answers_that_differ_at_the_front_part_company_there(self) -> None:
         self.assertEqual(masks._first_difference(b"\x01\x02", b"\x99\x02"), 0)
 
@@ -329,8 +316,6 @@ class EntryTest(unittest.TestCase):
 
 
 class ArgumentTest(unittest.TestCase):
-    """What the sweep tries, which decides whether it finds anything."""
-
     def test_the_edges_of_the_fixed_point_range_are_among_them(self) -> None:
         flat = {value for one in masks.ARGUMENTS for value in one}
 
