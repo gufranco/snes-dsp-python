@@ -1,4 +1,6 @@
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -420,6 +422,27 @@ class EntryTest(unittest.TestCase):
         doctor.main([], say=said.append)
 
         self.assertIn("snesdsp", " ".join(said))
+
+    def test_run_as_a_file_from_outside_the_repository_it_reports_rather_than_raises(
+        self,
+    ) -> None:
+        # Arrange
+        where = Path(doctor.__file__).resolve()
+
+        # Act
+        with tempfile.TemporaryDirectory() as elsewhere:
+            finished = subprocess.run(
+                [sys.executable, str(where)],
+                capture_output=True,
+                check=False,
+                text=True,
+                cwd=elsewhere,
+                timeout=300,
+            )
+
+        # Assert
+        self.assertNotIn("Traceback", finished.stderr)
+        self.assertTrue(finished.stdout.startswith("snesdsp "), finished.stdout[:200])
 
 
 if __name__ == "__main__":
