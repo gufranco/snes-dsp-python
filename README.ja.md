@@ -8,7 +8,7 @@ PythonによるNintendo DSP-1、DSP-1A、DSP-1B、DSP-2、DSP-3、DSP-4です。
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**5**個のマイクロコードイメージ上の**6**種類のチップ、**36**本の市販カートリッジから読み出した**121**件のやり取り、そのうち**61**件をチップに対して再生、失敗**0**件、手作業で記述したコマンド**0**個、テスト**971**件、ステートメントとブランチのカバレッジ**100%**、依存関係なし
+**5**個のマイクロコードイメージ上の**6**種類のチップ、**36**本の市販カートリッジから読み出した**121**件のやり取り、そのうち**61**件をチップに対して再生、失敗**0**件、手作業で記述したコマンド**0**個、テスト**979**件、ステートメントとブランチのカバレッジ**100%**、依存関係なし
 
 ```python
 import snesdsp
@@ -469,7 +469,7 @@ Nintendoはこれらのチップについて何も公開していません。ペ
 ```bash
 uvx ruff@0.16.3 format --check .
 uvx ruff@0.16.3 check .
-mypy
+uvx --python 3.12 --with types-setuptools==84.0.0.20260812 mypy==1.14.1
 pnpm run format:check
 cov=(uvx --python 3.12 --from coverage==7.6.10 --with setuptools==84.0.0 coverage)
 "${cov[@]}" erase

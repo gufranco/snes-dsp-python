@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** parts on **5** microcode images, **121** exchanges read out of **36** retail cartridges, **61** of them played at the part, **0** failures, **0** commands described by hand, **971** tests, **100%** statement and branch coverage, no dependencies
+**6** parts on **5** microcode images, **121** exchanges read out of **36** retail cartridges, **61** of them played at the part, **0** failures, **0** commands described by hand, **979** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 import snesdsp
@@ -465,7 +465,7 @@ Nintendo published nothing about these parts. The pacing, the boot length and th
 ```bash
 uvx ruff@0.16.3 format --check .
 uvx ruff@0.16.3 check .
-mypy
+uvx --python 3.12 --with types-setuptools==84.0.0.20260812 mypy==1.14.1
 pnpm run format:check
 cov=(uvx --python 3.12 --from coverage==7.6.10 --with setuptools==84.0.0 coverage)
 "${cov[@]}" erase

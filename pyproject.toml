@@ -145,6 +145,6 @@ files = ["snesdsp", "conformance"]
 # The submodules are checked in their own repositories, against their own gate.
 # Following imports into them here would report the state of somebody else's
 # project, and a finding nobody in this one can act on.
-module = ["upd7725.*", "mapper.*", "snesdriver.*", "setuptools.*"]
+module = ["upd7725.*", "mapper.*", "snesdriver.*"]
 follow_imports = "skip"
 ignore_missing_imports = true
