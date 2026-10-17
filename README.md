@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** parts on **5** microcode images, **121** exchanges read out of **36** retail cartridges, **61** of them played at the part, **0** failures, **0** commands described by hand, **979** tests, **100%** statement and branch coverage, no dependencies
+**6** parts on **5** microcode images, **121** exchanges read out of **36** retail cartridges, **61** of them played at the part, **0** failures, **0** commands described by hand, **986** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 import snesdsp
@@ -435,7 +435,7 @@ python3 -m conformance.answers
 python3 -m conformance.record
 ```
 
-`against_cartridges` takes one part, `dsp3` when none is named, and exits 1 when any exchange stays silent. `answers` takes part names, all of them by default, exits 1 on a changed answer, and exits 2 when the image on this machine is not the one the corpus was taken from. `--take` records answers instead of checking them. `record` re-reads every cartridge in [`cartridges/`](cartridges) or `SNES_CARTRIDGE_DIR` and exits 2 when none is present.
+`against_cartridges` takes one part, `dsp3` when none is named, and exits 1 when any exchange stays silent. `answers` takes part names, all of them by default, exits 1 on a changed answer, and exits 2 when the image on this machine is not the one the corpus was taken from. It exits 1 with no image present when a part has no corpus, or when the corpus was not taken over the shapes swept today in the same order: every payload comes from one seeded stream, so a moved shape changes the payload of every shape after it. `--take` records answers instead of checking them. `record` re-reads every cartridge in [`cartridges/`](cartridges) or `SNES_CARTRIDGE_DIR` and exits 2 when none is present.
 
 ### The DSP-1B correction
 

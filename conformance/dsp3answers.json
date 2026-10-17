@@ -37,6 +37,10 @@
     {
       "shape": "read1 read1 write1",
       "said": ["80", "80"]
+    },
+    {
+      "shape": "write1 read1",
+      "said": ["6b"]
     }
   ]
 }

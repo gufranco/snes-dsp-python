@@ -8,7 +8,7 @@
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** 个部件，基于 **5** 个微码镜像；从 **36** 个零售版卡带中读出 **121** 个交换，其中 **61** 个在部件上回放；**0** 个失败，**0** 个手工描述的命令，**979** 个测试，**100%** 语句和分支覆盖率，无依赖
+**6** 个部件，基于 **5** 个微码镜像；从 **36** 个零售版卡带中读出 **121** 个交换，其中 **61** 个在部件上回放；**0** 个失败，**0** 个手工描述的命令，**986** 个测试，**100%** 语句和分支覆盖率，无依赖
 
 ```python
 import snesdsp
@@ -439,7 +439,7 @@ python3 -m conformance.answers
 python3 -m conformance.record
 ```
 
-`against_cartridges` 接收一个部件，未指定时为 `dsp3`，任何交换保持沉默时以 1 退出。`answers` 接收部件名，默认全部，回答发生变化时以 1 退出，本机上的镜像不是采集语料时所用的镜像时以 2 退出。`--take` 记录回答而不是检查回答。`record` 重新读取 [`cartridges/`](cartridges) 或 `SNES_CARTRIDGE_DIR` 中的每个卡带，一个都没有时以 2 退出。
+`against_cartridges` 接收一个部件，未指定时为 `dsp3`，任何交换保持沉默时以 1 退出。`answers` 接收部件名，默认全部，回答发生变化时以 1 退出，本机上的镜像不是采集语料时所用的镜像时以 2 退出。即使没有镜像，某个部件没有语料，或其语料并非按今天扫描的形状以相同顺序采集时，也以 1 退出：所有载荷都来自同一个带种子的随机序列，一个形状移动了，其后每个形状的载荷都会改变。`--take` 记录回答而不是检查回答。`record` 重新读取 [`cartridges/`](cartridges) 或 `SNES_CARTRIDGE_DIR` 中的每个卡带，一个都没有时以 2 退出。
 
 ### DSP-1B 的修正
 

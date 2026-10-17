@@ -23,12 +23,8 @@
       "said": ["8080", "78ef", "78ef", "78ef", "78ef", "8080"]
     },
     {
-      "shape": "write1 write2 write2 write2 write2 write2 write2 write2 poll2 read2 read2",
-      "said": ["9090", "1abf", "1abf"]
-    },
-    {
       "shape": "write1 write2 read2 read2 read2 read2 poll2 write2 write2 write2 write2",
-      "said": ["6c19", "6c19", "0000", "0000", "8080"]
+      "said": ["0097", "0000", "0080", "8080", "8484"]
     },
     {
       "shape": "poll1 read1 read1 read1 write1 write2 write2 write2",
@@ -36,59 +32,67 @@
     },
     {
       "shape": "poll1 write1 write2 write2 write2 read2 read2 read2",
-      "said": ["84", "9f2e", "9f2e", "9f2e"]
+      "said": ["84", "6c00", "0000", "0000"]
     },
     {
       "shape": "write1 write2 write2 write2 poll1 read2 read2",
-      "said": ["80", "ca4f", "d3fd"]
+      "said": ["84", "5555", "5555"]
     },
     {
       "shape": "write1 write2 write2 write2 poll2 read2 read2",
-      "said": ["0000", "0000", "0000"]
+      "said": ["9090", "a09f", "a09f"]
     },
     {
       "shape": "poll1 write1 write2 write2 write2 read2",
-      "said": ["84", "043f"]
+      "said": ["84", "0000"]
     },
     {
       "shape": "write1 write2 write2 write2 write2 read2",
-      "said": ["7c7c"]
+      "said": ["0000"]
     },
     {
       "shape": "write1 write2 write2 poll2 read2 read2",
-      "said": ["8080", "f3e2", "f3e2"]
+      "said": ["9090", "0000", "0000"]
     },
     {
       "shape": "write1 write2 write2 write2 poll2 read2",
-      "said": ["8080", "7fa4"]
+      "said": ["8080", "0000"]
     },
     {
       "shape": "write1 write2 write2 read2 read2",
-      "said": ["5353", "5353"]
+      "said": ["7c7c", "7c7c"]
     },
     {
       "shape": "write1 write2 write2 read2",
-      "said": ["3600"]
+      "said": ["62ad"]
     },
     {
       "shape": "write1 poll1 read1 read1",
-      "said": ["84", "81", "81"]
+      "said": ["84", "f3", "f3"]
     },
     {
       "shape": "write1 write1 poll1 read1",
-      "said": ["84", "af"]
+      "said": ["80", "1c"]
     },
     {
       "shape": "write1 write1 read1",
-      "said": ["00"]
+      "said": ["a4"]
     },
     {
       "shape": "write1 read1 read1",
-      "said": ["fb", "fb"]
+      "said": ["e5", "e5"]
+    },
+    {
+      "shape": "write1 read1 poll1",
+      "said": ["4f", "84"]
     },
     {
       "shape": "write1 read1",
-      "said": ["55"]
+      "said": ["ac"]
+    },
+    {
+      "shape": "write1 read2",
+      "said": ["d7d7"]
     }
   ]
 }

@@ -3,6 +3,7 @@ import json
 import random
 import sys
 from collections.abc import Callable, Iterable, Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, override
 
@@ -89,15 +90,44 @@ def recorded_shapes(part: str) -> list[dict[str, Any]]:
     return named
 
 
+def _answers_back(steps: Iterable[shapes_module.Step]) -> bool:
+    kinds = {step.what for step in steps}
+    return shapes_module.WRITE in kinds and shapes_module.READ in kinds
+
+
+def _swept(held: Iterable[Mapping[str, Any]]) -> list[str]:
+    return [one["shape"] for one in held if _answers_back(shapes_module.parse(one["shape"]))]
+
+
+def out_of_step(corpus: Mapping[str, Any], held: Iterable[Mapping[str, Any]]) -> list[str]:
+    part = corpus["part"]
+    taken = [one["shape"] for one in corpus["exchanges"]]
+    swept = _swept(held)
+    said = [
+        f"       ! {shape}: recorded, and no longer among the shapes swept"
+        for shape in taken
+        if shape not in swept
+    ]
+    said += [
+        f"       ! {shape}: swept, and not yet recorded. Take the corpus again"
+        for shape in swept
+        if shape not in taken
+    ]
+    if not said and taken != swept:
+        said.append(
+            "       ! the shapes are swept in another order than the corpus was taken in,"
+            " so every payload after the first moved shape changed. Take the corpus again"
+        )
+    return [f"  {part}: the corpus is out of step with the shapes swept", *said] if said else []
+
+
 def _exchanges(
     part: str, build: BuildWatched, held: Iterable[Mapping[str, Any]], chance: random.Random
 ) -> list[dict[str, Any]]:
     found: list[dict[str, Any]] = []
     for one in held:
         steps = shapes_module.parse(one["shape"])
-        writes = any(step.what == shapes_module.WRITE for step in steps)
-        takes = any(step.what == shapes_module.READ for step in steps)
-        if not writes or not takes:
+        if not _answers_back(steps):
             continue
         payload = shapes_module.payload_for(steps, chance)
         said = shapes_module.drive(build(part), steps, payload)
@@ -189,6 +219,59 @@ def lines_for(found: "Checked") -> list[str]:
     return said
 
 
+@dataclass(frozen=True, slots=True)
+class _Run:
+    wanted: Sequence[str]
+    build: BuildWatched
+    shapes_for: Callable[[str], list[dict[str, Any]]]
+    digest: Callable[[str], str]
+    where: Path
+    say: Callable[[str], object]
+
+
+def _take_all(run: _Run) -> int:
+    for part in run.wanted:
+        corpus = take(part, run.build, run.shapes_for(part), digest=run.digest)
+        path = store(corpus, run.where)
+        run.say(f"  wrote {path.name}: {len(corpus['exchanges'])} exchanges from {part}")
+    return 0
+
+
+def _staleness(part: str, recorded: Mapping[str, Any] | None, run: _Run) -> list[str]:
+    if recorded is None:
+        return [f"  {part}: no answers are recorded. Take them with --take {part}"]
+    return out_of_step(recorded, run.shapes_for(part))
+
+
+def _rederive(ready: Mapping[str, Mapping[str, Any]], run: _Run) -> int:
+    unwell = False
+    for part, recorded in ready.items():
+        try:
+            found = check(recorded, run.build, run.shapes_for(part), digest=run.digest)
+        except WrongImage as wrong:
+            run.say(f"  {part}: {wrong}")
+            return 2
+        for line in lines_for(found):
+            run.say(line)
+        unwell = unwell or not found.agrees
+    return 1 if unwell else 0
+
+
+def _check_all(run: _Run, why_not: Callable[[], str | None]) -> int:
+    held = {part: load(part, run.where) for part in run.wanted}
+    stale = {part: _staleness(part, recorded, run) for part, recorded in held.items()}
+    for line in (line for lines in stale.values() for line in lines):
+        run.say(line)
+    unwell = any(stale.values())
+    reason = why_not()
+    if reason:
+        run.say(f"  nothing to run: {reason}")
+        return 1 if unwell else 2
+    ready = {part: one for part, one in held.items() if one is not None and not stale[part]}
+    found = _rederive(ready, run)
+    return found if found == 2 or not unwell else 1
+
+
 def main(
     argv: Sequence[str] = (),
     why_not: Callable[[], str | None] = chip.why_not,
@@ -199,37 +282,15 @@ def main(
     parts: Sequence[str] = PARTS,
     say: Callable[[str], object] = print,
 ) -> int:
+    wanted = [one for one in argv if one != "--take"] or list(parts)
+    run = _Run(wanted, build, shapes_for, digest, where, say)
+    if "--take" not in argv:
+        return _check_all(run, why_not)
     reason = why_not()
     if reason:
         say(f"  nothing to run: {reason}")
         return 2
-
-    taking = "--take" in argv
-    wanted = [one for one in argv if one != "--take"] or list(parts)
-
-    if taking:
-        for part in wanted:
-            corpus = take(part, build, shapes_for(part), digest=digest)
-            path = store(corpus, where)
-            say(f"  wrote {path.name}: {len(corpus['exchanges'])} exchanges from {part}")
-        return 0
-
-    unwell = False
-    for part in wanted:
-        recorded = load(part, where)
-        if recorded is None:
-            say(f"  {part}: no answers are recorded. Take them with --take {part}")
-            unwell = True
-            continue
-        try:
-            found = check(recorded, build, shapes_for(part), digest=digest)
-        except WrongImage as wrong:
-            say(f"  {part}: {wrong}")
-            return 2
-        for line in lines_for(found):
-            say(line)
-        unwell = unwell or not found.agrees
-    return 1 if unwell else 0
+    return _take_all(run)
 
 
 if __name__ == "__main__":

@@ -464,6 +464,129 @@ class EntryTest(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn("image", " ".join(said))
 
+    def test_taking_a_corpus_with_no_microcode_writes_nothing(self) -> None:
+        # Arrange
+        where = Path(tempfile.mkdtemp())
+        said: list[str] = []
+
+        # Act
+        code = answers.main(
+            ["--take", "dsp1"], why_not=lambda: "no image is here", where=where, say=said.append
+        )
+
+        # Assert
+        self.assertEqual(code, 2)
+        self.assertEqual(said, ["  nothing to run: no image is here"])
+        self.assertEqual(list(where.iterdir()), [])
+
+    def test_every_recorded_corpus_was_taken_over_the_shapes_swept_today(self) -> None:
+        # Arrange
+        said: list[str] = []
+
+        # Act
+        code = answers.main([], why_not=lambda: "no image is here", say=said.append)
+
+        # Assert
+        self.assertEqual(said, ["  nothing to run: no image is here"])
+        self.assertEqual(code, 2)
+
+    def test_a_shape_swept_but_not_recorded_fails_with_no_microcode(self) -> None:
+        # Arrange
+        where = Path(tempfile.mkdtemp())
+        answers.store(answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest), where)
+        said: list[str] = []
+
+        # Act
+        code = answers.main(
+            ["dsp1"],
+            why_not=lambda: "no image is here",
+            shapes_for=lambda _part: some_shapes(a_shape(), a_shape("write1 read2")),
+            where=where,
+            say=said.append,
+        )
+
+        # Assert
+        self.assertEqual(code, 1)
+        self.assertIn("write1 read2: swept, and not yet recorded", " ".join(said))
+
+    def test_a_shape_recorded_but_no_longer_swept_fails_with_no_microcode(self) -> None:
+        # Arrange
+        where = Path(tempfile.mkdtemp())
+        held = some_shapes(a_shape(), a_shape("write1 read2"))
+        answers.store(answers.take("dsp1", puppets(), shapes=held, digest=a_digest), where)
+        said: list[str] = []
+
+        # Act
+        code = answers.main(
+            ["dsp1"],
+            why_not=lambda: "no image is here",
+            shapes_for=lambda _part: some_shapes(),
+            where=where,
+            say=said.append,
+        )
+
+        # Assert
+        self.assertEqual(code, 1)
+        self.assertIn("write1 read2: recorded, and no longer among", " ".join(said))
+
+    def test_the_same_shapes_swept_in_another_order_fail_with_no_microcode(self) -> None:
+        # Arrange
+        where = Path(tempfile.mkdtemp())
+        held = some_shapes(a_shape(), a_shape("write1 read2"))
+        answers.store(answers.take("dsp1", puppets(), shapes=held, digest=a_digest), where)
+        said: list[str] = []
+
+        # Act
+        code = answers.main(
+            ["dsp1"],
+            why_not=lambda: "no image is here",
+            shapes_for=lambda _part: list(reversed(held)),
+            where=where,
+            say=said.append,
+        )
+
+        # Assert
+        self.assertEqual(code, 1)
+        self.assertIn("another order", " ".join(said))
+
+    def test_a_missing_corpus_fails_with_no_microcode(self) -> None:
+        # Arrange
+        said: list[str] = []
+
+        # Act
+        code = answers.main(
+            ["dsp1"],
+            why_not=lambda: "no image is here",
+            shapes_for=lambda _part: some_shapes(),
+            where=Path(tempfile.mkdtemp()),
+            say=said.append,
+        )
+
+        # Assert
+        self.assertEqual(code, 1)
+        self.assertIn("no answers are recorded", " ".join(said))
+
+    def test_a_stale_corpus_is_not_re_derived_against_the_microcode(self) -> None:
+        # Arrange
+        where = Path(tempfile.mkdtemp())
+        answers.store(answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest), where)
+        said: list[str] = []
+
+        # Act
+        code = answers.main(
+            ["dsp1"],
+            why_not=lambda: None,
+            build=puppets(first=0x30),
+            shapes_for=lambda _part: some_shapes(a_shape(), a_shape("write1 read2")),
+            digest=a_digest,
+            where=where,
+            say=said.append,
+        )
+
+        # Assert
+        self.assertEqual(code, 1)
+        self.assertNotIn("re-derived", " ".join(said))
+
     def test_with_no_part_named_every_part_is_checked(self) -> None:
         where = Path(tempfile.mkdtemp())
         for part in ("dsp1", "dsp2"):
