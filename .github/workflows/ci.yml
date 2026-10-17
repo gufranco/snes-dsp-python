@@ -1,3 +1,4 @@
+---
 name: CI
 
 on:
@@ -49,11 +50,7 @@ jobs:
       - name: Check that every JSON file is formatted
         run: pnpm run format:check
 
-      # The workflows are the one thing here nothing else checks, and a mistake
-      # in them is only visible once a run has already gone wrong. The archive
-      # is verified by digest before anything in it runs, for the same reason
-      # every image this project loads is.
-      - name: Check the workflows themselves
+      - name: Check the workflows themselves, from an archive verified by digest
         run: |
           curl -fsSL -o actionlint.tar.gz \
             "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
@@ -66,13 +63,15 @@ jobs:
           ACTIONLINT_VERSION: "1.7.12"
           ACTIONLINT_SHA256: "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
 
+      - name: Lint every YAML file
+        run: |
+          pipx install yamllint==1.38.0
+          yamllint --strict .
+
   types:
     name: Types
     runs-on: ubuntu-26.04
     steps:
-      # The processor is reached through a submodule, and the checker follows the
-      # import to type it. Without the checkout it would report the whole backend
-      # as missing rather than as wrong, which is a different and useless answer.
       - uses: actions/checkout@v7
         with:
           submodules: recursive
@@ -84,9 +83,6 @@ jobs:
       - name: Install the type checker
         run: pipx install mypy==1.14.1
 
-      # Strict, with every optional error class the version offers turned on. The
-      # settings live in pyproject.toml so a local run and this one agree; a gate
-      # that only holds in CI teaches people to push and find out.
       - name: Every annotation has to hold
         run: mypy
 
@@ -98,10 +94,6 @@ jobs:
       matrix:
         python: ["3.12", "3.13", "3.14"]
     steps:
-      # The package reaches the processor through this submodule, and without it
-      # the microcode backend cannot be built at all. Checking it out here does
-      # not supply any firmware, so the runner still exercises the path a user
-      # without an image takes.
       - uses: actions/checkout@v7
         with:
           submodules: recursive
@@ -153,10 +145,6 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      # No document is redistributable, so none is here and this checks nothing
-      # on a runner. It says so rather than reporting a pass: the value is that
-      # somebody running it with the data sheet on disk gets a real answer, and
-      # that a run without it cannot be mistaken for one.
       - name: Every quoted sentence, against the document it came from
         run: python -m conformance.quotes
 
@@ -172,15 +160,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      # This runs the program a cartridge carries, which belongs to whoever
-      # wrote it, so on a machine without one it says so and stops rather than
-      # reporting a pass. Everything a machine without one can check runs in the
-      # test job above: this package has no behaviour of its own to get wrong.
-      # Exit 2 is the runner saying it had nothing to run, which is the honest
-      # answer to a person who asked it to drive a part and holds no image. It is
-      # not a failure of this build, so it is caught here rather than by making
-      # the tool lie about it.
-      - name: Drive the parts with the exchanges real cartridges make
+      - name: Drive the parts with the exchanges real cartridges make, exit 2 meaning no microcode
         run: |
           set +e
           status=0
@@ -193,15 +173,14 @@ jobs:
           done
           set -e
           if [ "${status}" -eq 2 ]; then
-            echo "::notice title=No microcode present::The checks that run a part's own program did not run. They are not failures; they had nothing to run."
+            notice="The checks that run a part's own program did not run."
+            notice="${notice} They are not failures; they had nothing to run."
+            echo "::notice title=No microcode present::${notice}"
             exit 0
           fi
           exit "${status}"
         shell: bash
 
-      # What each part answers, re-derived and compared against what it answered
-      # when the corpus was taken. The microcode makes the values right; this
-      # catches the layers around it changing them, which nothing else would.
       - name: Every part still answers what it answered
         run: |
           set +e
@@ -209,15 +188,14 @@ jobs:
           status=$?
           set -e
           if [ "${status}" -eq 2 ]; then
-            echo "::notice title=No microcode present::The recorded answers were not re-derived. They are not failures; there was nothing to run."
+            notice="The recorded answers were not re-derived."
+            notice="${notice} They are not failures; there was nothing to run."
+            echo "::notice title=No microcode present::${notice}"
             exit 0
           fi
           exit "${status}"
         shell: bash
 
-      # The DSP-1B corrected an arithmetic fault in the DSP-1. That is a claim
-      # with a consequence, and this re-derives the inputs where the two masks
-      # actually part company rather than taking the claim on trust.
       - name: The DSP-1B correction is still where it was
         run: |
           set +e
@@ -225,15 +203,14 @@ jobs:
           status=$?
           set -e
           if [ "${status}" -eq 2 ]; then
-            echo "::notice title=Both DSP-1 masks not present::The mask comparison needs an image for the DSP-1 and the DSP-1B. It did not run."
+            notice="The mask comparison needs an image for the DSP-1 and the DSP-1B."
+            notice="${notice} It did not run."
+            echo "::notice title=Both DSP-1 masks not present::${notice}"
             exit 0
           fi
           exit "${status}"
         shell: bash
 
-      # Every snippet the README prints, run against the parts it names. A
-      # number in a document is a claim about the code, and this is what keeps
-      # the two from drifting apart. Same exit 2 rule as above.
       - name: Every example in the README still gives what it says
         run: |
           set +e
@@ -241,7 +218,9 @@ jobs:
           status=$?
           set -e
           if [ "${status}" -eq 2 ]; then
-            echo "::notice title=No microcode present::The README examples were not run. They are not failures; they had nothing to run."
+            notice="The README examples were not run."
+            notice="${notice} They are not failures; they had nothing to run."
+            echo "::notice title=No microcode present::${notice}"
             exit 0
           fi
           exit "${status}"
