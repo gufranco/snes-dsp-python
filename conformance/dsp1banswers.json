@@ -11,36 +11,40 @@
       "said": ["84", "1010", "4bbb", "a260", "de80", "8080", "a734", "a734", "59fd", "041f", "8080"]
     },
     {
+      "shape": "write1 write2 write2 write2 write2 poll1 write1 write2 write2 write2 read2 read2 read2",
+      "said": ["90", "0000", "0000", "0000"]
+    },
+    {
       "shape": "write1 write2 write2 write2 write2 write2 write2 write2 poll2 read2 read2 read2 read2",
-      "said": ["9090", "0000", "0000", "0000", "0000"]
+      "said": ["8484", "8080", "8080", "8080", "8080"]
     },
     {
       "shape": "poll1 write1 write2 write2 write2 read2 read2 write1 write2 write2 write2 read2",
-      "said": ["84", "2208", "2280", "b58f"]
+      "said": ["84", "0000", "0000", "0000"]
     },
     {
       "shape": "write1 write2 poll2 read2 read2 read2 read2 poll2 write2 write2 write2 write2",
-      "said": ["8080", "78ef", "78ef", "78ef", "78ef", "8080"]
+      "said": ["8080", "dbb2", "ce95", "264d", "8080", "8484"]
     },
     {
       "shape": "write1 write2 read2 read2 read2 read2 poll2 write2 write2 write2 write2",
-      "said": ["0097", "0000", "0080", "8080", "8484"]
+      "said": ["0073", "0073", "0000", "0000", "9090"]
     },
     {
       "shape": "poll1 read1 read1 read1 write1 write2 write2 write2",
       "said": ["84", "80", "80", "80"]
     },
     {
-      "shape": "poll1 write1 write2 write2 write2 read2 read2 read2",
-      "said": ["84", "6c00", "0000", "0000"]
+      "shape": "write1 write2 write2 write2 poll2 read2 read2 read2",
+      "said": ["9090", "2e10", "2e10", "2e10"]
     },
     {
       "shape": "write1 write2 write2 write2 poll1 read2 read2",
-      "said": ["84", "5555", "5555"]
+      "said": ["00", "0000", "0000"]
     },
     {
       "shape": "write1 write2 write2 write2 poll2 read2 read2",
-      "said": ["9090", "a09f", "a09f"]
+      "said": ["8080", "7832", "7832"]
     },
     {
       "shape": "poll1 write1 write2 write2 write2 read2",
@@ -48,51 +52,47 @@
     },
     {
       "shape": "write1 write2 write2 write2 write2 read2",
-      "said": ["0000"]
+      "said": ["5f5f"]
     },
     {
       "shape": "write1 write2 write2 poll2 read2 read2",
-      "said": ["9090", "0000", "0000"]
+      "said": ["9090", "e262", "e262"]
     },
     {
       "shape": "write1 write2 write2 write2 poll2 read2",
-      "said": ["8080", "0000"]
+      "said": ["9090", "a4e5"]
     },
     {
       "shape": "write1 write2 write2 read2 read2",
-      "said": ["7c7c", "7c7c"]
+      "said": ["d3d3", "d3d3"]
     },
     {
       "shape": "write1 write2 write2 read2",
-      "said": ["62ad"]
+      "said": ["0081"]
     },
     {
       "shape": "write1 poll1 read1 read1",
-      "said": ["84", "f3", "f3"]
+      "said": ["84", "f9", "f9"]
     },
     {
       "shape": "write1 write1 poll1 read1",
-      "said": ["80", "1c"]
-    },
-    {
-      "shape": "write1 write1 read1",
-      "said": ["a4"]
+      "said": ["80", "3e"]
     },
     {
       "shape": "write1 read1 read1",
-      "said": ["e5", "e5"]
+      "said": ["23", "00"]
     },
     {
       "shape": "write1 read1 poll1",
-      "said": ["4f", "84"]
+      "said": ["fb", "84"]
     },
     {
       "shape": "write1 read1",
-      "said": ["ac"]
+      "said": ["55"]
     },
     {
       "shape": "write1 read2",
-      "said": ["d7d7"]
+      "said": ["d4d4"]
     }
   ]
 }

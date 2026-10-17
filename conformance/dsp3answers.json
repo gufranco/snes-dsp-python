@@ -31,8 +31,12 @@
       "said": ["9898", "9898"]
     },
     {
+      "shape": "read1 write1 write2 read2",
+      "said": ["80", "80f8"]
+    },
+    {
       "shape": "write1 write2 read2",
-      "said": ["80f8"]
+      "said": ["5555"]
     },
     {
       "shape": "read1 read1 write1",
@@ -40,7 +44,7 @@
     },
     {
       "shape": "write1 read1",
-      "said": ["6b"]
+      "said": ["86"]
     }
   ]
 }

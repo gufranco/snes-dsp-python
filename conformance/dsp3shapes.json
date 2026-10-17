@@ -9,7 +9,7 @@
       "why": "the only game that carries the DSP-3",
       "bytes": 1048576,
       "layout": "lorom",
-      "shapes": 19,
+      "shapes": 20,
       "crc32": "4dc3d903",
       "md5": "3c9e14d90815bfc9fd154a30c85763cf",
       "sha1": "a504b74d1e256f97bc05a7dd836a2457ae6f525e",
@@ -49,6 +49,11 @@
     },
     {
       "shape": "write1 write2 write2 write2 write1",
+      "seen": 1,
+      "cartridges": 1
+    },
+    {
+      "shape": "read1 write1 write2 read2",
       "seen": 1,
       "cartridges": 1
     },
@@ -104,7 +109,7 @@
     },
     {
       "shape": "read1",
-      "seen": 29,
+      "seen": 28,
       "cartridges": 1
     },
     {

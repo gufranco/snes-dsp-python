@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** parts on **5** microcode images, **121** exchanges read out of **36** retail cartridges, **61** of them played at the part, **0** failures, **0** commands described by hand, **986** tests, **100%** statement and branch coverage, no dependencies
+**6** parts on **5** microcode images, **121** exchanges read out of **36** retail cartridges, **62** of them played at the part, **0** failures, **0** commands described by hand, **986** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 import snesdsp
@@ -419,14 +419,14 @@ What a game sends is read out of the cartridge by [snes-driver-python](https://g
 
 | Part | Cartridges | Shapes | Played at the part | Access sites |
 |:--|--:|--:|--:|--:|
-| DSP-1 | 29 | 51 | 22 | 1,397 |
+| DSP-1 | 29 | 50 | 22 | 1,384 |
 | DSP-2 | 3 | 13 | 1 | 270 |
-| DSP-3 | 1 | 19 | 9 | 182 |
+| DSP-3 | 1 | 20 | 10 | 182 |
 | DSP-4 | 3 | 38 | 29 | 910 |
 
 The DSP-1 rows come from 29 different drivers. The DSP-3 rows come from one cartridge, the only one that carries the part.
 
-A shape carries no payload, so its bytes are generated from a fixed seed. A shape the part answers with silence is played again under each of the 256 command bytes, and counts as silent only when all 256 are. Three shapes, one each on the DSP-1, DSP-3 and DSP-4, read before they write: on a console they read what an earlier exchange left, so they are reported apart rather than counted as silence. Every other shape gets an answer.
+A shape carries no payload, so its bytes are generated from a fixed seed. A shape the part answers with silence is played again under each of the 256 command bytes, and counts as silent only when all 256 are. Four shapes, one on the DSP-1, two on the DSP-3 and one on the DSP-4, read before they write: on a console they read what an earlier exchange left, so they are reported apart rather than counted as silence. Every other shape gets an answer.
 
 ```bash
 python3 -m conformance.against_cartridges dsp1

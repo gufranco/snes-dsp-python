@@ -333,7 +333,7 @@
       "why": "one of the DSP-1 family cartridges. Which of the three masks a given board carries is not determinable from a dump, and does not change the protocol: the DSP-1B corrected an arithmetic fault and left the command set alone",
       "bytes": 1048576,
       "layout": "hirom",
-      "shapes": 16,
+      "shapes": 14,
       "crc32": "b846b00d",
       "md5": "81cee1957fa875efbedaff130848ba9e",
       "sha1": "d110e337a49f6a635236c9bf485759e48411cb69",
@@ -357,6 +357,11 @@
       "shape": "poll1 write1 write2 write2 write2 write2 write2 write2 write2 poll2 read2 read2 read2 read2 write1 write2 read2 read2 read2 read2 poll2 write2 write2 write2 write2",
       "seen": 1,
       "cartridges": 1
+    },
+    {
+      "shape": "write1 write2 write2 write2 write2 poll1 write1 write2 write2 write2 read2 read2 read2",
+      "seen": 4,
+      "cartridges": 4
     },
     {
       "shape": "write1 write2 write2 write2 write2 write2 write2 write2 poll2 read2 read2 read2 read2",
@@ -384,9 +389,9 @@
       "cartridges": 4
     },
     {
-      "shape": "poll1 write1 write2 write2 write2 read2 read2 read2",
-      "seen": 4,
-      "cartridges": 4
+      "shape": "write1 write2 write2 write2 poll2 read2 read2 read2",
+      "seen": 2,
+      "cartridges": 1
     },
     {
       "shape": "write1 write2 write2 write2 poll1 read2 read2",
@@ -429,11 +434,6 @@
       "cartridges": 1
     },
     {
-      "shape": "write1 write2 write2 write2 write2",
-      "seen": 8,
-      "cartridges": 4
-    },
-    {
       "shape": "poll1 write1 write2 write2 write2",
       "seen": 4,
       "cartridges": 4
@@ -444,9 +444,19 @@
       "cartridges": 4
     },
     {
+      "shape": "write1 write2 write2 write2 write2",
+      "seen": 4,
+      "cartridges": 4
+    },
+    {
       "shape": "poll1 read1 read1 read1 read1",
       "seen": 1,
       "cartridges": 1
+    },
+    {
+      "shape": "write1 write2 write2 read2",
+      "seen": 16,
+      "cartridges": 9
     },
     {
       "shape": "write1 write2 write2 write2",
@@ -459,11 +469,6 @@
       "cartridges": 3
     },
     {
-      "shape": "write1 write2 write2 read2",
-      "seen": 12,
-      "cartridges": 5
-    },
-    {
       "shape": "poll1 read1 read1 read1",
       "seen": 8,
       "cartridges": 4
@@ -472,11 +477,6 @@
       "shape": "poll1 poll1 poll1 poll1",
       "seen": 6,
       "cartridges": 3
-    },
-    {
-      "shape": "poll1 read1 poll1 read1",
-      "seen": 1,
-      "cartridges": 1
     },
     {
       "shape": "write1 poll1 read1 read1",
@@ -509,17 +509,7 @@
       "cartridges": 1
     },
     {
-      "shape": "write1 write1 read1",
-      "seen": 4,
-      "cartridges": 4
-    },
-    {
       "shape": "poll1 poll1 poll1",
-      "seen": 3,
-      "cartridges": 3
-    },
-    {
-      "shape": "read1 poll1 read1",
       "seen": 3,
       "cartridges": 3
     },
@@ -530,6 +520,11 @@
     },
     {
       "shape": "read1 poll1 poll1",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "read1 poll1 read1",
       "seen": 2,
       "cartridges": 2
     },
@@ -545,8 +540,8 @@
     },
     {
       "shape": "poll1 read1",
-      "seen": 21,
-      "cartridges": 9
+      "seen": 20,
+      "cartridges": 8
     },
     {
       "shape": "write1 poll1",
@@ -595,7 +590,7 @@
     },
     {
       "shape": "write1",
-      "seen": 669,
+      "seen": 663,
       "cartridges": 29
     },
     {
@@ -605,7 +600,7 @@
     },
     {
       "shape": "read1",
-      "seen": 223,
+      "seen": 221,
       "cartridges": 29
     }
   ]
