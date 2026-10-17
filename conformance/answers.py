@@ -78,7 +78,7 @@ def shapes_named(part: str) -> str:
     return DRIVEN_LIKE.get(part, part)
 
 
-def _default_shapes(part: str) -> list[dict[str, Any]]:
+def recorded_shapes(part: str) -> list[dict[str, Any]]:
     path = ROOT / f"{shapes_named(part)}shapes.json"
     if not path.exists():
         return []
@@ -113,7 +113,7 @@ def take(
     digest: Callable[[str], str] = _default_digest,
     rolls: Callable[[int], random.Random] = shapes_module.rolls,
 ) -> dict[str, Any]:
-    held = _default_shapes(part) if shapes is None else shapes
+    held = recorded_shapes(part) if shapes is None else shapes
     return {
         "note": NOTE,
         "part": part,
@@ -140,7 +140,7 @@ def check(
             " differently, so there is nothing to compare"
         )
 
-    held = _default_shapes(part) if shapes is None else shapes
+    held = recorded_shapes(part) if shapes is None else shapes
     now = {
         one["shape"]: one["said"] for one in _exchanges(part, build, held, rolls(corpus["seed"]))
     }
@@ -193,7 +193,7 @@ def main(
     argv: Sequence[str] = (),
     why_not: Callable[[], str | None] = chip.why_not,
     build: BuildWatched = _default_build,
-    shapes_for: Callable[[str], list[dict[str, Any]]] = _default_shapes,
+    shapes_for: Callable[[str], list[dict[str, Any]]] = recorded_shapes,
     digest: Callable[[str], str] = _default_digest,
     where: Path = ROOT,
     parts: Sequence[str] = PARTS,

@@ -1,148 +1,294 @@
+import json
 import sys
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
-import snesdsp
-from snesdsp import chip, errors, models
+import snesdsp  # noqa: E402
 
 EVERY_PART = {"dsp1", "dsp1a", "dsp1b", "dsp2", "dsp3", "dsp4"}
+
+LISTED = "dsp1, dsp1a, dsp1b, dsp2, dsp3, dsp4"
+
+MANIFEST = ROOT / "snesdsp" / "artifacts.manifest.json"
+
+PROGRAM_WORDS = 2048
+
+TABLE_WORDS = 1024
+
+
+def built(name: str) -> Any:
+    identity = SimpleNamespace(
+        part="dsp1",
+        processor="upd7725",
+        revision="MADE UP",
+        program_words=PROGRAM_WORDS,
+        data_words=TABLE_WORDS,
+    )
+    image = bytes(PROGRAM_WORDS * 3 + TABLE_WORDS * 2)
+    return snesdsp.Chip(name, image=image, identity=identity, boot=0)
+
+
+def declared() -> list[dict[str, Any]]:
+    held = json.loads(MANIFEST.read_text())
+    assert isinstance(held, dict), f"{MANIFEST} does not hold an object"
+    artifacts = held["artifacts"]
+    assert isinstance(artifacts, list), f"{MANIFEST} does not hold a list of images"
+    return artifacts
 
 
 class CatalogueTest(unittest.TestCase):
     def test_the_package_names_every_part_it_covers(self) -> None:
-        self.assertEqual(set(models.MODELS), EVERY_PART)
+        # Arrange
+        catalogue = snesdsp.MODELS
 
-    def test_a_part_says_what_it_is(self) -> None:
-        self.assertTrue(models.lookup("dsp2").summary)
+        # Act
+        names = set(catalogue)
+
+        # Assert
+        self.assertEqual(names, EVERY_PART)
+
+    def test_a_part_says_what_its_program_does(self) -> None:
+        # Arrange
+        model = snesdsp.MODELS["dsp2"]
+
+        # Act
+        summary = model.summary
+
+        # Assert
+        self.assertIn("tile conversion", summary)
 
     def test_and_which_image_it_runs(self) -> None:
-        self.assertEqual(models.lookup("dsp2").image, "dsp2")
+        # Arrange
+        catalogue = snesdsp.MODELS
 
-    def test_a_part_that_carries_another_part_program_says_so(self) -> None:
-        self.assertEqual(models.lookup("dsp1a").image, "dsp1")
+        # Act
+        images = {name: model.image for name, model in catalogue.items()}
+
+        # Assert
+        self.assertEqual(
+            images,
+            {
+                "dsp1": "dsp1",
+                "dsp1a": "dsp1",
+                "dsp1b": "dsp1b",
+                "dsp2": "dsp2",
+                "dsp3": "dsp3",
+                "dsp4": "dsp4",
+            },
+        )
+
+    def test_the_one_part_that_runs_another_part_image_is_published(self) -> None:
+        # Arrange
+        expected = {"dsp1a": "dsp1"}
+
+        # Act
+        shared = snesdsp.SHARES_MICROCODE
+
+        # Assert
+        self.assertEqual(shared, expected)
 
     def test_and_is_still_a_part_in_its_own_right(self) -> None:
-        self.assertEqual(models.lookup("dsp1a").name, "dsp1a")
+        # Arrange
+        model = snesdsp.MODELS["dsp1a"]
+
+        # Act
+        name = model.name
+
+        # Assert
+        self.assertEqual(name, "dsp1a")
 
     def test_a_part_prints_as_itself_and_the_image_it_runs(self) -> None:
-        printed = repr(models.lookup("dsp1a"))
+        # Arrange
+        model = snesdsp.MODELS["dsp1a"]
 
+        # Act
+        printed = repr(model)
+
+        # Assert
         self.assertIn("dsp1a", printed)
-        self.assertIn("dsp1", printed)
+        self.assertIn("dsp1 image", printed)
 
     def test_every_part_carries_a_summary(self) -> None:
-        for name in models.MODELS:
-            self.assertTrue(models.lookup(name).summary, name)
+        # Arrange
+        catalogue = snesdsp.MODELS
 
-    def test_no_two_parts_share_a_name(self) -> None:
-        self.assertEqual(len(models.MODELS), len(set(models.MODELS)))
+        # Act
+        bare = [name for name, model in catalogue.items() if not model.summary]
+
+        # Assert
+        self.assertEqual(bare, [])
+
+    def test_every_record_is_the_published_model_type(self) -> None:
+        # Arrange
+        catalogue = snesdsp.MODELS
+
+        # Act
+        kinds = {type(model) for model in catalogue.values()}
+
+        # Assert
+        self.assertEqual(kinds, {snesdsp.Model})
 
 
 class NamingTest(unittest.TestCase):
-    def test_a_part_is_found_by_its_name(self) -> None:
-        self.assertEqual(models.lookup("dsp3").name, "dsp3")
+    def test_a_part_is_built_by_its_name(self) -> None:
+        # Arrange
+        name = "dsp3"
 
-    def test_and_by_any_name_it_is_also_known_by(self) -> None:
-        for alias in models.lookup("dsp1").aliases:
-            self.assertEqual(models.lookup(alias).name, "dsp1")
+        # Act
+        part = built(name)
 
-    def test_the_name_is_read_without_regard_to_case(self) -> None:
-        self.assertEqual(models.lookup("DSP3").name, "dsp3")
+        # Assert
+        self.assertEqual(part.model, "dsp3")
 
-    def test_a_name_no_part_answers_to_is_refused(self) -> None:
-        with self.assertRaises(errors.UnknownModelError):
-            models.lookup("dsp9")
+    def test_the_dsp1_answers_to_the_aliases_the_readme_lists(self) -> None:
+        # Arrange
+        expected = ("dsp-1", "upd77c25dsp1", "nintendodsp1")
 
-    def test_and_the_refusal_names_what_there_is(self) -> None:
-        with self.assertRaises(errors.UnknownModelError) as raised:
-            models.lookup("dsp9")
+        # Act
+        aliases = snesdsp.MODELS["dsp1"].aliases
 
-        for name in EVERY_PART:
-            self.assertIn(name, str(raised.exception))
+        # Assert
+        self.assertEqual(aliases, expected)
+
+    def test_and_building_by_any_of_them_builds_the_dsp1(self) -> None:
+        # Arrange
+        aliases = snesdsp.MODELS["dsp1"].aliases
+
+        # Act
+        built_as = {built(alias).model for alias in aliases}
+
+        # Assert
+        self.assertEqual(built_as, {"dsp1"})
+
+    def test_the_name_is_read_without_regard_to_case_hyphens_or_underscores(self) -> None:
+        # Arrange
+        name = "DSP_3"
+
+        # Act
+        part = built(name)
+
+        # Assert
+        self.assertEqual(part.model, "dsp3")
+
+    def test_a_name_no_part_answers_to_is_refused_naming_what_there_is(self) -> None:
+        # Arrange
+        name = "dsp5"
+
+        # Act
+        with self.assertRaises(snesdsp.UnknownModelError) as refused:
+            snesdsp.Chip(name)
+
+        # Assert
+        self.assertEqual(
+            str(refused.exception), f"dsp5 is not a part this package covers; it has {LISTED}"
+        )
 
     def test_no_alias_belongs_to_two_parts(self) -> None:
-        seen = [alias for name in models.MODELS for alias in models.lookup(name).aliases]
+        # Arrange
+        catalogue = snesdsp.MODELS
 
+        # Act
+        seen = [alias for model in catalogue.values() for alias in model.aliases]
+
+        # Assert
         self.assertEqual(len(seen), len(set(seen)))
 
 
 class DeclaredImageTest(unittest.TestCase):
-    def _manifest(self) -> "dict[str, Any]":
-        import json
+    def test_every_part_runs_an_image_the_manifest_declares(self) -> None:
+        # Arrange
+        declared_images = {one["part"] for one in declared()}
 
-        where = Path(__file__).resolve().parent / "artifacts.manifest.json"
-        held = json.loads(where.read_text())
-        assert isinstance(held, dict), f"{where} does not hold an object"
-        return held
+        # Act
+        missing = [n for n, model in snesdsp.MODELS.items() if model.image not in declared_images]
 
-    def test_every_part_runs_an_image_the_processor_declares(self) -> None:
-        declared = {one["part"] for one in self._manifest()["artifacts"]}
-
-        for name in models.MODELS:
-            self.assertIn(models.lookup(name).image, declared, name)
+        # Assert
+        self.assertEqual(missing, [])
 
     def test_every_declared_image_carries_a_deciding_digest(self) -> None:
-        for one in self._manifest()["artifacts"]:
-            for accepted in one["accepted"]:
-                self.assertEqual(len(accepted["sha256"]), 64, one["part"])
+        # Arrange
+        images = declared()
 
-    def test_and_the_shape_the_processor_needs_to_load_it(self) -> None:
-        for one in self._manifest()["artifacts"]:
-            self.assertEqual(
-                one["bytes"], one["programWords"] * 3 + one["dataWords"] * 2, one["part"]
-            )
+        # Act
+        widths = {len(accepted["sha256"]) for one in images for accepted in one["accepted"]}
+
+        # Assert
+        self.assertEqual(widths, {64})
 
     def test_every_part_of_this_family_runs_the_same_processor(self) -> None:
-        declared = {one["part"]: one["processor"] for one in self._manifest()["artifacts"]}
+        # Arrange
+        processors = {one["part"]: one["processor"] for one in declared()}
 
-        for name in models.MODELS:
-            self.assertEqual(declared[models.lookup(name).image], "upd7725", name)
+        # Act
+        found = {processors[model.image] for model in snesdsp.MODELS.values()}
+
+        # Assert
+        self.assertEqual(found, {"upd7725"})
 
 
 class BuildingTest(unittest.TestCase):
-    def test_asking_for_a_part_asks_for_its_microcode(self) -> None:
-        with self.assertRaises((snesdsp.NoFirmware, Exception)) as raised:
-            _refused_or_built("dsp9")
+    def test_asking_for_a_part_with_no_image_asks_for_its_microcode(self) -> None:
+        # Arrange
+        nothing: dict[str, tuple[object, Path]] = {}
 
-        self.assertTrue(raised.exception)
+        # Act
+        with self.assertRaises(snesdsp.NoFirmware) as refused:
+            snesdsp.Chip("dsp2", images=nothing)
+
+        # Assert
+        self.assertIn("microcode", str(refused.exception))
 
     def test_a_name_no_part_answers_to_is_refused_before_any_image_is_looked_for(self) -> None:
-        with self.assertRaises(errors.UnknownModelError):
-            snesdsp.Chip("dsp9")
+        # Arrange
+        nothing: dict[str, tuple[object, Path]] = {}
 
-    def test_the_default_part_is_one_the_catalogue_knows(self) -> None:
-        self.assertIn("dsp1", models.MODELS)
+        # Act
+        with self.assertRaises(snesdsp.UnknownModelError):
+            snesdsp.Chip("dsp9", images=nothing)
+
+        # Assert
+        self.assertNotIn("dsp9", snesdsp.MODELS)
 
     def test_the_package_offers_no_way_to_ask_for_anything_but_the_part(self) -> None:
-        self.assertNotIn("backend", snesdsp.__all__)
-        self.assertNotIn("MODELLED", snesdsp.__all__)
+        # Arrange
+        published = snesdsp.__all__
 
+        # Act
+        backends = {"backend", "MODELLED"} & set(published)
 
-def _refused_or_built(name: str) -> "chip.Chip":
-    return snesdsp.Chip(name)
+        # Assert
+        self.assertEqual(backends, set())
 
 
 class NamingNoneTest(unittest.TestCase):
-    def test_building_without_naming_a_model_is_refused(self) -> None:
-        with self.assertRaises(errors.UnknownModelError):
+    def test_building_without_naming_a_model_is_refused_naming_every_model(self) -> None:
+        # Arrange
+        expected = (
+            "no model was named, and this package will not choose one for you."
+            f" Name one of: {LISTED}"
+        )
+
+        # Act
+        with self.assertRaises(snesdsp.UnknownModelError) as refused:
             snesdsp.Chip()
 
-    def test_and_the_refusal_names_every_model_there_is(self) -> None:
-        with self.assertRaises(errors.UnknownModelError) as caught:
-            snesdsp.Chip()
+        # Assert
+        self.assertEqual(str(refused.exception), expected)
 
-        missing = [name for name in snesdsp.MODELS if name not in str(caught.exception)]
+    def test_nothing_named_describe_or_a_default_model_is_published(self) -> None:
+        # Arrange
+        names = ("describe", "DEFAULT_MODEL")
 
-        self.assertEqual(missing, [])
+        # Act
+        found = [name for name in names if hasattr(snesdsp, name)]
 
-    def test_nothing_named_describe_is_published(self) -> None:
-        self.assertFalse(hasattr(snesdsp, "describe"))
-
-    def test_and_no_default_model_is_published_either(self) -> None:
-        self.assertFalse(hasattr(snesdsp, "DEFAULT_MODEL"))
+        # Assert
+        self.assertEqual(found, [])
 
 
 if __name__ == "__main__":

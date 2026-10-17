@@ -8,7 +8,7 @@
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** 款晶片共用 **5** 個微碼映像檔，讀出 **121** 種交換，來自 **36** 盒零售版卡帶，其中 **61** 種在晶片上重播，**0** 次失敗，**0** 個以人手描述的命令，**1,000** 項測試，**100%** 語句及分支覆蓋率，沒有任何依賴套件
+**6** 款晶片共用 **5** 個微碼映像檔，讀出 **121** 種交換，來自 **36** 盒零售版卡帶，其中 **61** 種在晶片上重播，**0** 次失敗，**0** 個以人手描述的命令，**971** 項測試，**100%** 語句及分支覆蓋率，沒有任何依賴套件
 
 ```python
 import snesdsp
@@ -65,7 +65,7 @@ python3 snesdsp/doctor.py
 | `boot` | `20000` | 載入後、首次存取前執行的指令數 |
 | `fill` | `0` | 載入映像檔前處理器記憶體所持有的值 |
 | `image` | 無 | 映像檔的位元組，直接傳入，因此不搜尋任何目錄。需要 `identity` |
-| `identity` | 無 | `image` 是甚麼，即 `firmware.identify(image)` 傳回的值 |
+| `identity` | 無 | `image` 是甚麼，即 `snesdsp.identify(image)` 傳回的值 |
 | `images` | 無 | 由晶片名稱對應到 `(identity, path)` 的映射，取代目錄搜尋 |
 
 ### 型號
@@ -115,15 +115,18 @@ python3 snesdsp/doctor.py
 | `snesdsp.MODELS` | 六個 `Model` 記錄，以標準名稱為鍵。每個記錄都有 `name`、`aliases`、`summary` 及 `image` |
 | `snesdsp.Model` | 這些記錄的型別 |
 | `snesdsp.SHARES_MICROCODE` | `{"dsp1a": "dsp1"}`，唯一執行另一款晶片映像檔的晶片 |
-| `snesdsp.available()` | 映像檔位於本機的晶片，以晶片名稱對應到 `(identity, path)` 的映射表示 |
-| `snesdsp.why_not()` | 至少有一款晶片可以建立時為 `None`，否則為說明為何一款都無法建立的句子 |
+| `snesdsp.available(held=None)` | 映像檔位於本機的晶片，以晶片名稱對應到 `(identity, path)` 的映射表示。傳入形狀相同的映射 `held` 時，會讀取它而不進行搜尋 |
+| `snesdsp.why_not(held=None)` | 至少有一款晶片可以建立時為 `None`，否則為說明為何一款都無法建立的句子。接受同樣的 `held` |
 | `snesdsp.MASTER_CLOCK` | `21477273`，主機的主時鐘，單位為 Hz，是 NTSC 色彩副載波的六倍 |
 | `snesdsp.DSP_CLOCK` | `7600000`，晶片的時鐘，單位為 Hz，每個時鐘一條指令 |
 | `snesdsp.GAP` | `14`，`gap` 的預設值 |
 | `snesdsp.clock_of(model)` | 該型號的時鐘，單位為 Hz。名稱未知時引發 `UnknownModelError` |
 | `snesdsp.steps_for(master_clocks, clock=DSP_CLOCK, master=MASTER_CLOCK)` | 在該數量的主時鐘內執行的指令數，向下取整 |
 | `snesdsp.__version__` | 已安裝的版本 |
-| `snesdsp.firmware` | `identify(image)`、`digests_of(image)`、`directories()` 及 `search()`，用於尋找及命名映像檔 |
+| `snesdsp.identify(image, catalogue=None)` | 映像檔的 `Identity`，按 SHA-256 在清單或形狀相同的映射 `catalogue` 中尋找。會引發 `Unrecognised` 或 `Corrupt` |
+| `snesdsp.digests_of(image)` | 映像檔的 CRC32、MD5、SHA-1 及 SHA-256，以 `crc32`、`md5`、`sha1` 及 `sha256` 為鍵的小寫十六進位 |
+| `snesdsp.directories(environment=None)` | 搜尋按次序讀取的目錄，取自 `environment` 或程序的環境變數 |
+| `snesdsp.search(places=None, catalogue=None)` | 在 `places` 或 `directories()` 中找到的每個映像檔，以 `(identity, path)` 配對列出，每款晶片以最先找到的檔案為準 |
 
 ```python
 import snesdsp
@@ -165,7 +168,7 @@ no model was named, and this package will not choose one for you. Name one of: d
 | `UnknownModelError` | 缺少型號名稱，或沒有型號使用該名稱。訊息會列出每個型號 |
 | `NoFirmware` | 處理器子模組未簽出、找不到該晶片的映像檔，或傳入了 `image` 但沒有 `identity` |
 | `NeverReady` | `settle()` 執行了 `patience` 條指令，晶片始終沒有發出請求 |
-| `Unrecognised` | 傳給 `firmware.identify` 的位元組，其 SHA-256 與清單中任何映像檔都不符。訊息會說明該檔案最可能是甚麼 |
+| `Unrecognised` | 傳給 `snesdsp.identify` 的位元組，其 SHA-256 與清單中任何映像檔都不符。訊息會說明該檔案最可能是甚麼 |
 | `Corrupt` | 映像檔的 SHA-256 相符，但與清單記錄的另一個摘要不符 |
 | `WrongShape` | `image` 的長度不是其 `identity` 所需的長度：每個程式字 3 個位元組，每個數據字 2 個位元組 |
 
@@ -173,21 +176,20 @@ no model was named, and this package will not choose one for you. Name one of: d
 from pathlib import Path
 
 import snesdsp
-from snesdsp import firmware
 
 if snesdsp.why_not():
     raise snesdsp.NoFirmware(snesdsp.why_not())
 
 identity, where = snesdsp.available()["dsp1b"]
 held = Path(where).read_bytes()
-print(firmware.identify(held), identity.program_words, identity.data_words, len(held))
+print(snesdsp.identify(held), identity.program_words, identity.data_words, len(held))
 
 part = snesdsp.Chip("dsp1b", image=held, identity=identity)
 print(part.identity.part, part.processor)
 
 for wrong in (held[:-2], held[::-1]):
     try:
-        firmware.identify(wrong)
+        snesdsp.identify(wrong)
     except snesdsp.Unrecognised as error:
         print(str(error)[:72])
 try:
@@ -235,7 +237,7 @@ dsp1 did not ask for attention within 0 instructions
 3. 存放本簽出副本的目錄中的 [`firmware/`](firmware/README.md)，適用於本儲存庫作為另一個專案的子模組時。
 4. 本簽出副本中的 [`firmware/`](firmware/README.md)。
 
-SHA-256 不在清單中的檔案會被搜尋略過。若交給 `firmware.identify`，它會被拒絕並附上診斷：複製器檔頭、位元組對調的傾印及已知的損壞傾印都會被識別並指出。
+SHA-256 不在清單中的檔案會被搜尋略過。若交給 `snesdsp.identify`，它會被拒絕並附上診斷：複製器檔頭、位元組對調的傾印及已知的損壞傾印都會被識別並指出。
 
 確認你持有的副本：
 
@@ -469,11 +471,12 @@ uvx ruff@0.16.3 format --check .
 uvx ruff@0.16.3 check .
 mypy
 pnpm run format:check
-python3 -m coverage erase
+cov=(uvx --python 3.12 --from coverage==7.6.10 --with setuptools==84.0.0 coverage)
+"${cov[@]}" erase
 for file in $(find snesdsp conformance -name '*.test.py' | sort); do
-  python3 -m coverage run -a "$file"
+  "${cov[@]}" run -a "$file"
 done
-python3 -m coverage report
+"${cov[@]}" report
 python3 -m conformance.speed
 ```
 

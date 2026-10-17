@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** parts on **5** microcode images, **121** exchanges read out of **36** retail cartridges, **61** of them played at the part, **0** failures, **0** commands described by hand, **1,000** tests, **100%** statement and branch coverage, no dependencies
+**6** parts on **5** microcode images, **121** exchanges read out of **36** retail cartridges, **61** of them played at the part, **0** failures, **0** commands described by hand, **971** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 import snesdsp
@@ -65,7 +65,7 @@ Releases follow [Semantic Versioning](https://semver.org/) and are cut from the 
 | `boot` | `20000` | Instructions run after loading, before the first access |
 | `fill` | `0` | The value the processor's memories hold before the image is loaded |
 | `image` | none | The image bytes, handed in so no directory is searched. Needs `identity` |
-| `identity` | none | What `image` is, as `firmware.identify(image)` returns it |
+| `identity` | none | What `image` is, as `snesdsp.identify(image)` returns it |
 | `images` | none | A mapping of part name to `(identity, path)`, used in place of the directory search |
 
 ### Models
@@ -115,15 +115,18 @@ Releases follow [Semantic Versioning](https://semver.org/) and are cut from the 
 | `snesdsp.MODELS` | The six `Model` records, keyed by canonical name. Each has `name`, `aliases`, `summary` and `image` |
 | `snesdsp.Model` | The type of those records |
 | `snesdsp.SHARES_MICROCODE` | `{"dsp1a": "dsp1"}`, the one part that runs another part's image |
-| `snesdsp.available()` | The parts whose image is on this machine, as a mapping of part name to `(identity, path)` |
-| `snesdsp.why_not()` | `None` when at least one part can be built, otherwise the sentence saying why none can |
+| `snesdsp.available(held=None)` | The parts whose image is on this machine, as a mapping of part name to `(identity, path)`. Given `held`, a mapping of the same shape, it reads that instead of searching |
+| `snesdsp.why_not(held=None)` | `None` when at least one part can be built, otherwise the sentence saying why none can. Takes the same `held` |
 | `snesdsp.MASTER_CLOCK` | `21477273`, the console's master clock in Hz, six times the NTSC colour carrier |
 | `snesdsp.DSP_CLOCK` | `7600000`, the part's clock in Hz, one instruction per clock |
 | `snesdsp.GAP` | `14`, the default `gap` |
 | `snesdsp.clock_of(model)` | The clock of that model in Hz. Raises `UnknownModelError` for an unknown name |
 | `snesdsp.steps_for(master_clocks, clock=DSP_CLOCK, master=MASTER_CLOCK)` | Instructions run in that many master clocks, rounded down |
 | `snesdsp.__version__` | The installed version |
-| `snesdsp.firmware` | `identify(image)`, `digests_of(image)`, `directories()` and `search()`, for finding and naming an image |
+| `snesdsp.identify(image, catalogue=None)` | The image's `Identity`, found by SHA-256 in the manifest or in `catalogue`, a mapping of the manifest's shape. Raises `Unrecognised` or `Corrupt` |
+| `snesdsp.digests_of(image)` | The image's CRC32, MD5, SHA-1 and SHA-256, as lowercase hex keyed `crc32`, `md5`, `sha1` and `sha256` |
+| `snesdsp.directories(environment=None)` | The directories the search reads, in order, from `environment` or the process environment |
+| `snesdsp.search(places=None, catalogue=None)` | Every image found in `places`, or in `directories()`, as `(identity, path)` pairs, the first file found for a part winning |
 
 ```python
 import snesdsp
@@ -165,7 +168,7 @@ A sixtieth of a second of master clocks is 126,666 instructions of the part.
 | `UnknownModelError` | The model name is missing or no model goes by it. The message lists every model |
 | `NoFirmware` | The processor submodule is not checked out, no image for the part was found, or `image` was passed without `identity` |
 | `NeverReady` | `settle()` ran `patience` instructions and the part never asked |
-| `Unrecognised` | `firmware.identify` was given bytes whose SHA-256 no image in the manifest has. The message says what the file most likely is |
+| `Unrecognised` | `snesdsp.identify` was given bytes whose SHA-256 no image in the manifest has. The message says what the file most likely is |
 | `Corrupt` | An image matched on SHA-256 and disagreed on another digest the manifest records |
 | `WrongShape` | `image` is not the length its `identity` needs: 3 bytes per program word and 2 per data word |
 
@@ -173,21 +176,20 @@ A sixtieth of a second of master clocks is 126,666 instructions of the part.
 from pathlib import Path
 
 import snesdsp
-from snesdsp import firmware
 
 if snesdsp.why_not():
     raise snesdsp.NoFirmware(snesdsp.why_not())
 
 identity, where = snesdsp.available()["dsp1b"]
 held = Path(where).read_bytes()
-print(firmware.identify(held), identity.program_words, identity.data_words, len(held))
+print(snesdsp.identify(held), identity.program_words, identity.data_words, len(held))
 
 part = snesdsp.Chip("dsp1b", image=held, identity=identity)
 print(part.identity.part, part.processor)
 
 for wrong in (held[:-2], held[::-1]):
     try:
-        firmware.identify(wrong)
+        snesdsp.identify(wrong)
     except snesdsp.Unrecognised as error:
         print(str(error)[:72])
 try:
@@ -233,7 +235,7 @@ The search reads files ending `.bin` or `.rom` from these directories, in order,
 3. [`firmware/`](firmware/README.md) in the directory that holds this checkout, for when it is a submodule of another project.
 4. [`firmware/`](firmware/README.md) in this checkout.
 
-A file whose SHA-256 is not in the manifest is skipped by the search. Handed to `firmware.identify`, it is refused with a diagnosis: a copier header, a byte-swapped dump and a known bad dump are each recognised and named.
+A file whose SHA-256 is not in the manifest is skipped by the search. Handed to `snesdsp.identify`, it is refused with a diagnosis: a copier header, a byte-swapped dump and a known bad dump are each recognised and named.
 
 Confirm a copy you hold:
 
@@ -465,11 +467,12 @@ uvx ruff@0.16.3 format --check .
 uvx ruff@0.16.3 check .
 mypy
 pnpm run format:check
-python3 -m coverage erase
+cov=(uvx --python 3.12 --from coverage==7.6.10 --with setuptools==84.0.0 coverage)
+"${cov[@]}" erase
 for file in $(find snesdsp conformance -name '*.test.py' | sort); do
-  python3 -m coverage run -a "$file"
+  "${cov[@]}" run -a "$file"
 done
-python3 -m coverage report
+"${cov[@]}" report
 python3 -m conformance.speed
 ```
 

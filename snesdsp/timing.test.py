@@ -2,98 +2,179 @@ import sys
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
-from snesdsp import errors, models, timing
+import snesdsp  # noqa: E402
+
+CARTRIDGE_OSCILLATOR = 7_600_000
+
+NTSC_COLOUR_CARRIER = 3_579_545.4545454545
+
+PAL_MASTER_CLOCK = round(4_433_618.75 * 4.8)
+
+SLOW_ACCESS = 8
+
+FAST_ACCESS = 6
+
+LONG_STORE_CYCLES = 5
 
 
 class ClockTest(unittest.TestCase):
-    def test_every_part_runs_at_a_stated_rate(self) -> None:
-        for name in models.MODELS:
-            self.assertGreater(timing.clock_of(name), 0, name)
+    def test_every_part_runs_at_the_cartridge_oscillator(self) -> None:
+        # Arrange
+        names = sorted(snesdsp.MODELS)
 
-    def test_the_family_shares_one_rate(self) -> None:
-        rates = {timing.clock_of(name) for name in models.MODELS}
+        # Act
+        rates = {name: snesdsp.clock_of(name) for name in names}
 
-        self.assertEqual(rates, {timing.DSP_CLOCK})
+        # Assert
+        self.assertEqual(rates, dict.fromkeys(names, CARTRIDGE_OSCILLATOR))
+
+    def test_a_model_is_found_by_its_alias_too(self) -> None:
+        # Arrange
+        alias = "DSP-1"
+
+        # Act
+        rate = snesdsp.clock_of(alias)
+
+        # Assert
+        self.assertEqual(rate, CARTRIDGE_OSCILLATOR)
 
     def test_a_part_nobody_names_is_refused(self) -> None:
-        with self.assertRaises(errors.UnknownModelError):
-            timing.clock_of("nonsense")
+        # Arrange
+        name = "nonsense"
 
-    def test_the_rate_is_the_one_the_cartridge_oscillator_runs_at(self) -> None:
-        self.assertEqual(timing.DSP_CLOCK, 7_600_000)
+        # Act
+        with self.assertRaises(snesdsp.UnknownModelError) as refused:
+            snesdsp.clock_of(name)
+
+        # Assert
+        self.assertIn("nonsense is not a part this package covers", str(refused.exception))
+
+    def test_the_published_rate_is_the_cartridge_oscillator(self) -> None:
+        # Arrange
+        expected = CARTRIDGE_OSCILLATOR
+
+        # Act
+        rate = snesdsp.DSP_CLOCK
+
+        # Assert
+        self.assertEqual(rate, expected)
 
     def test_the_console_rate_is_six_times_its_colour_carrier(self) -> None:
-        self.assertEqual(timing.MASTER_CLOCK, round(timing.NTSC_COLOURBURST * 6))
+        # Arrange
+        expected = round(NTSC_COLOUR_CARRIER * 6)
 
-    def test_a_slower_console_is_also_named(self) -> None:
-        self.assertLess(timing.PAL_MASTER_CLOCK, timing.MASTER_CLOCK)
+        # Act
+        rate = snesdsp.MASTER_CLOCK
 
-
-class AccessTest(unittest.TestCase):
-    def test_a_cartridge_access_costs_the_console_a_stated_number_of_clocks(self) -> None:
-        self.assertEqual(timing.SLOW_ACCESS, 8)
-        self.assertEqual(timing.FAST_ACCESS, 6)
-
-    def test_a_fast_access_costs_less_than_a_slow_one(self) -> None:
-        self.assertLess(timing.FAST_ACCESS, timing.SLOW_ACCESS)
+        # Assert
+        self.assertEqual((rate, expected), (21_477_273, 21_477_273))
 
 
 class ConversionTest(unittest.TestCase):
-    def test_console_clocks_become_part_instructions(self) -> None:
-        self.assertGreater(timing.steps_for(timing.SLOW_ACCESS), 0)
+    def test_one_slow_access_alone_is_two_instructions(self) -> None:
+        # Arrange
+        master_clocks = SLOW_ACCESS
+
+        # Act
+        steps = snesdsp.steps_for(master_clocks)
+
+        # Assert
+        self.assertEqual(steps, 2)
 
     def test_a_longer_wait_gives_the_part_more_to_do(self) -> None:
-        self.assertGreater(
-            timing.steps_for(timing.SLOW_ACCESS * 10), timing.steps_for(timing.SLOW_ACCESS)
-        )
+        # Arrange
+        master_clocks = SLOW_ACCESS * 10
+
+        # Act
+        steps = snesdsp.steps_for(master_clocks)
+
+        # Assert
+        self.assertEqual(steps, 28)
 
     def test_no_console_time_gives_the_part_none(self) -> None:
-        self.assertEqual(timing.steps_for(0), 0)
+        # Arrange
+        master_clocks = 0
 
-    def test_the_ratio_is_the_two_rates_rather_than_a_number_somebody_picked(self) -> None:
-        found = timing.steps_for(timing.MASTER_CLOCK)
+        # Act
+        steps = snesdsp.steps_for(master_clocks)
 
-        self.assertEqual(found, timing.DSP_CLOCK)
+        # Assert
+        self.assertEqual(steps, 0)
 
-    def test_one_bus_access_alone_is_only_a_few_instructions(self) -> None:
-        self.assertLessEqual(timing.steps_for(timing.SLOW_ACCESS), 4)
+    def test_a_second_of_console_time_is_a_second_of_the_part(self) -> None:
+        # Arrange
+        master_clocks = snesdsp.MASTER_CLOCK
 
-    def test_but_the_store_around_it_costs_several_times_that(self) -> None:
-        self.assertGreater(
-            timing.steps_for(timing.LONG_STORE_CYCLES * timing.SLOW_ACCESS),
-            timing.steps_for(timing.SLOW_ACCESS) * 4,
-        )
+        # Act
+        steps = snesdsp.steps_for(master_clocks)
 
-    def test_and_a_faster_console_leaves_it_fewer_still(self) -> None:
-        self.assertLessEqual(
-            timing.steps_for(timing.FAST_ACCESS), timing.steps_for(timing.SLOW_ACCESS)
-        )
+        # Assert
+        self.assertEqual(steps, CARTRIDGE_OSCILLATOR)
+
+    def test_a_sixtieth_of_a_second_is_the_worked_example(self) -> None:
+        # Arrange
+        master_clocks = snesdsp.MASTER_CLOCK // 60
+
+        # Act
+        steps = snesdsp.steps_for(master_clocks)
+
+        # Assert
+        self.assertEqual(steps, 126_666)
+
+    def test_a_faster_access_leaves_the_part_no_more(self) -> None:
+        # Arrange
+        slow = snesdsp.steps_for(SLOW_ACCESS)
+
+        # Act
+        fast = snesdsp.steps_for(FAST_ACCESS)
+
+        # Assert
+        self.assertEqual((fast, slow), (2, 2))
 
     def test_a_part_that_runs_faster_gets_more_out_of_the_same_wait(self) -> None:
-        slow = timing.steps_for(timing.MASTER_CLOCK, clock=1_000_000)
-        fast = timing.steps_for(timing.MASTER_CLOCK, clock=2_000_000)
+        # Arrange
+        slow = snesdsp.steps_for(snesdsp.MASTER_CLOCK, clock=1_000_000)
 
-        self.assertEqual(fast, 2 * slow)
+        # Act
+        fast = snesdsp.steps_for(snesdsp.MASTER_CLOCK, clock=2_000_000)
+
+        # Assert
+        self.assertEqual((slow, fast), (1_000_000, 2_000_000))
 
     def test_a_console_that_runs_slower_gives_the_part_more_per_access(self) -> None:
-        found = timing.steps_for(timing.SLOW_ACCESS, master=timing.PAL_MASTER_CLOCK)
+        # Arrange
+        ntsc = snesdsp.steps_for(SLOW_ACCESS * 1000)
 
-        self.assertGreaterEqual(found, timing.steps_for(timing.SLOW_ACCESS))
+        # Act
+        pal = snesdsp.steps_for(SLOW_ACCESS * 1000, master=PAL_MASTER_CLOCK)
+
+        # Assert
+        self.assertEqual((pal, ntsc), (2856, 2830))
 
 
 class GapTest(unittest.TestCase):
-    def test_the_gap_is_derived_from_the_store_that_reaches_the_port(self) -> None:
-        self.assertEqual(
-            timing.GAP, timing.steps_for(timing.LONG_STORE_CYCLES * timing.SLOW_ACCESS)
-        )
+    def test_the_gap_is_what_one_long_store_of_slow_accesses_leaves(self) -> None:
+        # Arrange
+        master_clocks = LONG_STORE_CYCLES * SLOW_ACCESS
 
-    def test_it_is_the_least_a_console_could_leave_rather_than_the_usual_amount(self) -> None:
-        self.assertGreater(timing.GAP, timing.steps_for(timing.SLOW_ACCESS))
+        # Act
+        steps = snesdsp.steps_for(master_clocks)
 
-    def test_and_it_is_a_number_of_instructions_the_part_can_get_through(self) -> None:
-        self.assertGreater(timing.GAP, 0)
+        # Assert
+        self.assertEqual((steps, snesdsp.GAP), (14, 14))
+
+    def test_it_is_several_times_what_one_access_alone_leaves(self) -> None:
+        # Arrange
+        one_access = snesdsp.steps_for(SLOW_ACCESS)
+
+        # Act
+        gap = snesdsp.GAP
+
+        # Assert
+        self.assertEqual((gap, one_access), (14, 2))
 
 
 if __name__ == "__main__":

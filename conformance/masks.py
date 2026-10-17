@@ -104,7 +104,7 @@ def answer(
     return bytes(chip.read() for _ in range(reads))
 
 
-def _first_difference(first: bytes, second: bytes) -> int:
+def first_difference(first: bytes, second: bytes) -> int:
     for at, (one, other) in enumerate(zip(first, second, strict=False)):
         if one != other:
             return at
@@ -129,7 +129,7 @@ def sweep(
                     "command": command,
                     "arguments": list(held),
                     "answers": {mask: said[mask].hex() for mask in MASKS},
-                    "firstDifferingByte": _first_difference(first, second),
+                    "firstDifferingByte": first_difference(first, second),
                 }
             )
     return found

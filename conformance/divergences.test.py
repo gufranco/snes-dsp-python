@@ -2,13 +2,12 @@ import json
 import sys
 import unittest
 from pathlib import Path
-from typing import Any
+from typing import Any, override
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import snesdsp
-from snesdsp import chip
 
 RECORDED = Path(__file__).resolve().parent / "divergences.json"
 
@@ -68,40 +67,47 @@ class RecordTest(unittest.TestCase):
 
 
 class DivergenceTest(unittest.TestCase):  # pragma: no cover
-    def test_the_part_still_answers_what_was_recorded(self) -> None:
-        if chip.why_not() is not None:
+    @override
+    def setUp(self) -> None:
+        if snesdsp.why_not() is not None:
             self.skipTest("no microcode on this machine")
 
+    def test_the_part_still_answers_what_was_recorded(self) -> None:
+        # Arrange
         one = entry_for("dsp3", "0x1c")
         part = snesdsp.Chip("dsp3")
         for byte in one["thisProject"]["sends"]:
             part.write(int(byte, 16))
 
+        # Act
         said = " ".join(f"{part.read():02x}" for _ in range(8))
 
+        # Assert
         self.assertEqual(said, "78 56 78 56 78 56 78 56")
 
     def test_and_echoes_the_last_word_rather_than_a_constant(self) -> None:
-        if chip.why_not() is not None:
-            self.skipTest("no microcode on this machine")
-
+        # Arrange
         part = snesdsp.Chip("dsp3")
         for byte in (0x1C, 0x00, 0xAA, 0xBB, 0xCC, 0xDD):
             part.write(byte)
 
+        # Act
         said = " ".join(f"{part.read():02x}" for _ in range(4))
 
+        # Assert
         self.assertEqual(said, "cc dd cc dd")
 
     def test_and_does_not_answer_the_zeroes_the_other_one_does(self) -> None:
-        if chip.why_not() is not None:
-            self.skipTest("no microcode on this machine")
-
+        # Arrange
         part = snesdsp.Chip("dsp3")
         for byte in (0x1C, 0x00, 0x34, 0x12, 0x78, 0x56):
             part.write(byte)
 
-        self.assertNotEqual([part.read() for _ in range(4)], [0, 0, 0, 0])
+        # Act
+        said = [part.read() for _ in range(4)]
+
+        # Assert
+        self.assertEqual(said, [0x78, 0x56, 0x78, 0x56])
 
 
 if __name__ == "__main__":

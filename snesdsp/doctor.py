@@ -88,7 +88,7 @@ def _clocks() -> Finding:
     )
 
 
-def _default_build(part: str, images: Images) -> chip.Chip:
+def default_build(part: str, images: Images) -> chip.Chip:
     return chip.Chip(part, images=images)
 
 
@@ -116,11 +116,11 @@ def _part(name: str, images: Images, build: Build) -> Finding:
         )
     identity = getattr(part, "identity", None)
     running = identity.part if identity is not None else wanted
-    digest = _digest_of(wanted, images)
+    digest = digest_of(wanted, images)
     return Finding(name, True, f"runs and resets the {running} image{digest}")
 
 
-def _digest_of(wanted: str, images: Images | None) -> str:
+def digest_of(wanted: str, images: Images | None) -> str:
     held = images.get(wanted) if isinstance(images, dict) else None
     if not isinstance(held, tuple) or len(held) != 2:
         return ""
@@ -132,14 +132,14 @@ def _digest_of(wanted: str, images: Images | None) -> str:
 
 
 def _default_beneath() -> list[Finding]:
-    _reach()
+    reach_processor()
     from upd7725 import doctor as underneath
 
     found: list[Finding] = list(underneath.examine())
     return found
 
 
-def _reach(path: list[str] | None = None) -> list[str]:
+def reach_processor(path: list[str] | None = None) -> list[str]:
     path = sys.path if path is None else path
     where = str(chip.PROCESSOR)
     if where not in path:
@@ -167,7 +167,7 @@ def _beneath(beneath: Callable[[], Iterable[Finding]]) -> list[Finding]:
     ]
 
 
-def _exchanges(where: Path | str = EXCHANGES) -> Finding:
+def check_exchanges(where: Path | str = EXCHANGES) -> Finding:
     found = []
     for path in sorted(Path(where).glob("*shapes.json")):
         part = path.stem.replace("shapes", "")
@@ -187,7 +187,7 @@ def _exchanges(where: Path | str = EXCHANGES) -> Finding:
     )
 
 
-def _answers(where: Path | str = EXCHANGES) -> Finding:
+def check_answers(where: Path | str = EXCHANGES) -> Finding:
     found = sorted(one.stem.replace("answers", "") for one in Path(where).glob("*answers.json"))
     return Finding(
         "recorded answers",
@@ -197,7 +197,7 @@ def _answers(where: Path | str = EXCHANGES) -> Finding:
     )
 
 
-def _masks(where: Path | str = EXCHANGES) -> Finding:
+def check_masks(where: Path | str = EXCHANGES) -> Finding:
     path = Path(where) / "dsp1masks.json"
     if not path.exists():
         return Finding(
@@ -223,15 +223,15 @@ def _masks(where: Path | str = EXCHANGES) -> Finding:
 
 def examine(
     images: Images | None = None,
-    build: Build = _default_build,
+    build: Build = default_build,
     beneath: Callable[[], Iterable[Finding]] = _default_beneath,
 ) -> list[Finding]:
     held = chip.available() if images is None else images
     found = [_python(), _package(), _processor(), _clocks()]
     found.extend(_part(name, held, build) for name in sorted(models.MODELS))
-    found.append(_exchanges())
-    found.append(_answers())
-    found.append(_masks())
+    found.append(check_exchanges())
+    found.append(check_answers())
+    found.append(check_masks())
     found.extend(_beneath(beneath))
     return found
 

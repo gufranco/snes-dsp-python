@@ -7,6 +7,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import snesdsp
 from conformance import documented
 
 
@@ -44,12 +45,14 @@ class ShapeTest(unittest.TestCase):
             self.assertTrue(callable(example))
 
     def test_there_is_one_for_every_part(self) -> None:
-        from snesdsp import models
-
+        # Arrange
         named = " ".join(name for name, _, _ in documented.DOCUMENTED)
 
-        for part in models.MODELS:
-            self.assertIn(part, named, part)
+        # Act
+        missing = [part for part in snesdsp.MODELS if part not in named]
+
+        # Assert
+        self.assertEqual(missing, [])
 
 
 class RunTest(unittest.TestCase):

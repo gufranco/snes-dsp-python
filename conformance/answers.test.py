@@ -6,10 +6,13 @@ import unittest
 from pathlib import Path
 from typing import Any
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+ROOT = Path(__file__).resolve().parent.parent
 
-from conformance import answers
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(ROOT))
+
+import snesdsp  # noqa: E402
+from conformance import answers  # noqa: E402
 
 
 class Complaint(Exception):
@@ -129,24 +132,36 @@ class FamilyTest(unittest.TestCase):
         self.assertEqual(answers.shapes_named("dsp1b"), "dsp1")
 
     def test_every_part_that_shares_shapes_is_a_part_this_covers(self) -> None:
-        from snesdsp import models
+        # Arrange
+        catalogue = set(snesdsp.MODELS)
 
-        for part, like in answers.DRIVEN_LIKE.items():
-            self.assertIn(part, models.MODELS)
-            self.assertIn(like, models.MODELS)
+        # Act
+        named = set(answers.DRIVEN_LIKE) | set(answers.DRIVEN_LIKE.values())
+
+        # Assert
+        self.assertEqual(named - catalogue, set())
 
     def test_a_part_reads_the_shapes_of_whoever_drives_it(self) -> None:
-        found = answers._default_shapes("dsp1a")
-        wanted = answers._default_shapes("dsp1")
+        # Arrange
+        recorded = json.loads((ROOT / "conformance" / "dsp1shapes.json").read_text())["shapes"]
 
-        self.assertEqual(found, wanted)
+        # Act
+        found = answers.recorded_shapes("dsp1a")
+
+        # Assert
+        self.assertEqual(found, recorded)
 
     def test_and_a_part_with_no_shapes_recorded_reads_none(self) -> None:
+        # Arrange
         original = answers.ROOT
         answers.ROOT = Path(tempfile.mkdtemp())
         self.addCleanup(setattr, answers, "ROOT", original)
 
-        self.assertEqual(answers._default_shapes("dsp1"), [])
+        # Act
+        found = answers.recorded_shapes("dsp1")
+
+        # Assert
+        self.assertEqual(found, [])
 
 
 class CheckingTest(unittest.TestCase):

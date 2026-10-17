@@ -1,17 +1,41 @@
 import sys
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import snesdsp
 from conformance import driven
-from snesdsp import chip
+
+PROGRAM_WORDS = 2048
+
+TABLE_WORDS = 1024
+
+
+def the_real_part() -> type:
+    identity = SimpleNamespace(
+        part="dsp1",
+        processor="upd7725",
+        revision="MADE UP",
+        program_words=PROGRAM_WORDS,
+        data_words=TABLE_WORDS,
+    )
+    image = bytes(PROGRAM_WORDS * 3 + TABLE_WORDS * 2)
+    return type(snesdsp.Chip("dsp1", image=image, identity=identity, boot=0))
 
 
 class ContractTest(unittest.TestCase):
     def test_the_real_part_is_something_a_console_could_drive(self) -> None:
-        self.assertTrue(issubclass(chip.Chip, driven.Driven))
+        # Arrange
+        real = the_real_part()
+
+        # Act
+        drivable = issubclass(real, driven.Driven)
+
+        # Assert
+        self.assertTrue(drivable)
 
     def test_a_stand_in_that_takes_a_byte_and_gives_one_back_is_too(self) -> None:
         self.assertIsInstance(_Byte(), driven.Driven)
@@ -30,7 +54,14 @@ class ContractTest(unittest.TestCase):
 
 class PolledTest(unittest.TestCase):
     def test_the_real_part_can_be_polled(self) -> None:
-        self.assertTrue(issubclass(chip.Chip, driven.Watched))
+        # Arrange
+        real = the_real_part()
+
+        # Act
+        polled = issubclass(real, driven.Watched)
+
+        # Assert
+        self.assertTrue(polled)
 
     def test_something_with_two_ports_and_no_register_cannot(self) -> None:
         self.assertNotIsInstance(_Byte(), driven.Watched)
@@ -50,8 +81,15 @@ class IdentifiedTest(unittest.TestCase):
         self.assertIsInstance(_Identified(), driven.Identified)
 
     def test_the_real_part_is_checked_by_the_type_checker_rather_than_here(self) -> None:
-        with self.assertRaises(TypeError):
-            issubclass(chip.Chip, driven.Identified)  # type: ignore[misc]
+        # Arrange
+        real = the_real_part()
+
+        # Act
+        with self.assertRaises(TypeError) as refused:
+            issubclass(real, driven.Identified)  # type: ignore[misc]
+
+        # Assert
+        self.assertIn("non-method members", str(refused.exception))
 
 
 class StandInTest(unittest.TestCase):

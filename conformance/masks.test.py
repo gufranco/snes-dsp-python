@@ -168,16 +168,44 @@ class PrintingTest(unittest.TestCase):
 
 class FirstDifferenceTest(unittest.TestCase):
     def test_two_answers_that_differ_at_the_front_part_company_there(self) -> None:
-        self.assertEqual(masks._first_difference(b"\x01\x02", b"\x99\x02"), 0)
+        # Arrange
+        first, second = b"\x01\x02", b"\x99\x02"
+
+        # Act
+        found = masks.first_difference(first, second)
+
+        # Assert
+        self.assertEqual(found, 0)
 
     def test_and_two_that_differ_later_part_company_later(self) -> None:
-        self.assertEqual(masks._first_difference(b"\x01\x02", b"\x01\x99"), 1)
+        # Arrange
+        first, second = b"\x01\x02", b"\x01\x99"
+
+        # Act
+        found = masks.first_difference(first, second)
+
+        # Assert
+        self.assertEqual(found, 1)
 
     def test_two_answers_that_agree_part_company_at_neither_end(self) -> None:
-        self.assertEqual(masks._first_difference(b"\x01\x02", b"\x01\x02"), 2)
+        # Arrange
+        first, second = b"\x01\x02", b"\x01\x02"
+
+        # Act
+        found = masks.first_difference(first, second)
+
+        # Assert
+        self.assertEqual(found, 2)
 
     def test_and_one_shorter_than_the_other_parts_company_where_it_stops(self) -> None:
-        self.assertEqual(masks._first_difference(b"\x01", b"\x01\x02"), 1)
+        # Arrange
+        first, second = b"\x01", b"\x01\x02"
+
+        # Act
+        found = masks.first_difference(first, second)
+
+        # Assert
+        self.assertEqual(found, 1)
 
 
 class StoringTest(unittest.TestCase):

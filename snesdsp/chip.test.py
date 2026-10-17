@@ -1,387 +1,284 @@
 import sys
+import tempfile
 import unittest
 from pathlib import Path
-from types import ModuleType
+from types import SimpleNamespace
 from typing import Any, override
+from unittest import mock
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
-from snesdsp import chip, errors, timing
+import snesdsp  # noqa: E402
 
-PRESENT = chip.available()
+PROGRAM_WORDS = 2048
+
+TABLE_WORDS = 1024
+
+BLANK = bytes(PROGRAM_WORDS * 3 + TABLE_WORDS * 2)
+
+BOOT = 64
+
+COUNTING = bytes(range(256)) * 24 + bytes(TABLE_WORDS * 2)
 
 
-def a_processor_that_is_there() -> tuple[ModuleType, ModuleType]:
-    held = ModuleType("held")
-    return held, held
+def an_identity(part: str = "dsp1") -> SimpleNamespace:
+    return SimpleNamespace(
+        part=part,
+        processor="upd7725",
+        revision="MADE UP",
+        program_words=PROGRAM_WORDS,
+        data_words=TABLE_WORDS,
+    )
 
 
-def a_submodule_that_is_absent(modules: dict[str, Any]) -> None:
-    modules["upd7725"] = None
+def a_part(model: str = "dsp1", **options: Any) -> Any:
+    return snesdsp.Chip(model, image=BLANK, identity=an_identity(), boot=BOOT, **options)
 
 
-class WithoutTest(unittest.TestCase):
+def on_disk() -> dict[str, tuple[object, Path]]:
+    where = Path(tempfile.mkdtemp()) / "made-up.bin"
+    where.write_bytes(COUNTING)
+    return {"dsp1": (an_identity(), where)}
+
+
+class WithoutTheProcessorTest(unittest.TestCase):
     @override
     def setUp(self) -> None:
-        self.real = chip._processor
-
-    @override
-    def tearDown(self) -> None:
-        chip._processor = self.real
+        hidden = mock.patch.dict(sys.modules, {"upd7725": None})
+        hidden.start()
+        self.addCleanup(hidden.stop)
 
     def test_with_no_processor_it_offers_nothing(self) -> None:
-        chip._processor = lambda: None
+        # Arrange
+        expected: dict[str, object] = {}
 
-        self.assertEqual(chip.available(), {})
+        # Act
+        found = snesdsp.available()
+
+        # Assert
+        self.assertEqual(found, expected)
 
     def test_and_says_the_submodule_is_missing(self) -> None:
-        chip._processor = lambda: None
+        # Arrange
+        wanted = "submodule"
 
-        self.assertEqual(chip.why_not(), chip.WHY_NOT_PROCESSOR)
+        # Act
+        reason = snesdsp.why_not()
+
+        # Assert
+        self.assertIn(wanted, str(reason))
 
     def test_and_refuses_to_build_a_part(self) -> None:
-        chip._processor = lambda: None
+        # Arrange
+        model = "dsp1"
 
-        with self.assertRaises(errors.NoFirmware):
-            chip.Chip("dsp1")
+        # Act
+        with self.assertRaises(snesdsp.NoFirmware) as refused:
+            snesdsp.Chip(model)
 
-    def test_with_a_processor_but_no_image_it_says_that_instead(self) -> None:
-        chip._processor = a_processor_that_is_there
+        # Assert
+        self.assertIn("submodule", str(refused.exception))
 
-        self.assertEqual(chip.why_not({}), chip.WHY_NOT_FIRMWARE)
+
+class WithoutAnImageTest(unittest.TestCase):
+    def test_with_a_processor_but_no_image_it_names_where_one_goes(self) -> None:
+        # Arrange
+        held: dict[str, tuple[object, Path]] = {}
+
+        # Act
+        reason = snesdsp.why_not(held)
+
+        # Assert
+        self.assertIn("SNES_DSP_FIRMWARE_DIR", str(reason))
 
     def test_a_part_sharing_an_image_that_is_absent_is_refused(self) -> None:
-        with self.assertRaises(errors.NoFirmware):
-            chip.Chip("dsp1a", images={})
+        # Arrange
+        held: dict[str, tuple[object, Path]] = {}
+
+        # Act
+        with self.assertRaises(snesdsp.NoFirmware) as refused:
+            snesdsp.Chip("dsp1a", images=held)
+
+        # Assert
+        self.assertIn("dsp1a", str(refused.exception))
 
 
 class SharingTest(unittest.TestCase):
     def test_a_part_that_shares_an_image_is_offered_when_the_image_is(self) -> None:
+        # Arrange
         held = {"dsp1": ("identity", Path("dsp1.bin"))}
 
-        self.assertIn("dsp1a", chip.available(held))
+        # Act
+        found = snesdsp.available(held)
+
+        # Assert
+        self.assertEqual(found["dsp1a"], held["dsp1"])
 
     def test_and_is_not_offered_when_it_is_not(self) -> None:
+        # Arrange
         held = {"dsp2": ("identity", Path("dsp2.bin"))}
 
-        self.assertNotIn("dsp1a", chip.available(held))
+        # Act
+        found = snesdsp.available(held)
+
+        # Assert
+        self.assertEqual(sorted(found), ["dsp2"])
 
     def test_what_was_found_is_left_as_it_was(self) -> None:
+        # Arrange
         held = {"dsp1": ("identity", Path("dsp1.bin"))}
 
-        chip.available(held)
+        # Act
+        snesdsp.available(held)
 
-        self.assertEqual(set(held), {"dsp1"})
-
-
-class ImportTest(unittest.TestCase):
-    def test_with_the_processor_unimportable_it_offers_nothing(self) -> None:
-        import sys as system
-
-        held = dict(system.modules)
-        a_submodule_that_is_absent(system.modules)
-        try:
-            self.assertIsNone(chip._processor())
-        finally:
-            system.modules.clear()
-            system.modules.update(held)
+        # Assert
+        self.assertEqual(sorted(held), ["dsp1"])
 
 
 class AvailabilityTest(unittest.TestCase):
-    def test_it_says_which_parts_it_can_run(self) -> None:
-        self.assertIsInstance(chip.available(), dict)
+    def test_every_part_offered_is_one_the_catalogue_names(self) -> None:
+        # Arrange
+        catalogue = set(snesdsp.MODELS)
 
-    def test_a_part_with_no_image_is_not_offered(self) -> None:
-        self.assertNotIn("nonsense", chip.available())
+        # Act
+        found = set(snesdsp.available())
+
+        # Assert
+        self.assertEqual(found - catalogue, set())
 
     def test_asking_for_a_part_it_cannot_run_is_refused(self) -> None:
-        with self.assertRaises(errors.NoFirmware):
-            chip.Chip("nonsense")
+        # Arrange
+        held: dict[str, tuple[object, Path]] = {"dsp2": (an_identity("dsp2"), Path("x"))}
 
-    def test_the_refusal_says_what_is_missing_and_what_to_do(self) -> None:
-        with self.assertRaises(errors.NoFirmware) as raised:
-            chip.Chip("nonsense")
+        # Act
+        with self.assertRaises(snesdsp.NoFirmware) as refused:
+            snesdsp.Chip("dsp4", images=held)
 
-        told = str(raised.exception).lower()
+        # Assert
+        self.assertIn("microcode", str(refused.exception))
 
-        self.assertIn("microcode", told)
-        self.assertTrue("firmware" in told or "submodule" in told)
+    def test_the_refusal_says_what_is_missing_and_where_it_goes(self) -> None:
+        # Arrange
+        held: dict[str, tuple[object, Path]] = {}
 
-    def test_the_reason_is_the_same_one_the_refusal_carries(self) -> None:
-        self.assertTrue(chip.why_not() is None or isinstance(chip.why_not(), str))
+        # Act
+        with self.assertRaises(snesdsp.NoFirmware) as refused:
+            snesdsp.Chip("dsp4", images=held)
 
-
-class BusTest(unittest.TestCase):
-    def _built(self, **options: Any) -> "chip.Chip":
-        import sys as system
-
-        system.path.insert(0, str(chip.PROCESSOR))
-        from snesdsp import firmware
-
-        identity = firmware.Identity("made-up", "upd7725", "MADE UP", 2048, 1024)
-        image = bytes(2048 * 3 + 1024 * 2)
-        return chip.Chip("made-up", image=image, identity=identity, boot=64, **options)
-
-    def test_an_even_address_is_the_data_port(self) -> None:
-        through_the_bus = self._built().read_bus(0x00C000)
-
-        directly = self._built().read()
-
-        self.assertEqual(through_the_bus, directly)
-
-    def test_an_odd_address_is_the_status_register(self) -> None:
-        through_the_bus = self._built().read_bus(0x00C001)
-
-        directly = self._built().read_status()
-
-        self.assertEqual(through_the_bus, directly)
-
-    def test_only_the_lowest_bit_decides(self) -> None:
-        high = self._built().read_bus(0x3F8000)
-
-        low = self._built().read_bus(0x008000)
-
-        self.assertEqual(high, low)
-
-    def test_a_write_to_an_even_address_reaches_the_data_port(self) -> None:
-        part = self._built()
-        before = part.core.registers.pc
-
-        part.write_bus(0x00C000, 0x42)
-
-        self.assertNotEqual(part.core.registers.pc, before)
-
-    def test_a_write_to_an_odd_address_is_taken_as_a_status_write(self) -> None:
-        part = self._built()
-
-        part.write_bus(0x00C001, 0x00)
-
-        self.assertIsInstance(part.read_status(), int)
-
-    def test_what_is_written_is_narrowed_to_a_byte(self) -> None:
-        part = self._built()
-
-        part.write_bus(0x00C000, 0x1FF)
-
-        self.assertIsInstance(part.read_status(), int)
-
-
-class PacingTest(unittest.TestCase):
-    def _built(self, **options: Any) -> "chip.Chip":
-        import sys as system
-
-        system.path.insert(0, str(chip.PROCESSOR))
-        from snesdsp import firmware
-
-        identity = firmware.Identity("made-up", "upd7725", "MADE UP", 2048, 1024)
-        image = bytes(2048 * 3 + 1024 * 2)
-        return chip.Chip("made-up", image=image, identity=identity, boot=64, **options)
-
-    def test_the_default_gap_is_the_one_the_console_clocks_imply(self) -> None:
-        self.assertEqual(chip.GAP, timing.GAP)
-
-    def test_a_caller_can_say_how_long_their_console_actually_spent(self) -> None:
-        part = self._built()
-        before = part.core.registers.pc
-
-        part.elapsed(timing.MASTER_CLOCK // 1000)
-
-        self.assertNotEqual(part.core.registers.pc, before)
-
-    def test_more_console_time_runs_the_part_further(self) -> None:
-        one, two = self._built(), self._built()
-
-        one.elapsed(timing.SLOW_ACCESS)
-        two.elapsed(timing.SLOW_ACCESS * 100)
-
-        self.assertNotEqual(one.core.registers.pc, two.core.registers.pc)
-
-    def test_no_console_time_at_all_runs_it_nowhere(self) -> None:
-        part = self._built()
-        before = part.core.registers.pc
-
-        part.elapsed(0)
-
-        self.assertEqual(part.core.registers.pc, before)
-
-    def test_the_part_says_what_rate_it_runs_at(self) -> None:
-        self.assertEqual(self._built().clock, timing.DSP_CLOCK)
-
-
-class StatusTest(unittest.TestCase):
-    def _built(self) -> "chip.Chip":
-        import sys as system
-
-        system.path.insert(0, str(chip.PROCESSOR))
-        from snesdsp import firmware
-
-        identity = firmware.Identity("made-up", "upd7725", "MADE UP", 2048, 1024)
-        image = bytes(2048 * 3 + 1024 * 2)
-        return chip.Chip("made-up", image=image, identity=identity, boot=64)
-
-    def test_the_status_register_can_be_read_without_taking_a_byte(self) -> None:
-        part = self._built()
-
-        self.assertIsInstance(part.read_status(), int)
-
-    def test_it_is_one_byte_wide(self) -> None:
-        self.assertLessEqual(self._built().read_status(), 0xFF)
-
-    def test_reading_it_does_not_change_what_the_part_has_to_say(self) -> None:
-        part = self._built()
-        before = part.pending_output
-
-        part.read_status()
-
-        self.assertEqual(part.pending_output, before)
+        # Assert
+        self.assertIn("dsp4", str(refused.exception))
+        self.assertIn("SNES_DSP_FIRMWARE_DIR", str(refused.exception))
 
 
 class FoundOnDiskTest(unittest.TestCase):
-    def _catalogue(self) -> "dict[str, tuple[object, Path]]":
-        import sys as system
-        import tempfile
-
-        system.path.insert(0, str(chip.PROCESSOR))
-        from snesdsp import firmware
-
-        identity = firmware.Identity("dsp1", "upd7725", "MADE UP", 2048, 1024)
-        where = Path(tempfile.mkdtemp()) / "made-up.bin"
-        where.write_bytes(bytes(2048 * 3 + 1024 * 2))
-        return {"dsp1": (identity, where)}
-
     def test_an_image_the_search_found_is_read_from_its_file(self) -> None:
-        part = chip.Chip("dsp1", images=self._catalogue(), boot=64)
+        # Arrange
+        held = on_disk()
 
-        self.assertEqual(part.part, "dsp1")
+        # Act
+        part = snesdsp.Chip("dsp1", images=held, boot=BOOT)
+
+        # Assert
+        self.assertEqual(part.core.stores.program[0], 0x000102)
 
     def test_a_part_sharing_another_part_image_is_built_from_it(self) -> None:
-        part = chip.Chip("dsp1a", images=self._catalogue(), boot=64)
+        # Arrange
+        held = on_disk()
 
-        self.assertEqual(part.part, "dsp1a")
+        # Act
+        part = snesdsp.Chip("dsp1a", images=held, boot=BOOT)
 
-    def test_a_part_with_no_image_anywhere_is_refused_by_name(self) -> None:
-        with self.assertRaises(errors.NoFirmware) as raised:
-            chip.Chip("dsp4", images=self._catalogue())
-
-        self.assertIn("dsp4", str(raised.exception))
+        # Assert
+        self.assertEqual((part.part, part.identity.part), ("dsp1a", "dsp1"))
 
     def test_with_an_image_present_there_is_no_reason_it_cannot_run(self) -> None:
-        self.assertIsNone(chip.why_not(self._catalogue()))
+        # Arrange
+        held = on_disk()
+
+        # Act
+        reason = snesdsp.why_not(held)
+
+        # Assert
+        self.assertIsNone(reason)
 
 
 class SuppliedImageTest(unittest.TestCase):
-    def _built(self, **options: Any) -> "chip.Chip":
-        import sys as system
-
-        system.path.insert(0, str(chip.PROCESSOR))
-        from snesdsp import firmware
-
-        identity = firmware.Identity("made-up", "upd7725", "MADE UP", 2048, 1024)
-        image = bytes(2048 * 3 + 1024 * 2)
-        return chip.Chip("made-up", image=image, identity=identity, boot=64, **options)
-
     def test_a_supplied_image_is_run_without_one_on_disk(self) -> None:
-        self.assertEqual(self._built().part, "made-up")
+        # Arrange
+        identity = an_identity()
+
+        # Act
+        part = snesdsp.Chip("dsp2", image=BLANK, identity=identity, boot=BOOT)
+
+        # Assert
+        self.assertIs(part.identity, identity)
 
     def test_it_names_the_processor_the_image_says_it_runs_on(self) -> None:
-        self.assertEqual(self._built().processor, "upd7725")
+        # Arrange
+        identity = an_identity()
 
-    def test_it_carries_the_same_name_field_the_models_do(self) -> None:
-        self.assertEqual(self._built().model, "made-up")
+        # Act
+        part = snesdsp.Chip("dsp1", image=BLANK, identity=identity, boot=BOOT)
+
+        # Assert
+        self.assertEqual(part.processor, "upd7725")
+
+    def test_an_alias_builds_the_part_under_its_canonical_name(self) -> None:
+        # Arrange
+        alias = "DSP-1"
+
+        # Act
+        part = a_part(alias)
+
+        # Assert
+        self.assertEqual((part.model, part.part), ("dsp1", "dsp1"))
 
     def test_a_reset_hands_the_part_back(self) -> None:
-        built = self._built()
+        # Arrange
+        part = a_part()
 
-        self.assertIs(built.reset(), built)
+        # Act
+        handed = part.reset()
 
-    def test_and_leaves_it_running_the_same_program(self) -> None:
-        built = self._built()
-        built.step(200)
-        before = built.identity
+        # Assert
+        self.assertIs(handed, part)
 
-        built.reset()
+    def test_and_leaves_it_where_a_fresh_one_starts_with_the_same_identity(self) -> None:
+        # Arrange
+        part = a_part()
+        part.step(200)
+        before = part.identity
+        fresh = a_part()
 
-        self.assertIs(built.identity, before)
-        self.assertEqual(built.core.registers.pc, self._built().core.registers.pc)
+        # Act
+        part.reset()
 
-    def test_it_prints_as_the_part_and_how_it_is_run(self) -> None:
-        self.assertIn("Chip", repr(self._built()))
+        # Assert
+        self.assertIs(part.identity, before)
+        self.assertEqual(part.core.registers.pc, fresh.core.registers.pc)
+        self.assertEqual(part.core.cycles, fresh.core.cycles)
 
-    def test_a_part_that_is_already_asking_is_read_without_waiting(self) -> None:
-        part = self._built(patience=1)
-        part.core.registers.sr.rqm = True
+    def test_it_prints_as_the_part_and_the_processor_it_runs_on(self) -> None:
+        # Arrange
+        part = a_part("dsp3")
 
-        self.assertLess(part.read(), 0x100)
+        # Act
+        printed = repr(part)
 
-    def test_and_waiting_on_one_that_is_asking_says_so_at_once(self) -> None:
-        part = self._built(patience=1)
-        part.core.registers.sr.rqm = True
-
-        self.assertTrue(part.waited())
-
-    def test_while_one_that_never_asks_says_it_never_did(self) -> None:
-        part = self._built(patience=8)
-
-        self.assertFalse(part.waited())
-
-    def test_waiting_on_a_part_that_is_asking_returns_rather_than_refusing(self) -> None:
-        part = self._built(patience=1)
-        part.core.registers.sr.rqm = True
-
-        part.settle()
-
-        self.assertTrue(part.core.registers.sr.rqm)
-
-    def test_writing_a_byte_runs_the_part_afterwards(self) -> None:
-        part = self._built()
-
-        part.write(0x12)
-
-        self.assertIsInstance(part.pending_output, int)
-
-    def test_a_program_that_never_asks_is_given_up_on_when_waited_on(self) -> None:
-        part = self._built(patience=32)
-
-        with self.assertRaises(errors.NeverReady):
-            part.settle()
-
-    def test_but_reading_from_it_takes_the_port_rather_than_hanging(self) -> None:
-        part = self._built(patience=32)
-
-        self.assertLess(part.read(), 0x100)
-
-    def test_reading_leaves_the_part_room_to_act_before_the_next_access(self) -> None:
-        part = self._built(patience=32)
-        before = part.core.registers.pc
-
-        part.read()
-
-        self.assertNotEqual(part.core.registers.pc, before)
-
-    def test_a_part_that_is_asking_can_be_read_from(self) -> None:
-        part = self._built()
-        part.core.registers.sr.rqm = True
-
-        self.assertLess(part.read(), 0x100)
-
-    def test_and_reports_that_it_has_something_to_say(self) -> None:
-        part = self._built()
-        part.core.registers.sr.rqm = True
-
-        self.assertEqual(part.pending_output, 1)
-
-    def test_stepping_a_given_number_of_times_is_allowed(self) -> None:
-        part = self._built()
-
-        part.step(3)
-
-        self.assertTrue(True)
+        # Assert
+        self.assertEqual(printed, "<Chip dsp3 on upd7725>")
 
     def test_an_image_supplied_without_saying_what_it_is_is_refused(self) -> None:
-        with self.assertRaises(errors.NoFirmware) as raised:
-            chip.Chip("made-up", image=bytes(64))
+        # Arrange
+        image = bytes(64)
 
-        self.assertIn("program", str(raised.exception))
+        # Act
+        with self.assertRaises(snesdsp.NoFirmware) as refused:
+            snesdsp.Chip("dsp1", image=image)
+
+        # Assert
+        self.assertIn("program", str(refused.exception))
 
 
 if __name__ == "__main__":

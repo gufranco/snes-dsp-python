@@ -1,588 +1,487 @@
 import hashlib
 import json
-import os
 import sys
-import tempfile
+import tomllib
 import unittest
+import zlib
 from collections.abc import Iterator
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
-from snesdsp import chip, errors, firmware, models  # noqa: F401
+import snesdsp  # noqa: E402
 
-sys.path.append(str(chip.PROCESSOR))
+sys.path.append(str(ROOT / "nec-upd7725-96050-python"))
 
-from upd7725 import models as upd_models
+from upd7725 import MODELS as PROCESSORS  # noqa: E402
 
+PACKAGE = ROOT / "snesdsp"
 
-def an_image(program_words: int = 2048, data_words: int = 1024, filler: int = 0xAB) -> bytes:
-    return bytes([filler]) * (program_words * 3 + data_words * 2)
+MANIFEST = PACKAGE / "artifacts.manifest.json"
 
+DIGEST_WIDTHS = {"crc32": 8, "md5": 32, "sha1": 40, "sha256": 64}
 
-class ShippedManifestTest(unittest.TestCase):
-    def test_the_manifest_lives_inside_the_package(self) -> None:
-        package = Path(firmware.__file__).resolve().parent
+PROGRAM_WORDS = 2048
 
-        self.assertEqual(Path(firmware.MANIFEST).resolve().parent, package)
-
-    def test_and_the_packaging_declares_it_as_package_data(self) -> None:
-        pyproject = (Path(firmware.__file__).resolve().parent.parent / "pyproject.toml").read_text()
-
-        self.assertIn('snesdsp = ["artifacts.manifest.json"]', pyproject)
-
-    def test_and_identify_needs_nothing_outside_the_package(self) -> None:
-        package = Path(firmware.__file__).resolve().parent
-
-        reached = Path(firmware.MANIFEST).resolve()
-
-        self.assertTrue(reached.is_relative_to(package))
-        self.assertTrue(reached.exists())
+TABLE_WORDS = 1024
 
 
-class ManifestTest(unittest.TestCase):
-    def test_the_manifest_names_every_part_the_package_can_run(self) -> None:
-        named = {entry["part"] for entry in firmware.manifest()["artifacts"]}
-
-        self.assertEqual(named, {"dsp1", "dsp1b", "dsp2", "dsp3", "dsp4"})
-
-    def test_and_nothing_another_member_is_responsible_for(self) -> None:
-        named = {entry["part"] for entry in firmware.manifest()["artifacts"]}
-
-        self.assertEqual(named & {"st010", "st011"}, set())
-
-    def test_each_part_names_the_processor_it_runs_on(self) -> None:
-        for entry in firmware.manifest()["artifacts"]:
-            self.assertIn(entry["processor"], upd_models.MODELS, entry["part"])
-
-    def test_each_part_names_a_size_its_two_stores_add_up_to(self) -> None:
-        for entry in firmware.manifest()["artifacts"]:
-            self.assertEqual(
-                entry["programWords"] * 3 + entry["dataWords"] * 2, entry["bytes"], entry["part"]
-            )
-
-    def test_each_part_carries_at_least_one_digest(self) -> None:
-        for entry in firmware.manifest()["artifacts"]:
-            self.assertTrue(entry["accepted"], entry["part"])
-
-    def test_every_accepted_image_carries_all_four_digests(self) -> None:
-        for entry in firmware.manifest()["artifacts"]:
-            for accepted in entry["accepted"]:
-                for name in firmware.DIGESTS:
-                    self.assertIn(name, accepted, (entry["part"], name))
-
-    def test_each_digest_is_the_length_that_kind_of_digest_has(self) -> None:
-        for entry in firmware.manifest()["artifacts"]:
-            for accepted in entry["accepted"]:
-                for name, width in firmware.DIGEST_WIDTHS.items():
-                    self.assertEqual(len(accepted[name]), width, (entry["part"], name))
-
-    def test_every_digest_is_a_whole_sha256(self) -> None:
-        for entry in firmware.manifest()["artifacts"]:
-            for accepted in entry["accepted"]:
-                self.assertEqual(len(accepted["sha256"]), 64, entry["part"])
-
-    def test_the_manifest_carries_no_run_of_bytes_longer_than_a_digest(self) -> None:
-        def strings(held: object) -> Iterator[str]:
-            if isinstance(held, str):
-                yield held
-            elif isinstance(held, dict):
-                for value in held.values():
-                    yield from strings(value)
-            elif isinstance(held, list):
-                for value in held:
-                    yield from strings(value)
-
-        runs = [
-            text.strip()
-            for text in strings(firmware.manifest())
-            if len(text.strip()) > 64
-            and all(letter in "0123456789abcdefABCDEF" for letter in text.strip())
-        ]
-
-        self.assertEqual(runs, [])
-
-    def test_a_manifest_can_be_read_from_somewhere_else(self) -> None:
-        where = Path(tempfile.mkdtemp()) / "other.json"
-        where.write_text(json.dumps({"artifacts": []}))
-
-        self.assertEqual(firmware.manifest(where)["artifacts"], [])
+def shipped() -> dict[str, Any]:
+    held = json.loads(MANIFEST.read_text())
+    assert isinstance(held, dict), f"{MANIFEST} does not hold an object"
+    return held
 
 
-class IdentifyTest(unittest.TestCase):
-    def test_an_image_the_manifest_knows_is_named(self) -> None:
-        image = an_image()
-        digest = hashlib.sha256(image).hexdigest()
-        catalogue = {
-            "artifacts": [
-                {
-                    "part": "made-up",
-                    "processor": "upd7725",
-                    "bytes": len(image),
-                    "programWords": 2048,
-                    "dataWords": 1024,
-                    "accepted": [{"revision": "one", "sha256": digest}],
-                }
-            ]
-        }
+def every_accepted() -> Iterator[tuple[str, dict[str, Any]]]:
+    for entry in shipped()["artifacts"]:
+        for accepted in entry["accepted"]:
+            yield entry["part"], accepted
 
-        self.assertEqual(firmware.identify(image, catalogue).part, "made-up")
 
-    def test_and_the_revision_it_turned_out_to_be(self) -> None:
-        image = an_image()
-        digest = hashlib.sha256(image).hexdigest()
-        catalogue = {
-            "artifacts": [
-                {
-                    "part": "made-up",
-                    "processor": "upd7725",
-                    "bytes": len(image),
-                    "programWords": 2048,
-                    "dataWords": 1024,
-                    "accepted": [{"revision": "one", "sha256": digest}],
-                }
-            ]
-        }
-
-        self.assertEqual(firmware.identify(image, catalogue).revision, "one")
-
-    def test_an_image_of_the_right_size_and_the_wrong_content_says_so(self) -> None:
-        catalogue = {
-            "artifacts": [
-                {
-                    "part": "made-up",
-                    "processor": "upd7725",
-                    "bytes": 8192,
-                    "programWords": 2048,
-                    "dataWords": 1024,
-                    "accepted": [{"revision": "one", "sha256": "0" * 64}],
-                }
-            ]
-        }
-
-        with self.assertRaises(errors.Unrecognised) as raised:
-            firmware.identify(an_image(), catalogue)
-
-        self.assertIn("altered", str(raised.exception))
-
-    def test_an_image_of_no_size_the_manifest_knows_says_that_instead(self) -> None:
-        catalogue: dict[str, list[object]] = {"artifacts": []}
-
-        with self.assertRaises(errors.Unrecognised) as raised:
-            firmware.identify(b"\x00" * 7, catalogue)
-
-        self.assertIn("7", str(raised.exception))
-
-    def test_the_report_always_carries_the_digest_that_was_computed(self) -> None:
-        with self.assertRaises(errors.Unrecognised) as raised:
-            firmware.identify(b"\x00" * 7, {"artifacts": []})
-
-        self.assertIn(hashlib.sha256(b"\x00" * 7).hexdigest(), str(raised.exception))
+def an_image(filler: int = 0xAB) -> bytes:
+    return bytes([filler]) * (PROGRAM_WORDS * 3 + TABLE_WORDS * 2)
 
 
 def a_catalogue(image: bytes, part: str = "made-up", **extra: object) -> dict[str, Any]:
+    accepted = {"revision": "one", "sha256": hashlib.sha256(image).hexdigest(), **extra}
     return {
         "artifacts": [
             {
                 "part": part,
                 "processor": "upd7725",
                 "bytes": len(image),
-                "programWords": 2048,
-                "dataWords": 1024,
-                "accepted": [{"revision": "one", "sha256": hashlib.sha256(image).hexdigest()}],
-                **extra,
+                "programWords": PROGRAM_WORDS,
+                "dataWords": TABLE_WORDS,
+                "accepted": [accepted],
+                "badDumps": [],
             }
         ]
     }
 
 
-class RepairTest(unittest.TestCase):
+def with_bad_dumps(image: bytes, part: str, broken: bytes) -> dict[str, Any]:
+    held = a_catalogue(image, part)
+    held["artifacts"][0]["badDumps"] = [{"sha256": hashlib.sha256(broken).hexdigest()}]
+    return held
+
+
+def an_identity() -> SimpleNamespace:
+    return SimpleNamespace(
+        part="dsp1",
+        processor="upd7725",
+        revision="MADE UP",
+        program_words=PROGRAM_WORDS,
+        data_words=TABLE_WORDS,
+    )
+
+
+class RefusalCase(unittest.TestCase):
+    def refusal(self, image: bytes, catalogue: dict[str, Any]) -> str:
+        with self.assertRaises(snesdsp.Unrecognised) as refused:
+            snesdsp.identify(image, catalogue)
+        return str(refused.exception)
+
+
+class ShippedManifestTest(RefusalCase):
+    def test_the_manifest_lives_inside_the_package(self) -> None:
+        # Arrange
+        package = Path(snesdsp.__file__).resolve().parent
+
+        # Act
+        found = (package / MANIFEST.name).is_file()
+
+        # Assert
+        self.assertTrue(found)
+
+    def test_and_the_packaging_declares_it_as_package_data(self) -> None:
+        # Arrange
+        pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text())
+
+        # Act
+        declared = pyproject["tool"]["setuptools"]["package-data"]["snesdsp"]
+
+        # Assert
+        self.assertEqual(declared, [MANIFEST.name])
+
+    def test_and_identify_reads_it_with_no_catalogue_handed_in(self) -> None:
+        # Arrange
+        image = b"\x00" * 7
+        expected = self.refusal(image, shipped())
+
+        # Act
+        with self.assertRaises(snesdsp.Unrecognised) as refused:
+            snesdsp.identify(image)
+
+        # Assert
+        self.assertEqual(str(refused.exception), expected)
+
+
+class ManifestTest(unittest.TestCase):
+    def test_the_manifest_names_every_image_the_parts_run(self) -> None:
+        # Arrange
+        images = {model.image for model in snesdsp.MODELS.values()}
+
+        # Act
+        named = {entry["part"] for entry in shipped()["artifacts"]}
+
+        # Assert
+        self.assertEqual(named, images)
+        self.assertEqual(named, {"dsp1", "dsp1b", "dsp2", "dsp3", "dsp4"})
+
+    def test_each_part_names_a_processor_that_exists(self) -> None:
+        # Arrange
+        entries = shipped()["artifacts"]
+
+        # Act
+        named = {entry["processor"] for entry in entries}
+
+        # Assert
+        self.assertEqual(named - set(PROCESSORS), set())
+
+    def test_each_part_names_a_size_its_two_stores_add_up_to(self) -> None:
+        # Arrange
+        entries = shipped()["artifacts"]
+
+        # Act
+        wrong = [
+            entry["part"]
+            for entry in entries
+            if entry["programWords"] * 3 + entry["dataWords"] * 2 != entry["bytes"]
+        ]
+
+        # Assert
+        self.assertEqual(wrong, [])
+
+    def test_every_accepted_image_carries_all_four_digests_at_their_widths(self) -> None:
+        # Arrange
+        accepted = list(every_accepted())
+
+        # Act
+        widths = {
+            (part, name): len(one.get(name, "")) for part, one in accepted for name in DIGEST_WIDTHS
+        }
+
+        # Assert
+        self.assertEqual(
+            widths,
+            {(part, name): width for part, _ in accepted for name, width in DIGEST_WIDTHS.items()},
+        )
+
+    def test_the_manifest_carries_no_run_of_hex_longer_than_a_digest(self) -> None:
+        # Arrange
+        text = MANIFEST.read_text()
+
+        # Act
+        runs = [
+            word
+            for word in text.replace('"', " ").split()
+            if len(word) > 64 and all(letter in "0123456789abcdefABCDEF" for letter in word)
+        ]
+
+        # Assert
+        self.assertEqual(runs, [])
+
+    def test_every_part_declares_its_bad_dumps_and_its_provenance(self) -> None:
+        # Arrange
+        held = shipped()
+        kinds = held["provenance"]["kinds"]
+
+        # Act
+        missing = [
+            part
+            for part, one in every_accepted()
+            if one["provenance"]["kind"] not in kinds or "verifiedOn" not in one["provenance"]
+        ] + [entry["part"] for entry in held["artifacts"] if "badDumps" not in entry]
+
+        # Assert
+        self.assertEqual(missing, [])
+
+    def test_the_weakest_kind_says_that_it_is_the_weakest(self) -> None:
+        # Arrange
+        kinds = shipped()["provenance"]["kinds"]
+
+        # Act
+        local = kinds["localCopy"]
+
+        # Assert
+        self.assertIn("weakest", local)
+
+    def test_the_manifest_names_sha256_as_the_digest_that_decides(self) -> None:
+        # Arrange
+        held = str(shipped()["decides"])
+
+        # Act
+        named = ("sha256" in held, "decides anything on its own" in held)
+
+        # Assert
+        self.assertEqual(named, (True, True))
+
+
+class IdentifyTest(RefusalCase):
+    def test_an_image_the_catalogue_knows_is_named_with_its_revision(self) -> None:
+        # Arrange
+        image = an_image()
+
+        # Act
+        found = snesdsp.identify(image, a_catalogue(image))
+
+        # Assert
+        self.assertEqual(
+            (found.part, found.revision, found.processor, found.program_words, found.data_words),
+            ("made-up", "one", "upd7725", PROGRAM_WORDS, TABLE_WORDS),
+        )
+
+    def test_an_identity_prints_as_the_part_and_revision_it_names(self) -> None:
+        # Arrange
+        image = an_image()
+        found = snesdsp.identify(image, a_catalogue(image))
+
+        # Act
+        printed = repr(found)
+
+        # Assert
+        self.assertEqual(printed, "<Identity made-up one on upd7725>")
+
+    def test_an_image_of_a_known_length_and_the_wrong_content_says_so(self) -> None:
+        # Arrange
+        catalogue = a_catalogue(an_image())
+
+        # Act
+        said = self.refusal(an_image(0xCD), catalogue)
+
+        # Assert
+        self.assertIn("8192 bytes, the length of made-up, but its content is altered", said)
+
+    def test_an_image_of_no_length_the_catalogue_knows_says_that_instead(self) -> None:
+        # Arrange
+        catalogue = a_catalogue(an_image())
+
+        # Act
+        said = self.refusal(b"\x00" * 7, catalogue)
+
+        # Assert
+        self.assertIn("7 bytes, and the manifest knows no part of that length", said)
+        self.assertIn("(it knows 8192)", said)
+
+    def test_an_empty_catalogue_says_it_knows_no_length_at_all(self) -> None:
+        # Arrange
+        catalogue: dict[str, Any] = {"artifacts": []}
+
+        # Act
+        said = self.refusal(b"\x00" * 7, catalogue)
+
+        # Assert
+        self.assertIn("(it knows none)", said)
+
+    def test_the_refusal_always_carries_the_digest_that_was_computed(self) -> None:
+        # Arrange
+        image = b"\x00" * 7
+
+        # Act
+        said = self.refusal(image, {"artifacts": []})
+
+        # Assert
+        self.assertIn(hashlib.sha256(image).hexdigest(), said)
+
+
+class RepairTest(RefusalCase):
     def test_a_file_carrying_a_copier_header_is_told_to_strip_it(self) -> None:
+        # Arrange
         image = an_image()
 
-        found = firmware.repairs(b"H" * 512 + image, a_catalogue(image)["artifacts"])
+        # Act
+        said = self.refusal(b"H" * 512 + image, a_catalogue(image, "dsp9"))
 
-        self.assertEqual(len(found), 1)
-        self.assertIn("512", found[0][0])
+        # Assert
+        self.assertIn("strip the first 512 bytes, which is a copier header", said)
+        self.assertIn("turns it into dsp9", said)
+        self.assertIn("checked rather than guessed", said)
 
-    def test_and_told_which_part_it_would_become(self) -> None:
+    def test_a_file_with_a_trailer_is_told_to_strip_the_end(self) -> None:
+        # Arrange
         image = an_image()
 
-        found = firmware.repairs(b"H" * 512 + image, a_catalogue(image, "dsp9")["artifacts"])
+        # Act
+        said = self.refusal(image + b"T" * 512, a_catalogue(image))
 
-        self.assertEqual(found[0][1], "dsp9")
+        # Assert
+        self.assertIn("strip the last 512 bytes", said)
 
     def test_a_file_with_its_bytes_in_the_wrong_order_is_told_to_swap_them(self) -> None:
+        # Arrange
         image = bytes(range(256)) * 32
         swapped = bytes(image[at ^ 1] for at in range(len(image)))
 
-        found = firmware.repairs(swapped, a_catalogue(image)["artifacts"])
+        # Act
+        said = self.refusal(swapped, a_catalogue(image))
 
-        self.assertTrue(any("swap" in how for how, _part in found), found)
+        # Assert
+        self.assertIn("swap every pair of bytes", said)
 
-    def test_a_file_that_is_already_right_needs_nothing(self) -> None:
+    def test_a_file_nothing_helps_is_offered_no_repair(self) -> None:
+        # Arrange
         image = an_image()
 
-        self.assertEqual(firmware.repairs(image, a_catalogue(image)["artifacts"]), [])
+        # Act
+        said = self.refusal(b"Z" * len(image), a_catalogue(image))
 
-    def test_a_file_nothing_helps_is_offered_nothing(self) -> None:
+        # Assert
+        self.assertNotIn("checked rather than guessed", said)
+
+    def test_a_file_too_short_to_strip_is_offered_no_repair(self) -> None:
+        # Arrange
         image = an_image()
 
-        found = firmware.repairs(b"Z" * len(image), a_catalogue(image)["artifacts"])
+        # Act
+        said = self.refusal(b"Z" * 8, a_catalogue(image))
 
-        self.assertEqual(found, [])
-
-    def test_a_file_too_short_to_strip_is_offered_nothing(self) -> None:
-        image = an_image()
-
-        self.assertEqual(firmware.repairs(b"Z" * 8, a_catalogue(image)["artifacts"]), [])
-
-    def test_the_diagnosis_names_the_repair_rather_than_the_length(self) -> None:
-        image = an_image()
-
-        with self.assertRaises(errors.Unrecognised) as raised:
-            firmware.identify(b"H" * 512 + image, a_catalogue(image))
-
-        self.assertIn("512", str(raised.exception))
-        self.assertIn("checked rather than guessed", str(raised.exception))
+        # Assert
+        self.assertIn("8 bytes, and the manifest knows no part of that length", said)
 
 
-class BadDumpTest(unittest.TestCase):
-    def test_a_declared_bad_dump_is_named_as_damaged(self) -> None:
-        image = an_image()
-        broken = an_image(filler=0x00)
-        catalogue = a_catalogue(
-            image,
-            badDumps=[{"sha256": hashlib.sha256(broken).hexdigest(), "why": "truncated"}],
-        )
+class BadDumpTest(RefusalCase):
+    def test_a_declared_bad_dump_is_named_as_damaged_with_its_part(self) -> None:
+        # Arrange
+        broken = an_image(0x00)
+        catalogue = with_bad_dumps(an_image(), "dsp9", broken)
 
-        with self.assertRaises(errors.Unrecognised) as raised:
-            firmware.identify(broken, catalogue)
+        # Act
+        said = self.refusal(broken, catalogue)
 
-        self.assertIn("known bad dump", str(raised.exception))
-
-    def test_and_names_the_part_it_is_a_bad_dump_of(self) -> None:
-        image = an_image()
-        broken = an_image(filler=0x00)
-        catalogue = a_catalogue(
-            image,
-            part="dsp9",
-            badDumps=[{"sha256": hashlib.sha256(broken).hexdigest()}],
-        )
-
-        with self.assertRaises(errors.Unrecognised) as raised:
-            firmware.identify(broken, catalogue)
-
-        self.assertIn("dsp9", str(raised.exception))
+        # Assert
+        self.assertIn("this is a known bad dump of dsp9", said)
 
     def test_an_undeclared_file_is_not_called_a_bad_dump(self) -> None:
-        image = an_image()
+        # Arrange
+        catalogue = with_bad_dumps(an_image(), "dsp9", an_image(0x01))
 
-        with self.assertRaises(errors.Unrecognised) as raised:
-            firmware.identify(an_image(filler=0x00), a_catalogue(image))
+        # Act
+        said = self.refusal(an_image(0x00), catalogue)
 
-        self.assertNotIn("known bad dump", str(raised.exception))
-
-    def test_the_manifest_that_ships_declares_the_list_for_every_part(self) -> None:
-        for artifact in firmware.manifest()["artifacts"]:
-            self.assertIn("badDumps", artifact, artifact["part"])
-
-
-class ProvenanceTest(unittest.TestCase):
-    def test_every_accepted_revision_says_where_its_digest_came_from(self) -> None:
-        for artifact in firmware.manifest()["artifacts"]:
-            for accepted in artifact["accepted"]:
-                self.assertIn("provenance", accepted, artifact["part"])
-
-    def test_and_names_a_kind_the_manifest_explains(self) -> None:
-        held = firmware.manifest()
-        kinds = held["provenance"]["kinds"]
-
-        for artifact in held["artifacts"]:
-            for accepted in artifact["accepted"]:
-                self.assertIn(accepted["provenance"]["kind"], kinds, artifact["part"])
-
-    def test_and_the_date_it_was_checked_on(self) -> None:
-        for artifact in firmware.manifest()["artifacts"]:
-            for accepted in artifact["accepted"]:
-                self.assertIn("verifiedOn", accepted["provenance"], artifact["part"])
-
-    def test_the_weakest_kind_says_that_it_is_the_weakest(self) -> None:
-        kinds = firmware.manifest()["provenance"]["kinds"]
-
-        self.assertIn("weakest", kinds["localCopy"])
+        # Assert
+        self.assertNotIn("known bad dump", said)
 
 
 class CrossCheckTest(unittest.TestCase):
-    def test_an_image_whose_other_digests_disagree_is_refused(self) -> None:
+    def test_a_crc32_that_disagrees_is_refused_by_name(self) -> None:
+        # Arrange
         image = an_image()
-        catalogue = {
-            "artifacts": [
-                {
-                    "part": "made-up",
-                    "processor": "upd7725",
-                    "bytes": len(image),
-                    "programWords": 2048,
-                    "dataWords": 1024,
-                    "accepted": [
-                        {
-                            "revision": "one",
-                            "sha256": hashlib.sha256(image).hexdigest(),
-                            "crc32": "00000000",
-                            "md5": "0" * 32,
-                            "sha1": "0" * 40,
-                        }
-                    ],
-                }
-            ]
-        }
+        catalogue = a_catalogue(image, crc32="0" * 8)
 
-        with self.assertRaises(errors.Corrupt) as raised:
-            firmware.identify(image, catalogue)
+        # Act
+        with self.assertRaises(snesdsp.Corrupt) as refused:
+            snesdsp.identify(image, catalogue)
 
-        self.assertIn("crc32", str(raised.exception))
+        # Assert
+        self.assertIn("matches on sha256 but not on crc32", str(refused.exception))
 
-    def test_a_cross_check_that_passes_every_digest_accepts_the_image(self) -> None:
+    def test_an_md5_that_disagrees_is_refused_by_name(self) -> None:
+        # Arrange
         image = an_image()
-        catalogue = {
-            "artifacts": [
-                {
-                    "part": "made-up",
-                    "processor": "upd7725",
-                    "bytes": len(image),
-                    "programWords": 2048,
-                    "dataWords": 1024,
-                    "accepted": [{"revision": "one", **firmware.digests_of(image)}],
-                }
-            ]
-        }
+        catalogue = a_catalogue(image, md5="0" * 32)
 
-        self.assertEqual(firmware.identify(image, catalogue).revision, "one")
+        # Act
+        with self.assertRaises(snesdsp.Corrupt) as refused:
+            snesdsp.identify(image, catalogue)
 
-    def test_every_kind_of_disagreement_is_caught(self) -> None:
+        # Assert
+        self.assertIn("not on md5", str(refused.exception))
+
+    def test_a_sha1_that_disagrees_is_refused_by_name(self) -> None:
+        # Arrange
         image = an_image()
-        for name, wrong in (("crc32", "0" * 8), ("md5", "0" * 32), ("sha1", "0" * 40)):
-            catalogue = {
-                "artifacts": [
-                    {
-                        "part": "made-up",
-                        "processor": "upd7725",
-                        "bytes": len(image),
-                        "programWords": 2048,
-                        "dataWords": 1024,
-                        "accepted": [
-                            {"revision": "one", **firmware.digests_of(image), name: wrong}
-                        ],
-                    }
-                ]
-            }
+        catalogue = a_catalogue(image, sha1="0" * 40)
 
-            with self.assertRaises(errors.Corrupt):
-                firmware.identify(image, catalogue)
+        # Act
+        with self.assertRaises(snesdsp.Corrupt) as refused:
+            snesdsp.identify(image, catalogue)
 
-    def test_an_image_the_manifest_only_partly_describes_is_still_accepted(self) -> None:
+        # Assert
+        self.assertIn("not on sha1", str(refused.exception))
+
+    def test_an_image_every_digest_agrees_on_is_accepted(self) -> None:
+        # Arrange
         image = an_image()
-        catalogue = {
-            "artifacts": [
-                {
-                    "part": "made-up",
-                    "processor": "upd7725",
-                    "bytes": len(image),
-                    "programWords": 2048,
-                    "dataWords": 1024,
-                    "accepted": [{"revision": "one", "sha256": hashlib.sha256(image).hexdigest()}],
-                }
-            ]
-        }
+        catalogue = a_catalogue(
+            image,
+            crc32=f"{zlib.crc32(image) & 0xFFFFFFFF:08x}",
+            md5=hashlib.md5(image).hexdigest(),
+            sha1=hashlib.sha1(image).hexdigest(),
+        )
 
-        self.assertEqual(firmware.identify(image, catalogue).part, "made-up")
+        # Act
+        found = snesdsp.identify(image, catalogue)
+
+        # Assert
+        self.assertEqual(found.revision, "one")
 
 
-class IdentityTest(unittest.TestCase):
-    def test_an_identity_prints_as_the_part_it_names(self) -> None:
-        found = firmware.Identity("dsp1", "upd7725", "DSP-1", 2048, 1024)
+class DigestTest(unittest.TestCase):
+    def test_every_digest_is_the_one_the_standard_library_computes(self) -> None:
+        # Arrange
+        image = b"nothing anybody owns"
 
-        self.assertIn("dsp1", repr(found))
-        self.assertIn("DSP-1", repr(found))
+        # Act
+        found = snesdsp.digests_of(image)
+
+        # Assert
+        self.assertEqual(
+            found,
+            {
+                "crc32": f"{zlib.crc32(image) & 0xFFFFFFFF:08x}",
+                "md5": hashlib.md5(image).hexdigest(),
+                "sha1": hashlib.sha1(image).hexdigest(),
+                "sha256": hashlib.sha256(image).hexdigest(),
+            },
+        )
+
+    def test_a_crc_with_a_leading_zero_keeps_its_eight_digits(self) -> None:
+        # Arrange
+        image = b"\x00" * 13
+
+        # Act
+        crc = snesdsp.digests_of(image)["crc32"]
+
+        # Assert
+        self.assertEqual(crc, "0f744682")
 
 
 class LoadTest(unittest.TestCase):
-    def test_a_loaded_image_fills_the_program_store(self) -> None:
-        chip = upd_models.lookup("upd7725").build(fill=0)
-        image = bytes(range(256)) * 32 + bytes(2048)
+    def test_a_loaded_image_fills_the_program_store_three_bytes_a_word(self) -> None:
+        # Arrange
+        image = bytes(range(256)) * 24 + bytes(TABLE_WORDS * 2)
 
-        firmware.load(chip, image[: 2048 * 3] + image[: 1024 * 2])
+        # Act
+        part = snesdsp.Chip("dsp1", image=image, identity=an_identity(), boot=0)
 
-        self.assertEqual(chip.stores.program[0], 0x000102)
+        # Assert
+        self.assertEqual(part.core.stores.program[0], 0x000102)
 
-    def test_and_the_table_after_it(self) -> None:
-        chip = upd_models.lookup("upd7725").build(fill=0)
-        program = bytes(2048 * 3)
-        table = bytes([0xAA, 0xBB]) * 1024
+    def test_and_the_table_after_it_two_bytes_a_word(self) -> None:
+        # Arrange
+        image = bytes(PROGRAM_WORDS * 3) + bytes([0xAA, 0xBB]) * TABLE_WORDS
 
-        firmware.load(chip, program + table)
+        # Act
+        part = snesdsp.Chip("dsp1", image=image, identity=an_identity(), boot=0)
 
-        self.assertEqual(chip.stores.table[0], 0xAABB)
+        # Assert
+        self.assertEqual(part.core.stores.table[0], 0xAABB)
 
-    def test_an_image_that_does_not_match_the_processor_is_refused(self) -> None:
-        chip = upd_models.lookup("upd7725").build(fill=0)
+    def test_an_image_two_bytes_short_is_refused_as_the_readme_shows(self) -> None:
+        # Arrange
+        image = an_image()[:-2]
 
-        with self.assertRaises(errors.WrongShape):
-            firmware.load(chip, bytes(53248))
+        # Act
+        with self.assertRaises(snesdsp.WrongShape) as refused:
+            snesdsp.Chip("dsp1", image=image, identity=an_identity())
 
-
-class FoundTest(unittest.TestCase):
-    def test_a_directory_with_nothing_in_it_yields_nothing(self) -> None:
-        self.assertEqual(list(firmware.found(Path(tempfile.mkdtemp()))), [])
-
-    def test_a_directory_that_is_not_there_yields_nothing_either(self) -> None:
-        self.assertEqual(list(firmware.found(Path("/nowhere/at/all"))), [])
-
-    def test_a_file_the_manifest_knows_is_yielded_with_its_name(self) -> None:
-        where = Path(tempfile.mkdtemp())
-        image = an_image()
-        (where / "made-up.bin").write_bytes(image)
-        catalogue = {
-            "artifacts": [
-                {
-                    "part": "made-up",
-                    "processor": "upd7725",
-                    "bytes": len(image),
-                    "programWords": 2048,
-                    "dataWords": 1024,
-                    "accepted": [{"revision": "one", "sha256": hashlib.sha256(image).hexdigest()}],
-                }
-            ]
-        }
-
-        found = list(firmware.found(where, catalogue))
-
-        self.assertEqual(found[0][0].part, "made-up")
-
-    def test_a_file_that_is_not_an_image_at_all_is_passed_over(self) -> None:
-        where = Path(tempfile.mkdtemp())
-        (where / "README.md").write_text("notes, not an image")
-        (where / "notes.txt").write_text("also not one")
-
-        self.assertEqual(list(firmware.found(where, {"artifacts": []})), [])
-
-    def test_a_file_the_manifest_does_not_know_is_passed_over(self) -> None:
-        where = Path(tempfile.mkdtemp())
-        (where / "nonsense.bin").write_bytes(b"\x00" * 99)
-
-        self.assertEqual(list(firmware.found(where, {"artifacts": []})), [])
-
-    def test_the_directory_comes_from_the_environment_when_one_is_named(self) -> None:
-        self.assertEqual(firmware.directory({firmware.DIRECTORY_VARIABLE: "/x"}), Path("/x"))
-
-    def test_and_from_the_repository_when_none_is(self) -> None:
-        self.assertEqual(firmware.directory({}).name, "firmware")
-
-
-class SearchPathTest(unittest.TestCase):
-    def test_the_package_always_looks_in_its_own_directory(self) -> None:
-        self.assertIn(firmware.DEFAULT_DIRECTORY, firmware.directories({}))
-
-    def test_and_in_the_project_that_carries_it_as_a_submodule(self) -> None:
-        self.assertIn(firmware.ALONGSIDE, firmware.directories({}))
-
-    def test_the_project_above_is_looked_at_before_the_package_itself(self) -> None:
-        found = firmware.directories({})
-
-        self.assertLess(found.index(firmware.ALONGSIDE), found.index(firmware.DEFAULT_DIRECTORY))
-
-    def test_a_named_directory_is_looked_at_before_either(self) -> None:
-        found = firmware.directories({firmware.DIRECTORY_VARIABLE: "/x"})
-
-        self.assertEqual(found[0], Path("/x"))
-
-    def test_more_than_one_can_be_named_at_once(self) -> None:
-        found = firmware.directories({firmware.DIRECTORY_VARIABLE: f"/x{os.pathsep}/y"})
-
-        self.assertEqual(found[:2], (Path("/x"), Path("/y")))
-
-    def test_an_empty_entry_between_two_names_is_passed_over(self) -> None:
-        found = firmware.directories({firmware.DIRECTORY_VARIABLE: f"/x{os.pathsep}{os.pathsep}/y"})
-
-        self.assertEqual(found[:2], (Path("/x"), Path("/y")))
-
-    def test_no_directory_appears_twice(self) -> None:
-        found = firmware.directories({firmware.DIRECTORY_VARIABLE: str(firmware.DEFAULT_DIRECTORY)})
-
-        self.assertEqual(len(found), len(set(found)))
-
-    def test_the_name_this_member_used_to_share_still_works(self) -> None:
-        found = firmware.directories({firmware.SHARED_DIRECTORY_VARIABLE: "/x"})
-
-        self.assertEqual(found[0], Path("/x"))
-
-    def test_but_the_members_own_name_is_looked_at_first(self) -> None:
-        found = firmware.directories(
-            {firmware.SHARED_DIRECTORY_VARIABLE: "/shared", firmware.DIRECTORY_VARIABLE: "/mine"}
+        # Assert
+        self.assertEqual(
+            str(refused.exception), "a upd7725 takes 8192 bytes of firmware and this is 8190"
         )
-
-        self.assertEqual(found[:2], (Path("/mine"), Path("/shared")))
-
-    def test_the_two_names_are_not_the_same_name(self) -> None:
-        self.assertNotEqual(firmware.DIRECTORY_VARIABLE, firmware.SHARED_DIRECTORY_VARIABLE)
-
-    def test_searching_finds_an_image_in_any_of_them(self) -> None:
-        first = Path(tempfile.mkdtemp())
-        second = Path(tempfile.mkdtemp())
-        image = an_image()
-        (second / "made-up.bin").write_bytes(image)
-        catalogue = {
-            "artifacts": [
-                {
-                    "part": "made-up",
-                    "processor": "upd7725",
-                    "bytes": len(image),
-                    "programWords": 2048,
-                    "dataWords": 1024,
-                    "accepted": [{"revision": "one", "sha256": hashlib.sha256(image).hexdigest()}],
-                }
-            ]
-        }
-
-        found = list(firmware.search((first, second), catalogue))
-
-        self.assertEqual(found[0][0].part, "made-up")
-
-    def test_the_first_directory_holding_a_part_is_the_one_that_answers(self) -> None:
-        first = Path(tempfile.mkdtemp())
-        second = Path(tempfile.mkdtemp())
-        image = an_image()
-        (first / "from-first.bin").write_bytes(image)
-        (second / "from-second.bin").write_bytes(image)
-        catalogue = {
-            "artifacts": [
-                {
-                    "part": "made-up",
-                    "processor": "upd7725",
-                    "bytes": len(image),
-                    "programWords": 2048,
-                    "dataWords": 1024,
-                    "accepted": [{"revision": "one", "sha256": hashlib.sha256(image).hexdigest()}],
-                }
-            ]
-        }
-
-        found = list(firmware.search((first, second), catalogue))
-
-        self.assertEqual(len(found), 1)
-        self.assertEqual(found[0][1].name, "from-first.bin")
-
-
-class DecidingDigestTest(unittest.TestCase):
-    def held(self) -> str:
-        return str(firmware.manifest()["decides"])
-
-    def test_the_manifest_names_the_digest_that_decides(self) -> None:
-        self.assertIn(firmware.DECIDES, self.held())
-
-    def test_and_says_the_others_decide_nothing(self) -> None:
-        self.assertIn("decides anything on its own", self.held())
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ PythonによるNintendo DSP-1、DSP-1A、DSP-1B、DSP-2、DSP-3、DSP-4です。
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**5**個のマイクロコードイメージ上の**6**種類のチップ、**36**本の市販カートリッジから読み出した**121**件のやり取り、そのうち**61**件をチップに対して再生、失敗**0**件、手作業で記述したコマンド**0**個、テスト**1,000**件、ステートメントとブランチのカバレッジ**100%**、依存関係なし
+**5**個のマイクロコードイメージ上の**6**種類のチップ、**36**本の市販カートリッジから読み出した**121**件のやり取り、そのうち**61**件をチップに対して再生、失敗**0**件、手作業で記述したコマンド**0**個、テスト**971**件、ステートメントとブランチのカバレッジ**100%**、依存関係なし
 
 ```python
 import snesdsp
@@ -65,7 +65,7 @@ python3 snesdsp/doctor.py
 | `boot` | `20000` | 読み込み後、最初のアクセスの前に実行する命令数 |
 | `fill` | `0` | イメージを読み込む前にプロセッサのメモリが保持する値 |
 | `image` | なし | イメージのバイト列。直接渡すため、ディレクトリは検索されません。`identity`が必要です |
-| `identity` | なし | `image`が何であるか。`firmware.identify(image)`が返す形式です |
+| `identity` | なし | `image`が何であるか。`snesdsp.identify(image)`が返す形式です |
 | `images` | なし | チップ名から`(identity, path)`へのマッピング。ディレクトリ検索の代わりに使われます |
 
 ### モデル
@@ -115,15 +115,18 @@ python3 snesdsp/doctor.py
 | `snesdsp.MODELS` | 正規名をキーとする6つの`Model`レコード。それぞれ`name`、`aliases`、`summary`、`image`を持ちます |
 | `snesdsp.Model` | それらのレコードの型 |
 | `snesdsp.SHARES_MICROCODE` | `{"dsp1a": "dsp1"}`。別のチップのイメージを実行する唯一のチップです |
-| `snesdsp.available()` | このマシンにイメージがあるチップ。チップ名から`(identity, path)`へのマッピングです |
-| `snesdsp.why_not()` | 少なくとも1つのチップを構築できる場合は`None`、そうでなければどれも構築できない理由を述べる文 |
+| `snesdsp.available(held=None)` | このマシンにイメージがあるチップ。チップ名から`(identity, path)`へのマッピングです。同じ形のマッピング`held`を渡すと、検索せずにそれを読みます |
+| `snesdsp.why_not(held=None)` | 少なくとも1つのチップを構築できる場合は`None`、そうでなければどれも構築できない理由を述べる文。同じ`held`を受け取ります |
 | `snesdsp.MASTER_CLOCK` | `21477273`。コンソールのマスタークロック(Hz)で、NTSCカラーキャリアの6倍です |
 | `snesdsp.DSP_CLOCK` | `7600000`。チップのクロック(Hz)で、1クロックにつき1命令です |
 | `snesdsp.GAP` | `14`。デフォルトの`gap`です |
 | `snesdsp.clock_of(model)` | そのモデルのクロック(Hz)。不明な名前には`UnknownModelError`を送出します |
 | `snesdsp.steps_for(master_clocks, clock=DSP_CLOCK, master=MASTER_CLOCK)` | その数のマスタークロックで実行される命令数。切り捨てです |
 | `snesdsp.__version__` | インストールされているバージョン |
-| `snesdsp.firmware` | イメージを見つけて名前を特定するための`identify(image)`、`digests_of(image)`、`directories()`、`search()` |
+| `snesdsp.identify(image, catalogue=None)` | イメージの`Identity`。マニフェスト、または同じ形のマッピング`catalogue`からSHA-256で見つけます。`Unrecognised`または`Corrupt`を送出します |
+| `snesdsp.digests_of(image)` | イメージのCRC32、MD5、SHA-1、SHA-256。`crc32`、`md5`、`sha1`、`sha256`をキーとする小文字の16進数です |
+| `snesdsp.directories(environment=None)` | 検索が読むディレクトリを順に並べたもの。`environment`またはプロセスの環境変数から求めます |
+| `snesdsp.search(places=None, catalogue=None)` | `places`、または`directories()`で見つかったすべてのイメージを`(identity, path)`の組で返します。チップごとに最初に見つかったファイルが優先されます |
 
 ```python
 import snesdsp
@@ -165,7 +168,7 @@ no model was named, and this package will not choose one for you. Name one of: d
 | `UnknownModelError` | モデル名がないか、その名前のモデルが存在しない。メッセージにはすべてのモデルが列挙されます |
 | `NoFirmware` | プロセッサのサブモジュールがチェックアウトされていない、チップのイメージが見つからない、または`identity`なしで`image`が渡された |
 | `NeverReady` | `settle()`が`patience`命令を実行し、チップが一度も要求しなかった |
-| `Unrecognised` | マニフェスト内のどのイメージにもないSHA-256を持つバイト列が`firmware.identify`に渡された。メッセージには、そのファイルが何である可能性が最も高いかが示されます |
+| `Unrecognised` | マニフェスト内のどのイメージにもないSHA-256を持つバイト列が`snesdsp.identify`に渡された。メッセージには、そのファイルが何である可能性が最も高いかが示されます |
 | `Corrupt` | イメージがSHA-256では一致したが、マニフェストに記録された別のダイジェストでは一致しなかった |
 | `WrongShape` | `image`の長さが、その`identity`が必要とする長さではない。プログラムワードあたり3バイト、データワードあたり2バイトです |
 
@@ -173,21 +176,20 @@ no model was named, and this package will not choose one for you. Name one of: d
 from pathlib import Path
 
 import snesdsp
-from snesdsp import firmware
 
 if snesdsp.why_not():
     raise snesdsp.NoFirmware(snesdsp.why_not())
 
 identity, where = snesdsp.available()["dsp1b"]
 held = Path(where).read_bytes()
-print(firmware.identify(held), identity.program_words, identity.data_words, len(held))
+print(snesdsp.identify(held), identity.program_words, identity.data_words, len(held))
 
 part = snesdsp.Chip("dsp1b", image=held, identity=identity)
 print(part.identity.part, part.processor)
 
 for wrong in (held[:-2], held[::-1]):
     try:
-        firmware.identify(wrong)
+        snesdsp.identify(wrong)
     except snesdsp.Unrecognised as error:
         print(str(error)[:72])
 try:
@@ -235,7 +237,7 @@ dsp1 did not ask for attention within 0 instructions
 3. このチェックアウトを含むディレクトリ内の[`firmware/`](firmware/README.md)。これが別のプロジェクトのサブモジュールである場合のためです。
 4. このチェックアウト内の[`firmware/`](firmware/README.md)。
 
-SHA-256がマニフェストにないファイルは、検索ではスキップされます。`firmware.identify`に渡すと、診断付きで拒否されます。コピー機のヘッダ、バイトスワップされたダンプ、既知の不良ダンプはそれぞれ認識され、名前が示されます。
+SHA-256がマニフェストにないファイルは、検索ではスキップされます。`snesdsp.identify`に渡すと、診断付きで拒否されます。コピー機のヘッダ、バイトスワップされたダンプ、既知の不良ダンプはそれぞれ認識され、名前が示されます。
 
 手元のコピーを確認します。
 
@@ -469,11 +471,12 @@ uvx ruff@0.16.3 format --check .
 uvx ruff@0.16.3 check .
 mypy
 pnpm run format:check
-python3 -m coverage erase
+cov=(uvx --python 3.12 --from coverage==7.6.10 --with setuptools==84.0.0 coverage)
+"${cov[@]}" erase
 for file in $(find snesdsp conformance -name '*.test.py' | sort); do
-  python3 -m coverage run -a "$file"
+  "${cov[@]}" run -a "$file"
 done
-python3 -m coverage report
+"${cov[@]}" report
 python3 -m conformance.speed
 ```
 

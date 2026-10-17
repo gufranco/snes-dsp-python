@@ -85,14 +85,9 @@ ignore = [
 "snesdsp/doctor.py" = ["BLE001", "T201"]
 
 [tool.coverage.run]
-source = ["snesdsp", "conformance"]
+source = ["."]
+omit = ["nec-upd7725-96050-python/*", "snes-driver-python/*"]
 branch = true
-# Finding cartridges is measured out of the gate on purpose. It depends on files
-# nobody may distribute, so a machine that has them runs one set of paths and a
-# machine that does not runs the other. No single build can exercise both, and a
-# gate that demands the impossible gets switched off rather than met. What it
-# does instead is report every check it could not run as skipped, out loud.
-omit = []
 
 [tool.coverage.report]
 fail_under = 100
@@ -150,6 +145,6 @@ files = ["snesdsp", "conformance"]
 # The submodules are checked in their own repositories, against their own gate.
 # Following imports into them here would report the state of somebody else's
 # project, and a finding nobody in this one can act on.
-module = ["upd7725.*", "mapper.*", "snesdriver.*"]
+module = ["upd7725.*", "mapper.*", "snesdriver.*", "setuptools.*"]
 follow_imports = "skip"
 ignore_missing_imports = true

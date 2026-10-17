@@ -11,6 +11,7 @@ from .errors import (
     Unrecognised,
     WrongShape,
 )
+from .firmware import digests_of, directories, identify, search
 from .models import MODELS, SHARES_MICROCODE, Model
 from .timing import DSP_CLOCK, GAP, MASTER_CLOCK, clock_of, steps_for
 from .version import VERSION
@@ -39,6 +40,10 @@ __all__ = [
     "__version__",
     "available",
     "clock_of",
+    "digests_of",
+    "directories",
+    "identify",
+    "search",
     "steps_for",
     "why_not",
 ]

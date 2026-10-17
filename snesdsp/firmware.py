@@ -71,14 +71,10 @@ class Identity:
         return f"<Identity {self.part} {self.revision} on {self.processor}>"
 
 
-def manifest(path: Path | str | None = None) -> dict[str, Any]:
-    with Path(path or MANIFEST).open() as handle:
+def manifest() -> dict[str, Any]:
+    with MANIFEST.open() as handle:
         held: dict[str, Any] = json.load(handle)
     return held
-
-
-def directory(environment: Mapping[str, str] | None = None) -> Path:
-    return directories(environment)[0]
 
 
 def directories(environment: Mapping[str, str] | None = None) -> tuple[Path, ...]:
@@ -150,10 +146,7 @@ def repairs(image: bytes, entries: Iterable[dict[str, Any]]) -> list[tuple[str, 
     accepted = {one[DECIDES]: entry["part"] for entry in entries for one in entry["accepted"]}
     found = []
     for how, apply in REPAIRS:
-        try:
-            changed = apply(image)
-        except (IndexError, ValueError):  # pragma: no cover
-            continue
+        changed = apply(image)
         if not changed or changed == image:
             continue
         digest = hashlib.sha256(changed).hexdigest()
@@ -206,9 +199,9 @@ def _diagnosis(image: bytes, digest: str, entries: list[dict[str, Any]]) -> str:
     )
 
 
-def load(chip: Cpu, image: bytes, identity: Identity | None = None) -> Cpu:
-    program_words = identity.program_words if identity else len(chip.stores.program)
-    data_words = identity.data_words if identity else len(chip.stores.table)
+def load(chip: Cpu, image: bytes, identity: Identity) -> Cpu:
+    program_words = identity.program_words
+    data_words = identity.data_words
     wanted = program_words * PROGRAM_BYTES_PER_WORD + data_words * TABLE_BYTES_PER_WORD
 
     if len(image) != wanted:
@@ -223,9 +216,9 @@ def load(chip: Cpu, image: bytes, identity: Identity | None = None) -> Cpu:
 
 
 def found(
-    where: Path | str | None = None, catalogue: dict[str, Any] | None = None
+    where: Path | str, catalogue: dict[str, Any] | None = None
 ) -> Iterator[tuple[Identity, Path]]:
-    where = Path(where) if where is not None else directory()
+    where = Path(where)
     if not where.is_dir():
         return
 
@@ -239,7 +232,7 @@ def found(
 
 
 def search(
-    places: Iterable[Path] | None = None, catalogue: dict[str, Any] | None = None
+    places: Iterable[Path | str] | None = None, catalogue: dict[str, Any] | None = None
 ) -> Iterator[tuple[Identity, Path]]:
     seen = set()
     for where in places if places is not None else directories():
