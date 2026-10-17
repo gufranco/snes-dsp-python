@@ -19,7 +19,11 @@
       "quote": "The external clock frequency (8.3 MHz maximum) remains the same as for 7720/77C20 while the internal instruction execution speed is doubled.",
       "source": "necDataSheet",
       "note": "A property of the silicon. It is the ceiling, never the rate any board actually clocked.",
-      "page": 1
+      "page": 1,
+      "heldBy": [
+        "conformance/hardware.test.py::ConstantTest.test_the_rated_ceiling_is_what_the_data_sheet_prints",
+        "conformance/hardware.test.py::PrintedBehaviourTest.test_a_second_of_console_time_never_runs_the_part_past_its_rated_ceiling"
+      ]
     },
     "instructionsPerClock": {
       "value": 1,
@@ -27,7 +31,10 @@
       "quote": "All instructions execute in one instruction cycle",
       "source": "necDataSheet",
       "note": "This is why counting instructions is counting cycles, and why this package needs no per-instruction table.",
-      "page": 1
+      "page": 1,
+      "heldBy": [
+        "conformance/hardware.test.py::PrintedBehaviourTest.test_every_instruction_the_part_runs_costs_the_printed_cycle"
+      ]
     },
     "cartridgeOscillatorHz": {
       "value": 7600000,
@@ -57,7 +64,10 @@
       "source": "necDataSheet",
       "note": "Why a reset here cannot reach the program. The microcode is masked into the part, so what a reset moves is the counter and the state around it. This member's reset rebuilds the processor and reloads the same image, which is the same outcome by a different route: the image is what the mask holds.",
       "appliesTo": ["dsp1", "dsp1a", "dsp1b", "dsp2", "dsp3", "dsp4"],
-      "verified": true
+      "verified": true,
+      "heldBy": [
+        "conformance/hardware.test.py::PrintedBehaviourTest.test_a_reset_restarts_at_address_zero_with_the_program_intact"
+      ]
     }
   },
   "notStated": [

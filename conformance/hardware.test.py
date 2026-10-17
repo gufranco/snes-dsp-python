@@ -6,15 +6,36 @@ from typing import Any, override
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from snesdsp import timing
+from snesdsp import chip, firmware, timing
 
 HARDWARE = Path(__file__).resolve().parent / "hardware.json"
+
+PROGRAM_WORDS = 2048
+
+TABLE_WORDS = 1024
+
+LAST_WORD = b"\x12\x34\x56"
+
+STEPS = 50
 
 
 def declared() -> dict[str, Any]:
     held = json.loads(HARDWARE.read_text())
     assert isinstance(held, dict), f"{HARDWARE} does not hold an object"
     return held
+
+
+def words_of(part: chip.Chip) -> list[int]:
+    store = part.core.stores.program
+    return [store[at] for at in range(len(store))]
+
+
+def a_part() -> chip.Chip:
+    sys.path.insert(0, str(chip.PROCESSOR))
+    identity = firmware.Identity("made-up", "upd7725", "MADE UP", PROGRAM_WORDS, TABLE_WORDS)
+    program = bytes(PROGRAM_WORDS * firmware.PROGRAM_BYTES_PER_WORD - len(LAST_WORD)) + LAST_WORD
+    table = bytes(TABLE_WORDS * firmware.TABLE_BYTES_PER_WORD)
+    return chip.Chip("made-up", image=program + table, identity=identity, boot=0)
 
 
 class DocumentTest(unittest.TestCase):
@@ -93,6 +114,45 @@ class ConstantTest(unittest.TestCase):
         access = self.facts["accessCostMasterCycles"]
 
         self.assertEqual(set(access) & {"extraSlow", "extra_slow"}, set())
+
+
+class PrintedBehaviourTest(unittest.TestCase):
+    def test_a_second_of_console_time_never_runs_the_part_past_its_rated_ceiling(self) -> None:
+        # Arrange
+        ceiling = declared()["facts"]["ratedClock"]["value"]
+        part = a_part()
+
+        # Act
+        run = timing.steps_for(timing.MASTER_CLOCK, part.clock)
+
+        # Assert
+        self.assertLessEqual(run, ceiling)
+
+    def test_every_instruction_the_part_runs_costs_the_printed_cycle(self) -> None:
+        # Arrange
+        per_clock = declared()["facts"]["instructionsPerClock"]["value"]
+        part = a_part()
+        before = part.core.cycles
+
+        # Act
+        part.step(STEPS)
+
+        # Assert
+        self.assertEqual(part.core.cycles - before, STEPS * per_clock)
+
+    def test_a_reset_restarts_at_address_zero_with_the_program_intact(self) -> None:
+        # Arrange
+        stated = declared()["facts"]["resetLine"]["value"]
+        part = a_part()
+        part.step(STEPS)
+        program = words_of(part)
+
+        # Act
+        part.reset()
+
+        # Assert
+        self.assertIn("address zero", stated)
+        self.assertEqual((part.core.registers.pc, words_of(part)), (0, program))
 
 
 class StandingTest(unittest.TestCase):
