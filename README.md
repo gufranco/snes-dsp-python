@@ -8,7 +8,7 @@ English &nbsp;|&nbsp; [日本語](README.ja.md) &nbsp;|&nbsp; [简体中文](REA
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** parts on **5** microcode images, **121** exchanges read out of **36** retail cartridges, **61** of them played at the part, **0** failures, **0** commands described by hand, **979** tests, **100%** statement and branch coverage, no dependencies
+**6** parts on **5** microcode images, **121** exchanges read out of **36** retail cartridges, **61** of them played at the part, **0** failures, **0** commands described by hand, **981** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 import snesdsp
