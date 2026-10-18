@@ -11,7 +11,6 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(ROOT))
 
-import snesdsp  # noqa: E402
 from conformance import answers  # noqa: E402
 
 
@@ -122,25 +121,6 @@ class TakingTest(unittest.TestCase):
 
 
 class FamilyTest(unittest.TestCase):
-    def test_a_part_with_its_own_shapes_uses_them(self) -> None:
-        self.assertEqual(answers.shapes_named("dsp2"), "dsp2")
-
-    def test_the_die_shrink_is_driven_by_the_part_it_shrank(self) -> None:
-        self.assertEqual(answers.shapes_named("dsp1a"), "dsp1")
-
-    def test_and_so_is_the_later_mask(self) -> None:
-        self.assertEqual(answers.shapes_named("dsp1b"), "dsp1")
-
-    def test_every_part_that_shares_shapes_is_a_part_this_covers(self) -> None:
-        # Arrange
-        catalogue = set(snesdsp.MODELS)
-
-        # Act
-        named = set(answers.DRIVEN_LIKE) | set(answers.DRIVEN_LIKE.values())
-
-        # Assert
-        self.assertEqual(named - catalogue, set())
-
     def test_a_part_reads_the_shapes_of_whoever_drives_it(self) -> None:
         # Arrange
         recorded = json.loads((ROOT / "conformance" / "dsp1shapes.json").read_text())["shapes"]

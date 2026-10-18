@@ -80,6 +80,12 @@ two of the three run the same program. Only the DSP-1B changed it, correcting a
 fault in one of the maths routines, and that is the divergence the mask sweep
 pins.
 
+The shapes follow the protocol rather than the mask. `DRIVEN_LIKE` in
+[`conformance/shapes.py`](conformance/shapes.py) sends the DSP-1A and DSP-1B to
+the DSP-1 shapes, because no dump shows which mask a board carries and all three
+take the same commands. Every tool that reads shapes resolves a part through it,
+so a cartridge run naming either mask drives that mask rather than refusing.
+
 ## Every gate, in the order to run them
 
 ```bash

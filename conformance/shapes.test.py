@@ -8,6 +8,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import snesdsp
 from conformance import shapes
 
 
@@ -132,6 +133,58 @@ class RecordedTest(unittest.TestCase):
         held = json.loads((shapes.ROOT / "dsp1shapes.json").read_text())
 
         self.assertGreater(len(held["readFrom"]), 1)
+
+
+class FamilyTest(unittest.TestCase):
+    def test_a_part_with_its_own_shapes_uses_them(self) -> None:
+        # Arrange
+        part = "dsp2"
+
+        # Act
+        found = shapes.named(part)
+
+        # Assert
+        self.assertEqual(found, "dsp2")
+
+    def test_the_die_shrink_is_driven_by_the_part_it_shrank(self) -> None:
+        # Arrange
+        part = "dsp1a"
+
+        # Act
+        found = shapes.named(part)
+
+        # Assert
+        self.assertEqual(found, "dsp1")
+
+    def test_and_so_is_the_later_mask(self) -> None:
+        # Arrange
+        part = "dsp1b"
+
+        # Act
+        found = shapes.named(part)
+
+        # Assert
+        self.assertEqual(found, "dsp1")
+
+    def test_every_part_that_shares_shapes_is_a_part_this_covers(self) -> None:
+        # Arrange
+        catalogue = set(snesdsp.MODELS)
+
+        # Act
+        named = set(shapes.DRIVEN_LIKE) | set(shapes.DRIVEN_LIKE.values())
+
+        # Assert
+        self.assertEqual(named - catalogue, set())
+
+    def test_a_later_mask_reads_the_shapes_of_the_part_it_follows(self) -> None:
+        # Arrange
+        expected = shapes.recorded("dsp1")
+
+        # Act
+        found = shapes.recorded("dsp1b")
+
+        # Assert
+        self.assertEqual(found, expected)
 
 
 class InterestingTest(unittest.TestCase):

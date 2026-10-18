@@ -23,6 +23,8 @@ DEFAULT_SEED = 0x5D3A9C
 
 WIDTHS = (1, 2)
 
+DRIVEN_LIKE = {"dsp1a": "dsp1", "dsp1b": "dsp1"}
+
 Shapes = tuple[tuple["tuple[Step, ...]", int], ...]
 
 
@@ -68,14 +70,19 @@ def parse(shape: str) -> "tuple[Step, ...]":
     return tuple(steps)
 
 
+def named(part: str) -> str:
+    return DRIVEN_LIKE.get(part, part)
+
+
 def recorded(part: str, where: Path | str | None = None) -> "Shapes":
-    path = Path(where) if where is not None else ROOT / f"{part}shapes.json"
+    owner = named(part)
+    path = Path(where) if where is not None else ROOT / f"{owner}shapes.json"
     if not path.exists():
         return ()
     held = json.loads(path.read_text())
     assert isinstance(held, dict), f"{path} does not hold an object"
-    if held.get("part") != part:
-        raise Malformed(f"{path} holds shapes for {held.get('part')}, not for {part}")
+    if held.get("part") != owner:
+        raise Malformed(f"{path} holds shapes for {held.get('part')}, not for {owner}")
     found = [(parse(one["shape"]), one["seen"]) for one in held["shapes"]]
     return tuple(sorted(found, key=lambda one: (-len(one[0]), -one[1])))
 

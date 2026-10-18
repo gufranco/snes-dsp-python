@@ -253,10 +253,63 @@ class EntryTest(unittest.TestCase):
         self.assertTrue(said)
 
     def test_a_part_with_no_recorded_shapes_is_refused(self) -> None:
-        with self.assertRaises(against_cartridges.Usage):
+        # Arrange
+        nameless = "dsp9"
+
+        # Act
+        with self.assertRaises(against_cartridges.Usage) as raised:
             against_cartridges.main(
-                ["dsp1a"], why_not=lambda: None, build=build, say=lambda _: None
+                [nameless], why_not=lambda: None, build=build, say=lambda _: None
             )
+
+        # Assert
+        self.assertIn(nameless, str(raised.exception))
+
+    def test_the_die_shrink_is_driven_through_the_dsp1_cartridges_shapes(self) -> None:
+        # Arrange
+        said: list[str] = []
+        expected = len(shapes.interesting(shapes.recorded("dsp1")))
+
+        # Act
+        found = against_cartridges.main(
+            ["dsp1a"], why_not=lambda: None, build=build, say=said.append
+        )
+
+        # Assert
+        self.assertEqual(found, 0)
+        self.assertEqual(
+            said[0], f"  dsp1a: {expected} exchanges a real cartridge makes, played at the part"
+        )
+
+    def test_and_so_is_the_later_mask(self) -> None:
+        # Arrange
+        said: list[str] = []
+        expected = len(shapes.interesting(shapes.recorded("dsp1")))
+
+        # Act
+        found = against_cartridges.main(
+            ["dsp1b"], why_not=lambda: None, build=build, say=said.append
+        )
+
+        # Assert
+        self.assertEqual(found, 0)
+        self.assertEqual(
+            said[0], f"  dsp1b: {expected} exchanges a real cartridge makes, played at the part"
+        )
+
+    def test_and_the_part_driven_is_the_mask_that_was_named(self) -> None:
+        # Arrange
+        built: list[str] = []
+
+        def watching(name: str) -> Any:
+            built.append(name)
+            return Talkative(name)
+
+        # Act
+        against_cartridges.main(["dsp1b"], why_not=lambda: None, build=watching, say=lambda _: None)
+
+        # Assert
+        self.assertEqual(set(built), {"dsp1b"})
 
     def test_every_part_with_its_own_image_has_exchanges_recorded(self) -> None:
         from conformance import shapes as recorded

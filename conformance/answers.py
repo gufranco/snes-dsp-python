@@ -19,8 +19,6 @@ ROOT = Path(__file__).resolve().parent
 
 PARTS = tuple(sorted(models.MODELS))
 
-DRIVEN_LIKE = {"dsp1a": "dsp1", "dsp1b": "dsp1"}
-
 NOTE = (
     "What this part answered when driven through the exchanges real cartridges make."
     " The payloads were generated from the seed named here, so nothing any cartridge"
@@ -75,12 +73,8 @@ def _default_digest(part: str) -> str:  # pragma: no cover
     return hashlib.sha256(Path(held[wanted][1]).read_bytes()).hexdigest()
 
 
-def shapes_named(part: str) -> str:
-    return DRIVEN_LIKE.get(part, part)
-
-
 def recorded_shapes(part: str) -> list[dict[str, Any]]:
-    path = ROOT / f"{shapes_named(part)}shapes.json"
+    path = ROOT / f"{shapes_module.named(part)}shapes.json"
     if not path.exists():
         return []
     held = json.loads(path.read_text())
