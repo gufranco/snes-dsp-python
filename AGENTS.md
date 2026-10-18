@@ -132,6 +132,49 @@ the case it exists for.
 - A check nobody has seen fail is not known to work. Drive every new check
   against input that should fail it before keeping it.
 
+The linter's ignores in [`pyproject.toml`](pyproject.toml) carry no comments, so
+their reasons live here:
+
+- `nec-upd7725-96050-python` in ruff's `extend-exclude`: the processor is
+  another project checked out beside this one, with its own gate at its own
+  version. This lint must never depend on a commit made in another repository.
+- `N818`: the control flow signals here are named the way CPython names its
+  own, such as `StopIteration`. The exceptions that report a genuine failure do
+  end in `Error`.
+- `N999` in tests: a test file is named after the module it sits beside, so its
+  name carries a dot. A module and its tests are read together.
+- `T201` in the conformance tools: these are command line tools and printing is
+  their output. A logger would put a level and a timestamp in front of a report
+  meant for a person.
+- `BLE001` and `T201` in `environment.py`: it reports what a machine is, so a
+  check that throws has to become a line in the report rather than end the run.
+- `BLE001` and `T201` in the doctor: it has to survive whatever a check throws
+  and report it. A narrower catch would let an unforeseen failure escape as a
+  traceback and take the rest of the report with it.
+- The `Protocol` class pattern in the coverage exclusions: a protocol body is a
+  contract the type checker reads and the runtime never runs, so covering it
+  would mean calling methods that deliberately do nothing.
+- `if __name__ == "__main__":` in the coverage exclusions: the guard hands argv
+  to a function that is itself tested, and importing the module to cover it
+  would run the tool rather than test it.
+- The `sys.path` guard in the coverage exclusions: the doctor puts its own
+  repository on the import path so it runs when the package will not import. A
+  suite that imports the doctor has already done that, so no test can take the
+  other branch.
+- `if TYPE_CHECKING:` in the coverage exclusions: the block never runs. Python
+  3.14 drops it before coverage sees it and earlier versions do not, so
+  counting it would make the gate mean one thing on the newest runtime and
+  another on the oldest.
+- The two ellipsis patterns in the coverage exclusions: a protocol method has no
+  body to run, whether the ellipsis sits on its own line or after the
+  signature. The same version split applies.
+- The optional error classes in mypy: a model of a processor is arithmetic on
+  masked integers, and the errors that matter most are a width, a sign or a
+  `None` slipping through a boundary.
+- The `upd7725.*`, `mapper.*` and `snesdriver.*` override in mypy: the
+  submodules are checked in their own repositories, against their own gates.
+  Following imports into them would report findings nobody here can act on.
+
 ## Layout
 
 ```text

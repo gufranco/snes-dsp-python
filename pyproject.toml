@@ -40,10 +40,6 @@ snesdsp = ["artifacts.manifest.json"]
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-# The processor is another project checked out beside this one, named after
-# itself so anybody browsing the repository can see what this is built on. It
-# carries its own gate at its own version, and this repository's lint passing or
-# failing should never depend on a commit made in a different repository.
 extend-exclude = ["nec-upd7725-96050-python"]
 
 [tool.ruff.lint]
@@ -57,31 +53,13 @@ ignore = [
   "PLC0415",
   "PLR0917",
   "E501",
-  # N818 wants every exception to end in Error. The control flow signals here are
-  # named the way CPython names its own: StopIteration, SystemExit and
-  # GeneratorExit carry no suffix either. The exceptions that report a genuine
-  # failure do end in Error.
   "N818",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-# The environment checks are the same shape and exist for the same reason: they
-# report what a machine is, so a check that throws has to become a line in the
-# report rather than end the run, and its output is the product.
 "snesdsp/environment.py" = ["BLE001", "T201"]
-# A test file sits beside the module it covers and is named after it, so its
-# module name carries a dot that N999 rejects. The layout is deliberate: a
-# module and its tests are read together.
 "*.test.py" = ["PLR2004", "N999"]
-# These are command line tools. Printing is their output, not a stray debug
-# statement left behind, and routing it through a logger would put a level and
-# a timestamp in front of a report meant to be read by a person.
 "conformance/*.py" = ["T201"]
-# The doctor exists so that nothing fails silently, which means it has to survive
-# whatever a check throws at it and report that rather than propagate it. A
-# narrower catch here would let an unforeseen failure escape as a traceback and
-# take the rest of the report with it, which is the one outcome it must avoid.
-# It prints for the same reason every tool here does: its output is the product.
 "snesdsp/doctor.py" = ["BLE001", "T201"]
 
 [tool.coverage.run]
@@ -93,37 +71,15 @@ branch = true
 fail_under = 100
 show_missing = true
 exclude_also = [
-  # A protocol body is a contract, never code: the type checker reads it and the
-  # runtime never runs it, because the class exists to be satisfied rather than
-  # instantiated. Demanding coverage of the ellipses would mean calling methods
-  # that deliberately do nothing.
   'class .*\(.*Protocol.*\):',
-  # The command line guard hands argv to a function that is itself tested, so
-  # there is nothing behind it left to exercise. Importing the module to cover
-  # the guard would run the tool rather than test it.
   'if __name__ == "__main__":',
-  # The doctor puts its own repository on the import path so that it still runs
-  # when the package will not import, which is the case it exists for. A suite
-  # that imports the doctor has already put it there, so the branch the guard
-  # takes when running as a file is one no test can be in.
   'if str\(ROOT\) not in sys\.path:',
-  # A type checking block never runs, by definition. Python 3.14 drops it before
-  # coverage can see it and earlier versions do not, so leaving it in would make
-  # the gate mean one thing on the newest runtime and another on the oldest
-  # supported one, which is worse than either.
   'if TYPE_CHECKING:',
-  # A protocol method has no body to run, whether the ellipsis sits on its own
-  # line or after the signature. The same version split applies.
   '^\s*\.\.\.$',
   ': \.\.\.$',
 ]
 
 [tool.mypy]
-# Every flag mypy has, plus the ones strict does not turn on. A model of a
-# processor is arithmetic on masked integers from end to end, and the errors that
-# matter most here are the ones where a width, a sign or a None slips through a
-# boundary. A checker that sees the whole register file is the cheapest place to
-# catch those.
 strict = true
 python_version = "3.12"
 warn_unreachable = true
@@ -142,9 +98,6 @@ enable_error_code = [
 files = ["snesdsp", "conformance"]
 
 [[tool.mypy.overrides]]
-# The submodules are checked in their own repositories, against their own gate.
-# Following imports into them here would report the state of somebody else's
-# project, and a finding nobody in this one can act on.
 module = ["upd7725.*", "mapper.*", "snesdriver.*"]
 follow_imports = "skip"
 ignore_missing_imports = true

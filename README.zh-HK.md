@@ -8,7 +8,7 @@
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** 款晶片共用 **5** 個微碼映像檔，讀出 **121** 種交換，來自 **36** 盒零售版卡帶，其中 **62** 種在晶片上重播，**0** 次失敗，**0** 個以人手描述的命令，**987** 項測試，**100%** 語句及分支覆蓋率，沒有任何依賴套件
+**6** 款晶片共用 **5** 個微碼映像檔，讀出 **121** 種交換，來自 **36** 盒零售版卡帶，其中 **62** 種在晶片上重播，**0** 次失敗，**0** 個以人手描述的命令，**989** 項測試，**100%** 語句及分支覆蓋率，沒有任何依賴套件
 
 ```python
 import snesdsp
