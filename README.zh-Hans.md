@@ -8,7 +8,7 @@
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** 个部件，基于 **5** 个微码镜像；从 **36** 个零售版卡带中读出 **121** 个交换，其中 **62** 个在部件上回放；**0** 个失败，**0** 个手工描述的命令，**986** 个测试，**100%** 语句和分支覆盖率，无依赖
+**6** 个部件，基于 **5** 个微码镜像；从 **36** 个零售版卡带中读出 **121** 个交换，其中 **62** 个在部件上回放；**0** 个失败，**0** 个手工描述的命令，**987** 个测试，**100%** 语句和分支覆盖率，无依赖
 
 ```python
 import snesdsp
