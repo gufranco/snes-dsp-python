@@ -180,6 +180,15 @@ their reasons live here:
 - The `upd7725.*`, `mapper.*` and `snesdriver.*` override in mypy: the
   submodules are checked in their own repositories, against their own gates.
   Following imports into them would report findings nobody here can act on.
+- `@unittest\.skipUnless\(CLOCKED,` in the coverage exclusions: this member is
+  not a clocked part, so the family tests that drive a clock are skipped here
+  and their bodies never run.
+- `@unittest\.skipUnless\(SOLD_AS_A_COMPONENT,`, `^def machine_mentions\(` and
+  `^def listing\(` in the coverage exclusions: this part only existed inside one
+  machine, so the family sweep for machine names is skipped here.
+- `@unittest\.skipUnless\(A_PART and BUILDABLE,` in the coverage exclusions:
+  building a part needs a file this repository does not carry, so on a runner
+  without it the family tests that build one are skipped.
 
 ## Layout
 
@@ -193,7 +202,9 @@ snesdsp/
   doctor.py       what is actually on this machine, printed for a bug report
   version.py      rewritten by the release job and by nothing else
 conformance/
-  family.test.py  the family standard, held to this repository
+  family_*.test.py the family standard, held to this repository, one topic a file
+  family_member.py what this member answers to them
+  family_shared.py what more than one of them reads
   against_cartridges.py  drives a part with the exchanges a real cartridge makes
   shapes.py       reads and replays those exchanges
   cartridges.py   finds and confirms the cartridges they were read from
