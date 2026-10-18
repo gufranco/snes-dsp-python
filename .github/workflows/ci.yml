@@ -168,7 +168,7 @@ jobs:
         run: |
           set +e
           status=0
-          for part in dsp1 dsp2 dsp3 dsp4; do
+          for part in dsp1 dsp1a dsp1b dsp2 dsp3 dsp4; do
             echo "::group::${part}"
             python -m conformance.against_cartridges "${part}" | tee -a report.txt
             here=${PIPESTATUS[0]}
