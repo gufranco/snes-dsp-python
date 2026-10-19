@@ -230,6 +230,21 @@ jobs:
           exit "${status}"
         shell: bash
 
+      - name: Every test image on hand still answers what it answered
+        run: |
+          set +e
+          python -m conformance.testroms
+          status=$?
+          set -e
+          if [ "${status}" -eq 2 ]; then
+            notice="No test image was named, so none was run."
+            notice="${notice} It is not a failure; there was nothing to run."
+            echo "::notice title=No test images present::${notice}"
+            exit 0
+          fi
+          exit "${status}"
+        shell: bash
+
   package:
     name: package
     runs-on: ubuntu-26.04

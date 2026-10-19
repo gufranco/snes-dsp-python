@@ -89,6 +89,33 @@ the DSP-1 shapes, because no dump shows which mask a board carries and all three
 take the same commands. Every tool that reads shapes resolves a part through it,
 so a cartridge run naming either mask drives that mask rather than refusing.
 
+## Test cartridges
+
+[`conformance/testroms.json`](conformance/testroms.json) lists the test images
+that exercise this member, keyed by the SHA-256 of the file on disk and never
+committed. They live in `snes-roms/5 Tools & Service Test Carts/` in the local
+library.
+
+- **The five DSP program dumps** in its `CPU/` folder, `run`. Each stores every
+  word low byte first; the runner puts it back in the published order, builds
+  every part that runs it, and re-derives every answer the corpus recorded for
+  that part. None reports a verdict of its own, so the verdict is whether every
+  recorded answer comes back. On 2026-10-19 all five did, with no disagreement.
+- **DSP1 Tech Demo (USA)**, `hosted`, waiting on `snes-ppu`: it drives the
+  DSP-1 from the console's processor and shows the result on screen, so what it
+  checks is what it draws.
+
+```bash
+python3 -m conformance.testroms "../snes-roms/5 Tools & Service Test Carts/CPU"
+python3 -m conformance.testroms FOLDER --record   # only after the answers were taken again
+```
+
+The runner compares each image with
+[`conformance/testroms_measured.json`](conformance/testroms_measured.json). With
+no folder, or a folder holding none of the images, it exits 2, and CI annotates
+that as a skip. `conformance/testroms.test.py` replays the recorded verdict on a
+machine that holds no image.
+
 ## Every gate, in the order to run them
 
 ```bash
@@ -230,6 +257,7 @@ conformance/
   answers.py      what each part answered, and whether it still answers that
   masks.py        where the three masks of the DSP-1 disagree
   stack.py        how deep the shipped microcode drives the return stack
+  testroms.py     the test images on hand, each run against the recorded answers
   quotes.py       looks for every quoted sentence in the document it cites
   speed.py        the throughput floor
   documented.py   every example the readme prints, run against the parts
