@@ -9,7 +9,7 @@
       "why": "the only game that carries the DSP-3",
       "bytes": 1048576,
       "layout": "lorom",
-      "shapes": 20,
+      "shapes": 21,
       "crc32": "4dc3d903",
       "md5": "3c9e14d90815bfc9fd154a30c85763cf",
       "sha1": "a504b74d1e256f97bc05a7dd836a2457ae6f525e",
@@ -18,103 +18,108 @@
   ],
   "shapes": [
     {
-      "shape": "write1 write1 write1 write1 write1 write1 write1 write1 write1 read2 read2 read2 read2",
+      "shape": "write? write? write? write? write? write? write? write? read2 read2 read2 read2",
       "seen": 1,
       "cartridges": 1
     },
     {
-      "shape": "write1 read1 read1 write1 write2 write2 read2 read2",
+      "shape": "write? write2 write2 write2 poll2 read2 read2",
       "seen": 1,
       "cartridges": 1
     },
     {
-      "shape": "write1 write2 write2 write2 poll2 read2 read2",
-      "seen": 1,
-      "cartridges": 1
-    },
-    {
-      "shape": "write1 write2 write2 write2 read2 read2",
+      "shape": "write? write2 write2 write2 read2 read2",
       "seen": 4,
       "cartridges": 1
     },
     {
-      "shape": "write1 write2 poll2 read2 poll2 read2",
+      "shape": "write? write2 poll2 read2 poll2 read2",
       "seen": 2,
       "cartridges": 1
     },
     {
-      "shape": "write1 write1 write2 read2 read2",
+      "shape": "write? write? write2 read2 read2",
       "seen": 7,
       "cartridges": 1
     },
     {
-      "shape": "write1 write2 write2 write2 write1",
+      "shape": "write? write2 write2 read2 read2",
       "seen": 1,
       "cartridges": 1
     },
     {
-      "shape": "read1 write1 write2 read2",
-      "seen": 1,
-      "cartridges": 1
-    },
-    {
-      "shape": "write1 write2 read2",
+      "shape": "write? write2 read2",
       "seen": 3,
       "cartridges": 1
     },
     {
-      "shape": "read1 read1 write1",
+      "shape": "read? read? write?",
       "seen": 1,
       "cartridges": 1
     },
     {
-      "shape": "write1 write1 write1",
+      "shape": "write1 write2 write2",
       "seen": 1,
       "cartridges": 1
     },
     {
-      "shape": "read1 poll1",
+      "shape": "write? read? read?",
+      "seen": 1,
+      "cartridges": 1
+    },
+    {
+      "shape": "write? write? write?",
+      "seen": 1,
+      "cartridges": 1
+    },
+    {
+      "shape": "read? read?",
       "seen": 2,
       "cartridges": 1
     },
     {
-      "shape": "write1 write2",
+      "shape": "write? poll?",
       "seen": 2,
       "cartridges": 1
     },
     {
-      "shape": "poll1 poll1",
+      "shape": "write? read?",
+      "seen": 2,
+      "cartridges": 1
+    },
+    {
+      "shape": "poll? poll?",
       "seen": 1,
       "cartridges": 1
     },
     {
-      "shape": "read1 read1",
+      "shape": "poll? write?",
       "seen": 1,
       "cartridges": 1
     },
     {
-      "shape": "write1 poll1",
+      "shape": "write? write1",
       "seen": 1,
       "cartridges": 1
     },
     {
-      "shape": "write1 read1",
+      "shape": "write? write2",
       "seen": 1,
       "cartridges": 1
     },
     {
-      "shape": "write1",
-      "seen": 102,
+      "shape": "write?",
+      "seen": 182,
       "cartridges": 1
     },
     {
-      "shape": "read1",
-      "seen": 28,
+      "shape": "read?",
+      "seen": 61,
       "cartridges": 1
     },
     {
-      "shape": "poll1",
-      "seen": 21,
+      "shape": "poll?",
+      "seen": 51,
       "cartridges": 1
     }
   ]

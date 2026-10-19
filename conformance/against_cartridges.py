@@ -35,6 +35,7 @@ class Played:
         self.kinds = tuple(kinds)
         self.command = command
         self.kinds_in_order = tuple(one.what for one in shapes.parse(shape))
+        self.assumed = shapes.assumed(shapes.parse(shape))
 
     @property
     def unprompted(self) -> bool:
@@ -103,7 +104,7 @@ def driven(
         payload = shapes.payload_for(steps, chance)
         said = shapes.drive(build(part), steps, payload)
         taken = [one.what for one in steps if one.what in (shapes.READ, shapes.POLL)]
-        named = " ".join(f"{one.what}{one.width}" for one in steps)
+        named = " ".join(one.token for one in steps)
         played = Played(named, said, taken)
         if not played.answered and not played.unprompted:
             spoke = speaking(build, part, steps, payload)
@@ -131,7 +132,12 @@ def unprompted(found: "Iterable[Played]") -> "list[Played]":
 
 def lines_for(found: "Sequence[Played]", part: str) -> list[str]:
     quiet = silent(found)
-    lines = [f"  {part}: {len(found)} exchanges a real cartridge makes, played at the part"]
+    lines = [
+        f"  {part}: {len(found)} exchanges a real cartridge makes, played at the part",
+        f"  {sum(one.assumed for one in found)} of their"
+        f" {sum(len(one.kinds_in_order) for one in found)} accesses rest on an assumed width,"
+        " replayed as one byte",
+    ]
     lines.extend(report(found))
     if quiet:
         lines.append(

@@ -9,7 +9,7 @@
       "why": "the only game that carries the DSP-4; the Japanese release is titled The Planet's Champ TG 3000",
       "bytes": 1048576,
       "layout": "lorom",
-      "shapes": 38,
+      "shapes": 22,
       "crc32": "b9b9df06",
       "md5": "6ae194d9f8022c9a2962a423ffbc40cc",
       "sha1": "3e7f10e13065424a28c93871b4a1e458817d754c",
@@ -21,7 +21,7 @@
       "why": "the only game that carries the DSP-4; the Japanese release is titled The Planet's Champ TG 3000",
       "bytes": 1048576,
       "layout": "lorom",
-      "shapes": 38,
+      "shapes": 22,
       "crc32": "493fdb13",
       "md5": "462e15c018c653335ba634d3c1cd06c9",
       "sha1": "777d8732023a300a2c566f2d48bc354e0aa1da7e",
@@ -33,7 +33,7 @@
       "why": "the only game that carries the DSP-4; the Japanese release is titled The Planet's Champ TG 3000",
       "bytes": 1048576,
       "layout": "lorom",
-      "shapes": 38,
+      "shapes": 22,
       "crc32": "a20be998",
       "md5": "23eaa07e3f3315fa43f4b4d94ec97a7b",
       "sha1": "058aadf1ee719cb9e0c7333e665797f990a6381d",
@@ -42,193 +42,113 @@
   ],
   "shapes": [
     {
-      "shape": "write1 write1 write1 read1 read1 write1 read1 read1 write1 read1 write1",
+      "shape": "write? write? write? read? read? read? read?",
       "seen": 3,
       "cartridges": 3
     },
     {
-      "shape": "write1 write1 write1 read1 read1 write1 read1 read1 write1 write1 read1",
+      "shape": "write? write? write? read? read?",
+      "seen": 114,
+      "cartridges": 3
+    },
+    {
+      "shape": "write? write? write? read? write?",
       "seen": 3,
       "cartridges": 3
     },
     {
-      "shape": "write1 write1 write1 read1 read1 write1 write1 read1 read1",
+      "shape": "write? write? write? write? read?",
+      "seen": 3,
+      "cartridges": 3
+    },
+    {
+      "shape": "write? write? write? write? write?",
+      "seen": 3,
+      "cartridges": 3
+    },
+    {
+      "shape": "write? write? read? read?",
+      "seen": 39,
+      "cartridges": 3
+    },
+    {
+      "shape": "write? write? write? read?",
+      "seen": 18,
+      "cartridges": 3
+    },
+    {
+      "shape": "poll? read? poll? write?",
+      "seen": 3,
+      "cartridges": 3
+    },
+    {
+      "shape": "read? read? read? read?",
+      "seen": 3,
+      "cartridges": 3
+    },
+    {
+      "shape": "write? read? read?",
+      "seen": 111,
+      "cartridges": 3
+    },
+    {
+      "shape": "write? write? read?",
       "seen": 24,
       "cartridges": 3
     },
     {
-      "shape": "write1 write1 write1 read1 read1 write1 write1 write1 read1",
+      "shape": "read? read? read?",
       "seen": 6,
       "cartridges": 3
     },
     {
-      "shape": "write1 read1 read1 write2 write2 write2 read2 read2",
-      "seen": 12,
-      "cartridges": 3
-    },
-    {
-      "shape": "write1 write1 write1 write1 read1 write1 write1 read1",
-      "seen": 3,
-      "cartridges": 3
-    },
-    {
-      "shape": "write1 read1 read1 write1 write1 read1 read1",
-      "seen": 18,
-      "cartridges": 3
-    },
-    {
-      "shape": "write1 write1 read1 read1 write1 read1 read1",
-      "seen": 9,
-      "cartridges": 3
-    },
-    {
-      "shape": "write1 write1 write1 read1 read1 write1 write1",
+      "shape": "write? write? write?",
       "seen": 6,
       "cartridges": 3
     },
     {
-      "shape": "write1 write1 read1 read1 write1 read1 write1",
+      "shape": "write? read? write?",
       "seen": 3,
       "cartridges": 3
     },
     {
-      "shape": "write1 write1 read1 read1 write1 write1 read1",
-      "seen": 3,
+      "shape": "write? write?",
+      "seen": 111,
       "cartridges": 3
     },
     {
-      "shape": "write1 write1 read1 write1 write1 read1 read1",
-      "seen": 3,
+      "shape": "write? read?",
+      "seen": 27,
       "cartridges": 3
     },
     {
-      "shape": "write1 write1 write1 read1 read1 read1 read1",
-      "seen": 3,
-      "cartridges": 3
-    },
-    {
-      "shape": "write1 read1 read1 write1 read1 read1",
+      "shape": "read? read?",
       "seen": 9,
       "cartridges": 3
     },
     {
-      "shape": "write1 read1 write1 write1 read1 write1",
-      "seen": 9,
-      "cartridges": 3
-    },
-    {
-      "shape": "write1 read1 write1 write1 read1 read1",
+      "shape": "poll? poll?",
       "seen": 3,
       "cartridges": 3
     },
     {
-      "shape": "write1 write1 write1 read1 read1",
-      "seen": 93,
-      "cartridges": 3
-    },
-    {
-      "shape": "write1 write1 read1 read1 write1",
-      "seen": 9,
-      "cartridges": 3
-    },
-    {
-      "shape": "write1 write1 write1 write1 read1",
-      "seen": 9,
-      "cartridges": 3
-    },
-    {
-      "shape": "read1 write1 write1 read1 read1",
+      "shape": "poll? write?",
       "seen": 3,
       "cartridges": 3
     },
     {
-      "shape": "write1 write1 write1 read1 write1",
-      "seen": 3,
+      "shape": "write?",
+      "seen": 435,
       "cartridges": 3
     },
     {
-      "shape": "write1 write1 write1 write1 write1",
-      "seen": 3,
+      "shape": "read?",
+      "seen": 196,
       "cartridges": 3
     },
     {
-      "shape": "write1 write1 read1 read1",
-      "seen": 72,
-      "cartridges": 3
-    },
-    {
-      "shape": "read1 read1 read1 read1",
-      "seen": 12,
-      "cartridges": 3
-    },
-    {
-      "shape": "write1 read1 read1 write1",
-      "seen": 9,
-      "cartridges": 3
-    },
-    {
-      "shape": "write1 write1 read1 write1",
-      "seen": 6,
-      "cartridges": 3
-    },
-    {
-      "shape": "write1 write1 write1 read1",
-      "seen": 3,
-      "cartridges": 3
-    },
-    {
-      "shape": "write1 read1 read1",
-      "seen": 106,
-      "cartridges": 3
-    },
-    {
-      "shape": "write1 write1 read1",
-      "seen": 18,
-      "cartridges": 3
-    },
-    {
-      "shape": "write1 read1 write1",
-      "seen": 12,
-      "cartridges": 3
-    },
-    {
-      "shape": "read1 poll1 read1",
-      "seen": 6,
-      "cartridges": 3
-    },
-    {
-      "shape": "write1 read1",
-      "seen": 54,
-      "cartridges": 3
-    },
-    {
-      "shape": "write1 write1",
-      "seen": 45,
-      "cartridges": 3
-    },
-    {
-      "shape": "read1 read1",
-      "seen": 15,
-      "cartridges": 3
-    },
-    {
-      "shape": "poll1 poll1",
-      "seen": 3,
-      "cartridges": 3
-    },
-    {
-      "shape": "write1",
-      "seen": 140,
-      "cartridges": 3
-    },
-    {
-      "shape": "read1",
-      "seen": 127,
-      "cartridges": 3
-    },
-    {
-      "shape": "poll1",
-      "seen": 45,
+      "shape": "poll?",
+      "seen": 97,
       "cartridges": 3
     }
   ]

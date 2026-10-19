@@ -120,6 +120,35 @@ is not the same thing and would not be evidence.
 
 ## Where coverage is uneven rather than absent
 
+### Which recorded shapes rest on an assumed access width.
+
+**The document says.** Nothing. How wide an access is depends on the console
+processor's accumulator or index width when the driver makes it, which no
+Nintendo document gives for any shipped driver.
+
+**What this project follows.** Every shape
+[snes-driver-python](https://github.com/gufranco/snes-driver-python) reads,
+kept whole, each width labelled with what it rests on: a number alone where the
+cartridge's code sets it, `*` where a run of the image used it, `~` where a
+headless MAME trace saw the bus move it at that instruction, and `?` where
+nothing shows it. A `?` is replayed as one byte, as every width was before the
+labels existed, and every replay says how many accesses rest on one. Read on
+2026-10-19, the 3,468 DSP-1 accesses are 630 known, 220 traced and 2,618
+assumed; the DSP-2's 580 are 120 known, 30 traced and 430 assumed; the DSP-3's
+430 are 76 known and 354 assumed; and all 2,372 of the DSP-4's are assumed. 93
+of the 143 shapes carry at least one `?`: 45 of 84 on the DSP-1, 6 of 16 on the
+DSP-2, 20 of 21 on the DSP-3 and all 22 on the DSP-4.
+
+**Why.** Dropping a shape for one unknown width would leave the DSP-4 with no
+exchange at all, and a two-byte guess is no better founded than a one-byte one.
+Labelling keeps the exchange and keeps the doubt visible where it is used.
+
+**What would settle or reopen it.** A trace reaching that code, which
+snes-driver-python's `conformance.traced` records when a run drives the game
+there, or a decode the walker can follow into the routine, such as a jump table
+whose bounds it can read. Either turns a `?` into a width, and re-recording the
+shapes and the answers then shows which answers change.
+
 ### What the parts answer to commands no shipped game sends.
 
 **The document says.** Nothing.
@@ -157,9 +186,10 @@ So the boundary is visible rather than implied:
   against NEC's own data sheet.
 - **That four return-stack levels are enough for every shipped program.**
   [`conformance/stack.py`](conformance/stack.py) drove every recorded part
-  under all 256 command bytes: 15,104 exchanges and 33,734 movements of the
-  pointer. The DSP-4 reached slot 1, the DSP-1 and DSP-2 slot 2, and the DSP-3
-  slot 3, the last of four. Nothing went past it, so four instead of the
+  under all 256 command bytes: 13,568 exchanges and 35,647 movements of the
+  pointer, over the shapes re-read on 2026-10-19 with each width labelled.
+  Every part reached slot 3, the last of four. Nothing went past it, so four
+  instead of the
   sixteen most implementations carry changes no exchange a cartridge makes.
   What the silicon does on a fifth call stays unmeasured, because no shipped
   program makes one.

@@ -1,8 +1,14 @@
+import collections
+import hashlib
 import json
 import sys
 from collections.abc import Callable, Collection, Iterable, Mapping
 from pathlib import Path
 from typing import Any, override
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from conformance import shapes
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -11,6 +17,10 @@ DRIVER = ROOT / "snes-driver-python"
 CARTRIDGES = ROOT / "cartridges"
 
 MANIFEST = ROOT / "cartridges.manifest.json"
+
+TRACED = DRIVER / "conformance" / "traced.json"
+
+LABELS = ("known", "executed", "traced", "assumed")
 
 PRODUCED_BY = "https://github.com/gufranco/snes-driver-python"
 
@@ -79,11 +89,30 @@ def _default_layout(image: bytes) -> str:  # pragma: no cover
     return layout
 
 
-def _default_shapes(image: bytes, window: object) -> dict[str, int]:  # pragma: no cover
+def digest_of(image: bytes) -> str:
+    return hashlib.sha256(image).hexdigest()
+
+
+def traced_widths(image: bytes, corpus: Path = TRACED) -> dict[int, int]:
+    if not corpus.is_file():
+        return {}
+    held = json.loads(corpus.read_text())["cartridges"].get(digest_of(image))
+    if held is None:
+        return {}
+    return {
+        int(site["offset"], 16): site["widths"][0]
+        for site in held["sites"]
+        if len(site["widths"]) == 1 and not site["disputed"]
+    }
+
+
+def _default_shapes(
+    image: bytes, window: object, layout: str
+) -> dict[str, int]:  # pragma: no cover
     _reach()
     from snesdriver import conversation
 
-    found = conversation.shapes(image, window)
+    found = conversation.shapes(image, window, kind=layout, traced=traced_widths(image))
     assert isinstance(found, dict)
     return found
 
@@ -109,7 +138,7 @@ def reading(
     where: Path = CARTRIDGES,
     confirm: Callable[[bytes], object] = _default_confirm,
     layout_of: Callable[[bytes], str] = _default_layout,
-    shapes_of: Callable[[bytes, Any], dict[str, int]] = _default_shapes,
+    shapes_of: Callable[[bytes, Any, str], dict[str, int]] = _default_shapes,
     window_of: Callable[[str], object] = _default_window,
 ) -> tuple[str, dict[str, int]] | None:
     path = Path(where) / name
@@ -118,7 +147,7 @@ def reading(
     image = path.read_bytes()
     confirm(image)
     layout = layout_of(image)
-    return layout, shapes_of(image, window_of(layout))
+    return layout, shapes_of(image, window_of(layout), layout)
 
 
 def gather(
@@ -164,6 +193,14 @@ def write(recorded: Mapping[str, "Recorded"], where: Path) -> list[Path]:
     return written
 
 
+def labelled(counted: Mapping[str, int]) -> str:
+    tally: collections.Counter[str] = collections.Counter()
+    for shape, seen in counted.items():
+        for step in shapes.parse(shape):
+            tally[step.label] += seen
+    return ", ".join(f"{tally[label]} {label}" for label in LABELS)
+
+
 def lines_for(recorded: Mapping[str, "Recorded"], written: Collection[Path]) -> list[str]:
     said = []
     for part, held in sorted(recorded.items()):
@@ -171,6 +208,7 @@ def lines_for(recorded: Mapping[str, "Recorded"], written: Collection[Path]) -> 
             f"  {part}: {len(held.counted)} shapes from {len(held.sources)} cartridges"
             f", {sum(held.counted.values())} sites"
         )
+        said.append(f"      accesses by width: {labelled(held.counted)}")
         for one in held.sources:
             said.append(f"      {one['name']}  {one['layout']}, {one['shapes']} shapes")
         for name in held.silent:

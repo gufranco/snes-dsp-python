@@ -5,46 +5,47 @@
   "image": {
     "sha256": "2e635f72e4d4681148bc35429421c9b946e4f407590e74e31b93b8987b63ba90"
   },
+  "assumed": 23,
   "exchanges": [
     {
-      "shape": "write1 write1 write1 write1 write1 write1 write1 write1 write1 read2 read2 read2 read2",
-      "said": ["b479", "b479", "b479", "b479"]
+      "shape": "write? write? write? write? write? write? write? write? read2 read2 read2 read2",
+      "said": ["8db4", "8db4", "8db4", "8db4"]
     },
     {
-      "shape": "write1 read1 read1 write1 write2 write2 read2 read2",
-      "said": ["b9", "b9", "2df6", "1d00"]
+      "shape": "write? write2 write2 write2 poll2 read2 read2",
+      "said": ["8080", "2df6", "1d00"]
     },
     {
-      "shape": "write1 write2 write2 write2 poll2 read2 read2",
-      "said": ["8484", "e5e5", "e5e5"]
+      "shape": "write? write2 write2 write2 read2 read2",
+      "said": ["e5e5", "e5e5"]
     },
     {
-      "shape": "write1 write2 write2 write2 read2 read2",
-      "said": ["2a92", "2a92"]
+      "shape": "write? write2 poll2 read2 poll2 read2",
+      "said": ["8080", "0707", "8080", "0700"]
     },
     {
-      "shape": "write1 write2 poll2 read2 poll2 read2",
-      "said": ["8484", "6767", "8484", "6767"]
+      "shape": "write? write? write2 read2 read2",
+      "said": ["9200", "9200"]
     },
     {
-      "shape": "write1 write1 write2 read2 read2",
-      "said": ["9898", "9898"]
+      "shape": "write? write2 write2 read2 read2",
+      "said": ["d5d5", "d5d5"]
     },
     {
-      "shape": "read1 write1 write2 read2",
-      "said": ["80", "8000"]
+      "shape": "write? write2 read2",
+      "said": ["3800"]
     },
     {
-      "shape": "write1 write2 read2",
-      "said": ["5555"]
-    },
-    {
-      "shape": "read1 read1 write1",
+      "shape": "read? read? write?",
       "said": ["80", "80"]
     },
     {
-      "shape": "write1 read1",
-      "said": ["86"]
+      "shape": "write? read? read?",
+      "said": ["f8", "f8"]
+    },
+    {
+      "shape": "write? read?",
+      "said": ["ac"]
     }
   ]
 }

@@ -195,32 +195,38 @@ class ReadingTest(unittest.TestCase):
         self.assertIsNone(record.reading("nowhere.sfc", Path("/nowhere/at/all")))
 
     def test_a_cartridge_that_is_here_is_confirmed_before_it_is_read(self) -> None:
+        # Arrange
         where = Path(tempfile.mkdtemp())
         (where / "made-up.sfc").write_bytes(b"\x00" * 64)
         confirmed: list[bytes] = []
 
+        # Act
         record.reading(
             "made-up.sfc",
             where,
             confirm=confirmed.append,
             layout_of=lambda _image: "hirom",
-            shapes_of=lambda _image, _window: {},
+            shapes_of=lambda _image, _window, _layout: {},
         )
 
+        # Assert
         self.assertEqual(len(confirmed), 1)
 
     def test_and_what_it_says_comes_back_with_its_layout(self) -> None:
+        # Arrange
         where = Path(tempfile.mkdtemp())
         (where / "made-up.sfc").write_bytes(b"\x00" * 64)
 
+        # Act
         found = record.reading(
             "made-up.sfc",
             where,
             confirm=lambda _image: None,
             layout_of=lambda _image: "lorom",
-            shapes_of=lambda _image, _window: {"read1": 1},
+            shapes_of=lambda _image, _window, _layout: {"read1": 1},
         )
 
+        # Assert
         self.assertEqual(found, ("lorom", {"read1": 1}))
 
     def test_a_cartridge_that_is_not_the_one_named_is_refused(self) -> None:
@@ -232,6 +238,102 @@ class ReadingTest(unittest.TestCase):
 
         with self.assertRaises(Complaint):
             record.reading("made-up.sfc", where, confirm=refuse)
+
+
+class LayoutTest(unittest.TestCase):
+    def test_the_layout_a_cartridge_declares_reaches_the_shape_reader(self) -> None:
+        # Arrange
+        where = Path(tempfile.mkdtemp())
+        (where / "made-up.sfc").write_bytes(b"\x00" * 64)
+
+        # Act
+        found = record.reading(
+            "made-up.sfc",
+            where,
+            confirm=lambda _image: None,
+            layout_of=lambda _image: "hirom",
+            shapes_of=lambda _image, _window, layout: {f"write{len(layout) - 4}": 1},
+        )
+
+        # Assert
+        self.assertEqual(found, ("hirom", {"write1": 1}))
+
+
+def a_corpus(digest: str, *sites: dict[str, Any]) -> Path:
+    where = Path(tempfile.mkdtemp()) / "traced.json"
+    where.write_text(json.dumps({"cartridges": {digest: {"sites": list(sites)}}}))
+    return where
+
+
+def a_site(offset: str, widths: list[int], disputed: bool = False) -> dict[str, Any]:
+    return {"offset": offset, "widths": widths, "disputed": disputed}
+
+
+class TracedTest(unittest.TestCase):
+    def test_a_site_a_trace_saw_at_one_width_settles_that_width(self) -> None:
+        # Arrange
+        image = b"\x01" * 64
+        corpus = a_corpus(record.digest_of(image), a_site("0x000010", [2]))
+
+        # Act
+        found = record.traced_widths(image, corpus)
+
+        # Assert
+        self.assertEqual(found, {0x10: 2})
+
+    def test_a_site_seen_at_two_widths_or_disputed_settles_nothing(self) -> None:
+        # Arrange
+        image = b"\x01" * 64
+        corpus = a_corpus(
+            record.digest_of(image),
+            a_site("0x000010", [1, 2]),
+            a_site("0x000020", [2], disputed=True),
+        )
+
+        # Act
+        found = record.traced_widths(image, corpus)
+
+        # Assert
+        self.assertEqual(found, {})
+
+    def test_a_cartridge_no_trace_saw_settles_nothing(self) -> None:
+        # Arrange
+        image = b"\x01" * 64
+        corpus = a_corpus("e" * 64, a_site("0x000010", [2]))
+
+        # Act
+        found = record.traced_widths(image, corpus)
+
+        # Assert
+        self.assertEqual(found, {})
+
+    def test_no_corpus_at_all_settles_nothing(self) -> None:
+        # Arrange
+        corpus = Path(tempfile.mkdtemp()) / "absent.json"
+
+        # Act
+        found = record.traced_widths(b"\x01" * 64, corpus)
+
+        # Assert
+        self.assertEqual(found, {})
+
+
+class LabelTallyTest(unittest.TestCase):
+    def test_each_part_counts_its_accesses_by_the_evidence_for_their_width(self) -> None:
+        # Arrange
+        found = record.gather(
+            a_manifest(an_identity()),
+            lambda _name: ("hirom", {"write? read2~": 2, "write1 poll2*": 1}),
+        )
+
+        # Act
+        lines = record.lines_for(found, [])
+
+        # Assert
+        self.assertEqual(
+            lines[1],
+            "      accesses by width: 1 known, 1 executed, 2 traced, 2 assumed",
+        )
 
 
 class EntryTest(unittest.TestCase):

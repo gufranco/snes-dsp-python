@@ -23,6 +23,22 @@ DEFAULT_SEED = 0x5D3A9C
 
 WIDTHS = (1, 2)
 
+KNOWN = "known"
+
+EXECUTED = "executed"
+
+TRACED = "traced"
+
+ASSUMED = "assumed"
+
+UNKNOWN_WIDTH = "?"
+
+MARKS = {"": KNOWN, "*": EXECUTED, "~": TRACED}
+
+SPELLED = {label: mark for mark, label in MARKS.items()}
+
+ASSUMED_WIDTH = 1
+
 DRIVEN_LIKE = {"dsp1a": "dsp1", "dsp1b": "dsp1"}
 
 Shapes = tuple[tuple["tuple[Step, ...]", int], ...]
@@ -33,9 +49,16 @@ class Malformed(Exception):
 
 
 class Step:
-    def __init__(self, what: str, width: int) -> None:
+    def __init__(self, what: str, width: int, label: str = KNOWN) -> None:
         self.what = what
         self.width = width
+        self.label = label
+
+    @property
+    def token(self) -> str:
+        if self.label == ASSUMED:
+            return f"{self.what}{UNKNOWN_WIDTH}"
+        return f"{self.what}{self.width}{SPELLED[self.label]}"
 
     @property
     def moves(self) -> bool:
@@ -43,31 +66,39 @@ class Step:
 
     @override
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, Step) and self.what == other.what and self.width == other.width
+        return isinstance(other, Step) and self.token == other.token
 
     @override
     def __hash__(self) -> int:
-        return hash((self.what, self.width))
+        return hash(self.token)
 
     @override
     def __repr__(self) -> str:
-        return f"<Step {self.what}{self.width}>"
+        return f"<Step {self.token}>"
+
+
+def step_of(word: str, what: str) -> Step:
+    tail = word[len(what) :]
+    if tail == UNKNOWN_WIDTH:
+        return Step(what, ASSUMED_WIDTH, ASSUMED)
+    width, mark = tail[:1], tail[1:]
+    if not width.isdigit() or int(width) not in WIDTHS or mark not in MARKS:
+        raise Malformed(f"{word} does not name a width of 1, 2 or ?, with at most one of * or ~")
+    return Step(what, int(width), MARKS[mark])
 
 
 def parse(shape: str) -> "tuple[Step, ...]":
     steps: list[Step] = []
     for word in shape.split():
-        for what in STEPS:
-            if not word.startswith(what):
-                continue
-            tail = word[len(what) :]
-            if not tail.isdigit() or int(tail) not in WIDTHS:
-                raise Malformed(f"{word} does not name a width of 1 or 2")
-            steps.append(Step(what, int(tail)))
-            break
-        else:
+        what = next((one for one in STEPS if word.startswith(one)), None)
+        if what is None:
             raise Malformed(f"{word} is not one of {', '.join(STEPS)}")
+        steps.append(step_of(word, what))
     return tuple(steps)
+
+
+def assumed(steps: "Iterable[Step]") -> int:
+    return sum(1 for step in steps if step.label == ASSUMED)
 
 
 def named(part: str) -> str:

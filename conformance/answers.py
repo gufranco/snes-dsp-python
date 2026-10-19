@@ -45,8 +45,10 @@ class Checked:
         unrecorded: Iterable[str],
         vanished: Iterable[str],
         checked: int,
+        assumed: int = 0,
     ) -> None:
         self.part = part
+        self.assumed = assumed
         self.disagreements = tuple(disagreements)
         self.unrecorded = tuple(unrecorded)
         self.vanished = tuple(vanished)
@@ -87,6 +89,10 @@ def recorded_shapes(part: str) -> list[dict[str, Any]]:
 def _answers_back(steps: Iterable[shapes_module.Step]) -> bool:
     kinds = {step.what for step in steps}
     return shapes_module.WRITE in kinds and shapes_module.READ in kinds
+
+
+def assumed_in(found: Iterable[Mapping[str, Any]]) -> int:
+    return sum(shapes_module.assumed(shapes_module.parse(one["shape"])) for one in found)
 
 
 def _swept(held: Iterable[Mapping[str, Any]]) -> list[str]:
@@ -138,12 +144,14 @@ def take(
     rolls: Callable[[int], random.Random] = shapes_module.rolls,
 ) -> dict[str, Any]:
     held = recorded_shapes(part) if shapes is None else shapes
+    exchanges = _exchanges(part, build, held, rolls(seed))
     return {
         "note": NOTE,
         "part": part,
         "seed": seed,
         "image": {"sha256": digest(part)},
-        "exchanges": _exchanges(part, build, held, rolls(seed)),
+        "assumed": assumed_in(exchanges),
+        "exchanges": exchanges,
     }
 
 
@@ -165,9 +173,8 @@ def check(
         )
 
     held = recorded_shapes(part) if shapes is None else shapes
-    now = {
-        one["shape"]: one["said"] for one in _exchanges(part, build, held, rolls(corpus["seed"]))
-    }
+    taken = _exchanges(part, build, held, rolls(corpus["seed"]))
+    now = {one["shape"]: one["said"] for one in taken}
     before = {one["shape"]: one["said"] for one in corpus["exchanges"]}
 
     return Checked(
@@ -180,6 +187,7 @@ def check(
         unrecorded=sorted(set(now) - set(before)),
         vanished=sorted(set(before) - set(now)),
         checked=len(set(now) & set(before)),
+        assumed=assumed_in(taken),
     )
 
 
@@ -201,7 +209,11 @@ def load(part: str, where: Path = ROOT) -> dict[str, Any] | None:
 
 
 def lines_for(found: "Checked") -> list[str]:
-    said = [f"  {found.part}: {found.checked} exchanges re-derived and compared"]
+    said = [
+        f"  {found.part}: {found.checked} exchanges re-derived and compared",
+        f"  {found.assumed} of the accesses replayed rest on an assumed width,"
+        " replayed as one byte",
+    ]
     for shape, wanted, got in found.disagreements:
         said.append(f"       ! {shape}")
         said.append(f"           recorded {wanted}")

@@ -144,6 +144,32 @@ class FamilyTest(unittest.TestCase):
         self.assertEqual(found, [])
 
 
+class AssumedTest(unittest.TestCase):
+    def test_a_corpus_counts_the_accesses_it_replayed_at_an_assumed_width(self) -> None:
+        # Arrange
+        held = some_shapes(a_shape("write? read?"), a_shape("write1~ read2"))
+
+        # Act
+        found = answers.take("dsp1", puppets(), shapes=held, digest=a_digest)
+
+        # Assert
+        self.assertEqual(found["assumed"], 2)
+
+    def test_a_check_says_how_many_accesses_rest_on_an_assumed_width(self) -> None:
+        # Arrange
+        held = some_shapes(a_shape("write? read?"))
+        corpus = answers.take("dsp1", puppets(), shapes=held, digest=a_digest)
+        found = answers.check(corpus, puppets(), shapes=held, digest=a_digest)
+
+        # Act
+        lines = answers.lines_for(found)
+
+        # Assert
+        self.assertEqual(
+            lines[1], "  2 of the accesses replayed rest on an assumed width, replayed as one byte"
+        )
+
+
 class CheckingTest(unittest.TestCase):
     def _corpus(self, **held: Any) -> dict[str, Any]:
         found = answers.take("dsp1", puppets(), shapes=some_shapes(), digest=a_digest)

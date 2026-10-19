@@ -79,6 +79,100 @@ class ParseTest(unittest.TestCase):
         self.assertFalse(shapes.parse("poll1")[0].moves)
 
 
+class LabelTest(unittest.TestCase):
+    def test_a_width_the_code_set_is_known(self) -> None:
+        # Arrange
+        word = "write2"
+
+        # Act
+        found = shapes.parse(word)[0]
+
+        # Assert
+        self.assertEqual((found.width, found.label), (2, shapes.KNOWN))
+
+    def test_a_width_a_run_used_is_executed(self) -> None:
+        # Arrange
+        word = "write2*"
+
+        # Act
+        found = shapes.parse(word)[0]
+
+        # Assert
+        self.assertEqual((found.width, found.label), (2, shapes.EXECUTED))
+
+    def test_a_width_a_trace_saw_is_traced(self) -> None:
+        # Arrange
+        word = "read2~"
+
+        # Act
+        found = shapes.parse(word)[0]
+
+        # Assert
+        self.assertEqual((found.what, found.width, found.label), (shapes.READ, 2, shapes.TRACED))
+
+    def test_an_unknown_width_is_replayed_as_one_byte_and_says_it_was_assumed(self) -> None:
+        # Arrange
+        word = "poll?"
+
+        # Act
+        found = shapes.parse(word)[0]
+
+        # Assert
+        self.assertEqual((found.what, found.width, found.label), (shapes.POLL, 1, shapes.ASSUMED))
+
+    def test_every_label_prints_back_as_the_word_it_was_read_from(self) -> None:
+        # Arrange
+        shape = "write1 write2* read2~ poll?"
+
+        # Act
+        found = " ".join(step.token for step in shapes.parse(shape))
+
+        # Assert
+        self.assertEqual(found, shape)
+
+    def test_two_steps_of_one_width_on_different_evidence_are_different_steps(self) -> None:
+        # Arrange
+        known, traced = shapes.parse("write2 write2~")
+
+        # Act
+        same = known == traced
+
+        # Assert
+        self.assertFalse(same)
+
+    def test_the_accesses_resting_on_an_assumed_width_are_counted(self) -> None:
+        # Arrange
+        steps = shapes.parse("write? write2 read? read1~ poll?")
+
+        # Act
+        found = shapes.assumed(steps)
+
+        # Assert
+        self.assertEqual(found, 3)
+
+    def test_a_mark_with_no_width_before_it_is_refused(self) -> None:
+        # Arrange
+        word = "write~"
+
+        # Act
+        with self.assertRaises(shapes.Malformed) as raised:
+            shapes.parse(word)
+
+        # Assert
+        self.assertIn(word, str(raised.exception))
+
+    def test_two_marks_on_one_width_are_refused(self) -> None:
+        # Arrange
+        word = "write2*~"
+
+        # Act
+        with self.assertRaises(shapes.Malformed) as raised:
+            shapes.parse(word)
+
+        # Assert
+        self.assertIn(word, str(raised.exception))
+
+
 class RecordedTest(unittest.TestCase):
     def test_the_shapes_read_from_a_cartridge_come_back(self) -> None:
         self.assertTrue(shapes.recorded("dsp3"))

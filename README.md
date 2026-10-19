@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** parts on **5** microcode images, **121** exchanges read out of **36** retail cartridges, **62** of them played at the part, **0** failures, **0** commands described by hand, **1005** tests, **100%** statement and branch coverage, no dependencies
+**6** parts on **5** microcode images, **143** exchanges read out of **36** retail cartridges, **53** of them played at the part, **0** failures, **0** commands described by hand, **1024** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 import snesdsp
@@ -419,18 +419,18 @@ Each tool that needs an image exits 2 and says what is missing when none is pres
 
 ### The exchanges
 
-What a game sends is read out of the cartridge by [snes-driver-python](https://github.com/gufranco/snes-driver-python), which disassembles the routine that drives the part. Each result is a shape: the order and width of the accesses, with no payload. [`cartridges.manifest.json`](cartridges.manifest.json) names every cartridge by digest, and no byte of any cartridge is stored.
+What a game sends is read out of the cartridge by [snes-driver-python](https://github.com/gufranco/snes-driver-python), which disassembles the routine that drives the part. Each result is a shape: the order and width of the accesses, with no payload. Each width says what it rests on: a number alone where the cartridge's code sets it, `*` where a run of the image used it, `~` where a MAME trace saw the bus move it at that instruction, and `?` where nothing shows it. A `?` is played as one byte, and every run says how many accesses rest on one. [`cartridges.manifest.json`](cartridges.manifest.json) names every cartridge by digest, and no byte of any cartridge is stored.
 
 | Part  | Cartridges | Shapes | Played at the part | Access sites |
 | :---- | ---------: | -----: | -----------------: | -----------: |
-| DSP-1 |         29 |     50 |                 22 |        1,384 |
-| DSP-2 |          3 |     13 |                  1 |          270 |
-| DSP-3 |          1 |     20 |                 10 |          182 |
-| DSP-4 |          3 |     38 |                 29 |          910 |
+| DSP-1 |         29 |     84 |                 30 |        2,388 |
+| DSP-2 |          3 |     16 |                  2 |          445 |
+| DSP-3 |          1 |     21 |                 10 |          327 |
+| DSP-4 |          3 |     22 |                 11 |        1,220 |
 
 The DSP-1 rows come from 29 different drivers. The DSP-3 rows come from one cartridge, the only one that carries the part.
 
-A shape carries no payload, so its bytes are generated from a fixed seed. A shape the part answers with silence is played again under each of the 256 command bytes, and counts as silent only when all 256 are. Four shapes, one on the DSP-1, two on the DSP-3 and one on the DSP-4, read before they write: on a console they read what an earlier exchange left, so they are reported apart rather than counted as silence. Every other shape gets an answer.
+A shape carries no payload, so its bytes are generated from a fixed seed. A shape the part answers with silence is played again under each of the 256 command bytes, and counts as silent only when all 256 are. Four shapes, one on each part, read before they write: on a console they read what an earlier exchange left, so they are reported apart rather than counted as silence. Every other shape gets an answer.
 
 ```bash
 python3 -m conformance.against_cartridges dsp1

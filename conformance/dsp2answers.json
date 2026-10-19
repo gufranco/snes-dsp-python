@@ -5,10 +5,15 @@
   "image": {
     "sha256": "5efbdf96ed0652790855225964f3e90e6a4d466cfa64df25b110933c6cf94ea1"
   },
+  "assumed": 2,
   "exchanges": [
     {
       "shape": "write1 write1 write1 write1 write1 read1 read1 read1 read1",
       "said": ["e2", "e2", "e2", "e2"]
+    },
+    {
+      "shape": "read? write?",
+      "said": ["fb"]
     }
   ]
 }

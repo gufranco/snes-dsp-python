@@ -63,6 +63,33 @@ def _spoke(found: "against_cartridges.Spoke | None") -> "against_cartridges.Spok
     return found
 
 
+class AssumedWidthTest(unittest.TestCase):
+    def test_a_shape_keeps_its_labels_when_it_is_played(self) -> None:
+        # Arrange
+        played = against_cartridges.Played("write? write2~ read2*", [[1, 2]], ["read"])
+
+        # Act
+        found = played.shape
+
+        # Assert
+        self.assertEqual(found, "write? write2~ read2*")
+
+    def test_a_run_says_how_many_accesses_rest_on_an_assumed_width(self) -> None:
+        # Arrange
+        found = [
+            against_cartridges.Played("write? read?", [[1]], ["read"]),
+            against_cartridges.Played("write1~ read2", [[1, 2]], ["read"]),
+        ]
+
+        # Act
+        lines = against_cartridges.lines_for(found, "dsp3")
+
+        # Assert
+        self.assertEqual(
+            lines[1], "  2 of their 4 accesses rest on an assumed width, replayed as one byte"
+        )
+
+
 class CommandSweepTest(unittest.TestCase):
     def _steps(self) -> Any:
         return shapes.parse("write1 write2 poll1 read2")
