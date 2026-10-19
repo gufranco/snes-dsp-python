@@ -1,3 +1,4 @@
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -12,6 +13,8 @@ import snesdsp  # noqa: E402
 PROGRAM_WORDS = 2048
 
 TABLE_WORDS = 1024
+
+HARDWARE = ROOT / "conformance" / "hardware.json"
 
 BLANK = bytes(PROGRAM_WORDS * 3 + TABLE_WORDS * 2)
 
@@ -44,65 +47,134 @@ def spent(part: Any, act: Any) -> int:
     return int(part.core.cycles) - before
 
 
+def window(name: str) -> dict[str, Any]:
+    held = json.loads(HARDWARE.read_text())["facts"][name]
+    assert isinstance(held, dict), f"{name} is not recorded"
+    return held
+
+
+def edges(name: str) -> tuple[int, int, int, int]:
+    rows = {row["register"].split()[0]: row for row in window(name)["rows"]}
+    status, data = rows["STATUS"], rows["DATA"]
+    bank = int(status["banks"].split()[-1], 16)
+    return (
+        bank,
+        int(data["from"][:-1], 16),
+        int(status["from"][:-1], 16),
+        int(status["to"][:-1], 16),
+    )
+
+
+def banks(name: str) -> list[int]:
+    printed = window(name)["rows"][0]["banks"].replace("(", "").replace(")", "").split()
+    mirrors = [int(one, 16) for one in window(name)["mirrorBanks"]]
+    return [int(one, 16) for one in printed] + mirrors
+
+
+def landed(address: int) -> str:
+    part = a_part()
+    part.core.registers.sr.rqm = True
+    part.core.registers.dr = 0x5A5A
+    found = part.read_bus(address)
+    return "status" if found == part.read_status() and found != 0x5A else "data"
+
+
 class BusTest(unittest.TestCase):
-    def test_an_even_address_is_the_data_port(self) -> None:
+    def test_mode_20_selects_the_status_register_with_address_line_14(self) -> None:
         # Arrange
-        expected = a_part().read()
+        bank, data, status, end = edges("mode20Window")
 
         # Act
-        through_the_bus = a_part().read_bus(0x00C000)
+        found = [landed(bank << 16 | one) for one in (data, status - 1, status, end)]
 
         # Assert
-        self.assertEqual(through_the_bus, expected)
+        self.assertEqual(
+            (found, data ^ status),
+            (["data", "data", "status", "status"], 1 << window("mode20Window")["selectLine"]),
+        )
 
-    def test_an_odd_address_is_the_status_register(self) -> None:
+    def test_mode_21_selects_the_status_register_with_address_line_12(self) -> None:
         # Arrange
-        expected = a_part().read_status()
+        bank, data, status, end = edges("mode21Window")
 
         # Act
-        through_the_bus = a_part().read_bus(0x00C001)
+        found = [landed(bank << 16 | one) for one in (data, status - 1, status, end)]
 
         # Assert
-        self.assertEqual(through_the_bus, expected)
+        self.assertEqual(
+            (found, data ^ status),
+            (["data", "data", "status", "status"], 1 << window("mode21Window")["selectLine"]),
+        )
 
-    def test_only_the_lowest_bit_decides(self) -> None:
+    def test_every_bank_of_each_window_and_its_mirror_reaches_the_part(self) -> None:
         # Arrange
-        low = a_part().read_bus(0x008000)
+        names = ("mode20Window", "mode21Window")
 
         # Act
-        high = a_part().read_bus(0x3F8000)
+        found = {landed(bank << 16 | edges(name)[2]) for name in names for bank in banks(name)}
 
         # Assert
-        self.assertEqual(high, low)
+        self.assertEqual(found, {"status"})
 
-    def test_a_write_to_an_even_address_reaches_the_data_port(self) -> None:
+    def test_the_lowest_address_bit_no_longer_picks_the_port(self) -> None:
+        # Arrange
+        address = 0x3F8001
+
+        # Act
+        found = landed(address)
+
+        # Assert
+        self.assertEqual(found, "data")
+
+    def test_an_address_outside_both_windows_is_refused(self) -> None:
         # Arrange
         part = a_part()
 
         # Act
-        part.write_bus(0x00C000, 0x42)
+        with self.assertRaises(snesdsp.NotDecoded) as refused:
+            part.read_bus(0x00C000)
+
+        # Assert
+        self.assertTrue(str(refused.exception).startswith("00C000 is in neither window"))
+
+    def test_and_a_write_there_is_refused_too(self) -> None:
+        # Arrange
+        part = a_part()
+
+        # Act
+        with self.assertRaises(snesdsp.NotDecoded) as refused:
+            part.write_bus(0x406000, 0x42)
+
+        # Assert
+        self.assertTrue(str(refused.exception).startswith("406000 is in neither window"))
+
+    def test_a_write_to_the_data_range_reaches_the_data_port(self) -> None:
+        # Arrange
+        part = a_part()
+
+        # Act
+        part.write_bus(0x3F8000, 0x42)
 
         # Assert
         self.assertEqual(part.core.registers.dr & 0xFF, 0x42)
 
-    def test_a_write_to_an_odd_address_leaves_the_data_port_alone(self) -> None:
+    def test_a_write_to_the_read_only_status_range_leaves_the_data_port_alone(self) -> None:
         # Arrange
         part = a_part()
         before = part.core.registers.dr
 
         # Act
-        handed = part.write_bus(0x00C001, 0x42)
+        handed = part.write_bus(0x007000, 0x42)
 
         # Assert
-        self.assertIs(handed, part)
-        self.assertEqual(part.core.registers.dr, before)
+        self.assertEqual((handed, part.core.registers.dr), (part, before))
 
     def test_what_is_written_is_narrowed_to_a_byte(self) -> None:
         # Arrange
         part = a_part()
 
         # Act
-        part.write_bus(0x00C000, 0x1FF)
+        part.write_bus(0x006000, 0x1FF)
 
         # Assert
         self.assertEqual(part.core.registers.dr & 0xFF, 0xFF)

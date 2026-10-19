@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, override
 
-from snesdsp.errors import NeverReady, NoFirmware
+from snesdsp.errors import NeverReady, NoFirmware, NotDecoded
 
 from . import firmware
 
@@ -21,7 +21,13 @@ BOOT_STEPS = 20000
 
 GAP = timing.GAP
 
-STATUS_BIT = 0
+BANK_MIRROR = 0x7F
+
+MODE_20 = (range(0x30, 0x40), 0x8000, 0xFFFF, 14)
+
+MODE_21 = (range(0x00, 0x10), 0x6000, 0x7FFF, 12)
+
+DECODED = (MODE_20, MODE_21)
 
 SETTLE_LIMIT = 400000
 
@@ -49,6 +55,19 @@ def _processor() -> tuple[ModuleType, ModuleType] | None:
     except ImportError:
         return None
     return models, ports
+
+
+def selects_status(address: int) -> bool:
+    bank = address >> 16 & BANK_MIRROR
+    page = address & 0xFFFF
+    for banks, low, high, line in DECODED:
+        if bank in banks and low <= page <= high:
+            return bool(page >> line & 1)
+    raise NotDecoded(
+        f"{address:06X} is in neither window the board decodes for the part: banks"
+        " 30-3F and B0-BF at 8000-FFFF under Mode 20, or banks 00-0F and 80-8F at"
+        " 6000-7FFF under Mode 21"
+    )
 
 
 def available(held: dict[str, tuple[Any, Path]] | None = None) -> dict[str, tuple[Any, Path]]:
@@ -161,12 +180,12 @@ class Chip:
         return self
 
     def read_bus(self, address: int) -> int:
-        if address >> STATUS_BIT & 1:
+        if selects_status(address):
             return self.read_status()
         return self.read()
 
     def write_bus(self, address: int, value: int) -> Chip:
-        if address >> STATUS_BIT & 1:
+        if selects_status(address):
             self.console.write(self._ports.STATUS, value & 0xFF)
             self.step()
             return self

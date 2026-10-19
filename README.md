@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** parts on **5** microcode images, **121** exchanges read out of **36** retail cartridges, **62** of them played at the part, **0** failures, **0** commands described by hand, **993** tests, **100%** statement and branch coverage, no dependencies
+**6** parts on **5** microcode images, **121** exchanges read out of **36** retail cartridges, **62** of them played at the part, **0** failures, **0** commands described by hand, **996** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 import snesdsp
@@ -81,18 +81,18 @@ Releases follow [Semantic Versioning](https://semver.org/) and are cut from the 
 
 ### Calls
 
-| Call                        | Effect                                                                                                                   |
-| :-------------------------- | :----------------------------------------------------------------------------------------------------------------------- |
-| `write(value)`              | One byte into the data port, then `gap` instructions                                                                     |
-| `read()`                    | Waits up to `patience` instructions for the part to ask, reads one byte from the data port, then runs `gap` instructions |
-| `read_status()`             | The status register. Bit 7 is RQM, set while the part asks for the next byte                                             |
-| `write_bus(address, value)` | `write(value)` when bit 0 of `address` is 0, a write to the status port when it is 1. Returns the part                   |
-| `read_bus(address)`         | `read()` when bit 0 of `address` is 0, `read_status()` when it is 1                                                      |
-| `step(count=None)`          | Runs `count` instructions, or `gap` when `count` is left out                                                             |
-| `elapsed(master_clocks)`    | Runs as many instructions as the part executes in that many console master clocks. Returns the part                      |
-| `waited()`                  | Steps until the part asks, up to `patience` instructions. True when it asked                                             |
-| `settle()`                  | `waited()`, raising `NeverReady` when the part never asked                                                               |
-| `reset()`                   | Rebuilds the processor, reloads the same image bytes and boots again. Returns the part                                   |
+| Call                        | Effect                                                                                                                                                           |
+| :-------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `write(value)`              | One byte into the data port, then `gap` instructions                                                                                                             |
+| `read()`                    | Waits up to `patience` instructions for the part to ask, reads one byte from the data port, then runs `gap` instructions                                         |
+| `read_status()`             | The status register. Bit 7 is RQM, set while the part asks for the next byte                                                                                     |
+| `write_bus(address, value)` | `write(value)` when `address` falls in the data range of either window, a write to the read-only status port when it falls in the status range. Returns the part |
+| `read_bus(address)`         | `read()` in the data range of either window, `read_status()` in the status range                                                                                 |
+| `step(count=None)`          | Runs `count` instructions, or `gap` when `count` is left out                                                                                                     |
+| `elapsed(master_clocks)`    | Runs as many instructions as the part executes in that many console master clocks. Returns the part                                                              |
+| `waited()`                  | Steps until the part asks, up to `patience` instructions. True when it asked                                                                                     |
+| `settle()`                  | `waited()`, raising `NeverReady` when the part never asked                                                                                                       |
+| `reset()`                   | Rebuilds the processor, reloads the same image bytes and boots again. Returns the part                                                                           |
 
 ### State
 
@@ -171,6 +171,7 @@ A sixtieth of a second of master clocks is 126,666 instructions of the part.
 | `Unrecognised`      | `snesdsp.identify` was given bytes whose SHA-256 no image in the manifest has. The message says what the file most likely is |
 | `Corrupt`           | An image matched on SHA-256 and disagreed on another digest the manifest records                                             |
 | `WrongShape`        | `image` is not the length its `identity` needs: 3 bytes per program word and 2 per data word                                 |
+| `NotDecoded`        | `read_bus` or `write_bus` was given an address in neither window the board decodes for the part                              |
 
 ```python
 from pathlib import Path
@@ -247,7 +248,7 @@ certutil -hashfile firmware\dsp1.bin SHA256     # Windows
 
 ## Driving it the way a console does
 
-A console reaches the part through an address. Bit 0 of that address picks the port: 0 is the data port and 1 is the status register. No higher bit is decoded, so one part answers across a whole address window.
+A console reaches the part through an address, in one of the two windows Figures 3-1-4 and 3-1-5 of Nintendo's Book II print. Under Mode 20 the part answers in banks `$30` to `$3F` and `$B0` to `$BF`, data from `$8000` and status from `$C000` to `$FFFF`, so address line 14 picks the port. Under Mode 21 it answers in banks `$00` to `$0F` and `$80` to `$8F`, data from `$6000` and status from `$7000` to `$7FFF`, so line 12 picks it. Both figures mark the status register read only. An address in neither window raises `NotDecoded`.
 
 The part runs one instruction per clock at 7,600,000 Hz. The console counts master clocks at 21,477,273 Hz and spends 8 of them on a slow cartridge access. A 65816 store to a long address takes 5 cycles, so the least a console can leave the part between two accesses is 40 master clocks, which is 14 instructions. That is the default `gap`. A console that spent longer says so with `elapsed`.
 
@@ -255,7 +256,7 @@ The part runs one instruction per clock at 7,600,000 Hz. The console counts mast
 import snesdsp
 
 part = snesdsp.Chip("dsp1")
-print(f"{part.read_bus(0x3F8001):#04x}", part.asking)
+print(f"{part.read_bus(0x3FC000):#04x}", part.asking)
 
 part.write_bus(0x3F8000, 0x00)
 for word in (0x4000, 0x2000):
@@ -274,7 +275,7 @@ print(part.elapsed(snesdsp.MASTER_CLOCK // 60) is part, part.reset() is part)
 True True
 ```
 
-The odd address reads the status register, with RQM set after boot. The even address carries DSP-1 command `0x00`, a multiply, and its two arguments. `0x4000 * 0x2000 >> 15` is `0x1000`.
+`$3F:C000` reads the status register, with RQM set after boot. `$3F:8000` carries DSP-1 command `0x00`, a multiply, and its two arguments. `0x4000 * 0x2000 >> 15` is `0x1000`.
 
 ## Driving every part
 
@@ -450,7 +451,7 @@ The DSP-1B corrected an arithmetic fault, so some input must make the two masks 
 | Exchanges read out of cartridges                 | That the part answers what a shipped game asks                | Anything no game asks                                                                               |
 | A behavioural model of the same part             | Nothing: it is never followed                                 | Recorded only where it disagrees, in [`conformance/divergences.json`](conformance/divergences.json) |
 
-Nintendo published nothing about these parts. The pacing, the boot length and the decode above bit 0 are bounds, and [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) lists each with the measurement that would settle it. [`conformance/hardware.json`](conformance/hardware.json) records the authority order and what this member is compared against.
+Nintendo's Book II prints the port decode, read off Figures 3-1-4 and 3-1-5, and nothing about pacing or booting. The pacing and the boot length are bounds, and [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) lists each with the measurement that would settle it. [`conformance/hardware.json`](conformance/hardware.json) records the authority order and what this member is compared against.
 
 ## Working on it
 
@@ -481,6 +482,7 @@ Each module has a test file beside it, named `<module>.test.py`, and each runs o
 ## References
 
 - NEC, _uPD7725/uPD96050 Digital Signal Processor_ data sheet. Every fact taken from it is recorded, with its page, in [nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python), which this repository carries as a submodule. It is not redistributable and is not in this repository.
+- Nintendo, _SNES Development Manual, Book II_, scanned pages with their text layer, 29,575,127 bytes, SHA-256 `05197923d9b73b63845fc5c2d609e753ec634dc1e4b403ce7a57326e1259c3ed`, from https://archive.org/details/SNESDevManual. Figures 3-1-4 and 3-1-5 give the port decode and were read off the page images. It is not redistributable and is not in this repository.
 - snes9x, `dsp3.cpp` at commit `2971061cf07fdc6fc7d18883edf4e648eb16a6d2`, https://github.com/snes9xgit/snes9x, read only to state the one recorded disagreement. Nothing here follows it.
 - [snes-driver-python](https://github.com/gufranco/snes-driver-python), for reading what a cartridge's own code sends to its coprocessor.
 - Retail cartridges the reader owns, each confirmed by digest against [`cartridges.manifest.json`](cartridges.manifest.json) before it is read.

@@ -8,7 +8,7 @@
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** 个部件，基于 **5** 个微码镜像；从 **36** 个零售版卡带中读出 **121** 个交换，其中 **62** 个在部件上回放；**0** 个失败，**0** 个手工描述的命令，**993** 个测试，**100%** 语句和分支覆盖率，无依赖
+**6** 个部件，基于 **5** 个微码镜像；从 **36** 个零售版卡带中读出 **121** 个交换，其中 **62** 个在部件上回放；**0** 个失败，**0** 个手工描述的命令，**996** 个测试，**100%** 语句和分支覆盖率，无依赖
 
 ```python
 import snesdsp
@@ -81,18 +81,18 @@ python3 snesdsp/doctor.py
 
 ### 调用
 
-| 调用                        | 效果                                                                                    |
-| :-------------------------- | :-------------------------------------------------------------------------------------- |
-| `write(value)`              | 向数据端口写入一个字节，然后运行 `gap` 条指令                                           |
-| `read()`                    | 最多等待 `patience` 条指令让部件发出请求，从数据端口读取一个字节，然后运行 `gap` 条指令 |
-| `read_status()`             | 状态寄存器。第 7 位是 RQM，部件请求下一个字节时置位                                     |
-| `write_bus(address, value)` | `address` 的第 0 位为 0 时执行 `write(value)`，为 1 时写入状态端口。返回该部件          |
-| `read_bus(address)`         | `address` 的第 0 位为 0 时执行 `read()`，为 1 时执行 `read_status()`                    |
-| `step(count=None)`          | 运行 `count` 条指令，省略 `count` 时运行 `gap` 条                                       |
-| `elapsed(master_clocks)`    | 运行部件在这么多个主机主时钟内执行的指令数。返回该部件                                  |
-| `waited()`                  | 单步运行直到部件发出请求，最多 `patience` 条指令。发出请求时为 True                     |
-| `settle()`                  | 即 `waited()`，部件始终未发出请求时抛出 `NeverReady`                                    |
-| `reset()`                   | 重建处理器，重新加载同样的镜像字节并再次启动。返回该部件                                |
+| 调用                        | 效果                                                                                                |
+| :-------------------------- | :-------------------------------------------------------------------------------------------------- |
+| `write(value)`              | 向数据端口写入一个字节，然后运行 `gap` 条指令                                                       |
+| `read()`                    | 最多等待 `patience` 条指令让部件发出请求，从数据端口读取一个字节，然后运行 `gap` 条指令             |
+| `read_status()`             | 状态寄存器。第 7 位是 RQM，部件请求下一个字节时置位                                                 |
+| `write_bus(address, value)` | `address` 落在任一窗口的数据范围时执行 `write(value)`，落在状态范围时写入只读的状态端口。返回该部件 |
+| `read_bus(address)`         | 在任一窗口的数据范围执行 `read()`，在状态范围执行 `read_status()`                                   |
+| `step(count=None)`          | 运行 `count` 条指令，省略 `count` 时运行 `gap` 条                                                   |
+| `elapsed(master_clocks)`    | 运行部件在这么多个主机主时钟内执行的指令数。返回该部件                                              |
+| `waited()`                  | 单步运行直到部件发出请求，最多 `patience` 条指令。发出请求时为 True                                 |
+| `settle()`                  | 即 `waited()`，部件始终未发出请求时抛出 `NeverReady`                                                |
+| `reset()`                   | 重建处理器，重新加载同样的镜像字节并再次启动。返回该部件                                            |
 
 ### 状态
 
@@ -171,6 +171,7 @@ no model was named, and this package will not choose one for you. Name one of: d
 | `Unrecognised`      | 传给 `snesdsp.identify` 的字节的 SHA-256 与清单中任何镜像都不符。消息会说明该文件最可能是什么 |
 | `Corrupt`           | 镜像的 SHA-256 匹配，但与清单记录的另一个摘要不一致                                           |
 | `WrongShape`        | `image` 的长度不是其 `identity` 所需的长度：每个程序字 3 字节，每个数据字 2 字节              |
+| `NotDecoded`        | 传给 `read_bus` 或 `write_bus` 的地址不在电路板为部件译码的任何一个窗口内                     |
 
 ```python
 from pathlib import Path
@@ -249,7 +250,7 @@ certutil -hashfile firmware\dsp1.bin SHA256     # Windows
 
 ## 像主机那样驱动它
 
-主机通过地址访问部件。该地址的第 0 位选择端口：0 是数据端口，1 是状态寄存器。更高的位都不参与译码，因此一个部件会在整个地址窗口内应答。
+主机通过 Nintendo 的 Book II 图 3-1-4 和图 3-1-5 所印两个窗口之一中的地址访问部件。在 Mode 20 下部件在 bank `$30` 到 `$3F` 和 `$B0` 到 `$BF` 应答，数据从 `$8000` 起，状态从 `$C000` 到 `$FFFF`，因此由地址线 14 选择端口。在 Mode 21 下它在 bank `$00` 到 `$0F` 和 `$80` 到 `$8F` 应答，数据从 `$6000` 起，状态从 `$7000` 到 `$7FFF`，因此由地址线 12 选择。两张图都把状态寄存器标为只读。不在任一窗口内的地址会抛出 `NotDecoded`。
 
 部件以 7,600,000 Hz 每个时钟运行一条指令。主机以 21,477,273 Hz 计数主时钟，一次慢速卡带访问花费其中 8 个。65816 向长地址的一次存储需要 5 个周期，因此主机在两次访问之间最少能留给部件 40 个主时钟，也就是 14 条指令。这就是 `gap` 的默认值。花费时间更长的主机用 `elapsed` 说明这一点。
 
@@ -257,7 +258,7 @@ certutil -hashfile firmware\dsp1.bin SHA256     # Windows
 import snesdsp
 
 part = snesdsp.Chip("dsp1")
-print(f"{part.read_bus(0x3F8001):#04x}", part.asking)
+print(f"{part.read_bus(0x3FC000):#04x}", part.asking)
 
 part.write_bus(0x3F8000, 0x00)
 for word in (0x4000, 0x2000):
@@ -276,7 +277,7 @@ print(part.elapsed(snesdsp.MASTER_CLOCK // 60) is part, part.reset() is part)
 True True
 ```
 
-奇数地址读取状态寄存器，启动后 RQM 已置位。偶数地址传送 DSP-1 命令 `0x00`（一次乘法）及其两个参数。`0x4000 * 0x2000 >> 15` 等于 `0x1000`。
+`$3F:C000` 读取状态寄存器，启动后 RQM 已置位。`$3F:8000` 传送 DSP-1 命令 `0x00`（一次乘法）及其两个参数。`0x4000 * 0x2000 >> 15` 等于 `0x1000`。
 
 ## 驱动每个部件
 
@@ -454,7 +455,7 @@ DSP-1B 修正了一处算术错误，因此必然有某个输入会让两个掩�
 | 从卡带中读出的交换               | 部件会回答已发售游戏提出的请求             | 任何游戏都没有提出的请求                                                                |
 | 同一部件的行为模型               | 什么都不能：从不遵循它                     | 仅在其不一致之处记录，见 [`conformance/divergences.json`](conformance/divergences.json) |
 
-Nintendo 没有公布这些部件的任何资料。节奏、启动长度以及第 0 位以上的译码都是界限，[OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) 列出了每一项以及能确定它的测量。[`conformance/hardware.json`](conformance/hardware.json) 记录了权威顺序以及本成员与什么进行比较。
+Nintendo 的 Book II 在图 3-1-4 和图 3-1-5 中印出了端口译码，但没有涉及节奏或启动。节奏和启动长度都是界限，[OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) 列出了每一项以及能确定它的测量。[`conformance/hardware.json`](conformance/hardware.json) 记录了权威顺序以及本成员与什么进行比较。
 
 ## 参与开发
 
@@ -485,6 +486,7 @@ python3 -m conformance.speed
 ## 参考资料
 
 - NEC，_uPD7725/uPD96050 Digital Signal Processor_ 数据手册。从中摘取的每个事实都连同页码记录在 [nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python) 中，本仓库将其作为子模块携带。该手册不可再分发，也不在本仓库中。
+- Nintendo，_SNES Development Manual, Book II_，带文字层的扫描页，29,575,127 字节，SHA-256 为 `05197923d9b73b63845fc5c2d609e753ec634dc1e4b403ce7a57326e1259c3ed`，来自 https://archive.org/details/SNESDevManual 。图 3-1-4 和图 3-1-5 给出了端口译码，从页面图像读出。它不可再分发，也不在本仓库中。
 - snes9x，提交 `2971061cf07fdc6fc7d18883edf4e648eb16a6d2` 中的 `dsp3.cpp`，https://github.com/snes9xgit/snes9x ，仅为说明那一处已记录的分歧而阅读。这里没有任何内容遵循它。
 - [snes-driver-python](https://github.com/gufranco/snes-driver-python)，用于读取卡带自身代码发送给其协处理器的内容。
 - 读者自己拥有的零售版卡带，每个在读取前都先根据 [`cartridges.manifest.json`](cartridges.manifest.json) 以摘要确认。

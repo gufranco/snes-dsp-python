@@ -15,8 +15,9 @@ executes it. What this repository models is everything Nintendo put around that
 processor, which is the port decode, the pacing, the status register and the boot
 handshake. The processor itself is
 [nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python),
-consumed as a submodule at the repository root. No Nintendo document about any of
-these four parts is known to exist.
+consumed as a submodule at the repository root. Nintendo's Book II documents the
+DSP-1 in its section 3, including the two windows a board decodes for the part;
+nothing Nintendo printed covers the DSP-2, DSP-3 or DSP-4.
 
 ## The interface a caller drives
 
@@ -55,15 +56,16 @@ four deep and not sixteen: NEC printed four.
 
 ## What is settled and what is not
 
-**Not settled: 5 things**, each in
+**Not settled: 4 things**, each in
 [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) with the measurement that would close it.
-The short version is that Nintendo published nothing, so the pacing, the boot
-handshake and the port decode above its lowest bit are bounds and inferences
-rather than printed figures, and they say so.
+The short version is that Nintendo printed the port decode and nothing about
+pacing or booting, so the pacing and the boot handshake are bounds rather than
+printed figures, and they say so.
 
 Settled: what every command computes, because the program is run; which image
-each part runs, because each is pinned by digest; and everything about the
-processor, because a sibling read the data sheet.
+each part runs, because each is pinned by digest; everything about the
+processor, because a sibling read the data sheet; and the port decode, because
+Book II's Figures 3-1-4 and 3-1-5 print both windows.
 
 ## The microcode is never carried
 

@@ -1,5 +1,5 @@
 {
-  "note": "Facts about the boards these parts sit on, and the standing of each. The parts themselves are documented in nec-upd7725-96050-python and the console bus in snes-mapper-python; nothing is copied from either, because a fact in two files is a fact that will drift. What is here is what belongs to neither: the crystal on the cartridge, and what follows from it.",
+  "note": "Facts about the boards these parts sit on, and the standing of each. The parts themselves are documented in nec-upd7725-96050-python and the console bus in snes-mapper-python; nothing is copied from either, because a fact in two files is a fact that will drift. What is here is what belongs to neither: the crystal on the cartridge and what follows from it, and the two windows Nintendo's Book II prints for the part.",
   "authority": {
     "order": [
       "the microcode, which is the part: this package runs the program masked into the silicon rather than a description of it",
@@ -68,12 +68,68 @@
       "heldBy": [
         "conformance/hardware.test.py::PrintedBehaviourTest.test_a_reset_restarts_at_address_zero_with_the_program_intact"
       ]
+    },
+    "mode20Window": {
+      "rows": [
+        {
+          "banks": "(BF) 3F (B0) 30",
+          "register": "STATUS Read Only",
+          "from": "C000H",
+          "to": "FFFFH"
+        },
+        {
+          "banks": "(BF) 3F (B0) 30",
+          "register": "DATA Read/Write",
+          "from": "8000H",
+          "to": "C000H"
+        }
+      ],
+      "mirrorBanks": ["0xB0", "0xBF"],
+      "selectLine": 14,
+      "section": "Figure 3-1-4, Mode 20/DSP Memory Map, printed page 3-1-4",
+      "filePage": 284,
+      "readFrom": "The page image only: the text layer of that page carries the caption and nothing inside the figure. Read at 130 and again at 300 dots per inch, the page turned upright and the DSP AREA box cropped; both readings agree. The select line is the one address bit that differs between the two printed boundaries.",
+      "appliesTo": ["dsp1", "dsp1a", "dsp1b", "dsp2", "dsp3", "dsp4"],
+      "verified": true,
+      "heldBy": [
+        "snesdsp/port.test.py::BusTest.test_mode_20_selects_the_status_register_with_address_line_14",
+        "snesdsp/port.test.py::BusTest.test_every_bank_of_each_window_and_its_mirror_reaches_the_part"
+      ],
+      "source": "developmentManualBookIIScan"
+    },
+    "mode21Window": {
+      "rows": [
+        {
+          "banks": "(8F) 0F (80) 00",
+          "register": "STATUS Read Only",
+          "from": "7000H",
+          "to": "7FFFH"
+        },
+        {
+          "banks": "(8F) 0F (80) 00",
+          "register": "DATA Read/Write",
+          "from": "6000H",
+          "to": "7000H"
+        }
+      ],
+      "mirrorBanks": ["0x80", "0x8F"],
+      "selectLine": 12,
+      "section": "Figure 3-1-5, Mode 21/DSP Memory Map, printed page 3-1-5",
+      "filePage": 285,
+      "readFrom": "The page image only: the text layer of that page carries the caption and nothing inside the figure. Read at 130 and again at 300 dots per inch, the page turned upright and the DSP AREA box cropped; both readings agree. The select line is the one address bit that differs between the two printed boundaries.",
+      "appliesTo": ["dsp1", "dsp1a", "dsp1b", "dsp2", "dsp3", "dsp4"],
+      "verified": true,
+      "heldBy": [
+        "snesdsp/port.test.py::BusTest.test_mode_21_selects_the_status_register_with_address_line_12",
+        "snesdsp/port.test.py::BusTest.test_every_bank_of_each_window_and_its_mirror_reaches_the_part"
+      ],
+      "source": "developmentManualBookIIScan"
     }
   },
   "notStated": [
     "The crystal on any cartridge board. No manufacturer document on this machine carries one.",
     "How many of its own instructions a driver puts between two accesses. That is a property of each game, and the floor used here comes from what one store to a long address costs rather than from any document.",
-    "The port decode above the status bit. That a coprocessor answers across a window rather than at one address follows from the bit being the only one examined, and no document on this machine states it.",
+    "Where a board decodes the part for anything Book II's two figures do not show. The two windows and the address line that picks the status register are printed; whether a write to the status register, which both figures mark read only, does anything on a real board is not.",
     "The boot handshake. How long an image spends setting itself up before it will answer is a property of each image, and the limit used here is a bound rather than a documented figure."
   ],
   "documents": {
@@ -84,6 +140,16 @@
       "file": "upd7725.pdf",
       "through": "nec-upd7725-96050-python",
       "note": "Not read here. Every fact about the processor underneath these parts is recorded in that member and reached through the submodule rather than repeated, because a fact repeated in two records is a fact that can disagree with itself. The sibling is named so nobody mistakes a reading done there for a reading done here."
+    },
+    "developmentManualBookIIScan": {
+      "publisher": "Nintendo",
+      "title": "Super Nintendo Entertainment System Development Manual, Book II, the scanned pages with their text layer",
+      "readOn": "2026-10-19",
+      "readVia": "archive.org/download/SNESDevManual/book2_text.pdf, file pages 284 and 285 rendered as images",
+      "file": "book2_text.pdf",
+      "sha256": "05197923d9b73b63845fc5c2d609e753ec634dc1e4b403ce7a57326e1259c3ed",
+      "bytes": 29575127,
+      "note": "Section 3, Introduction to DSP1, 1.6 Memory Mapping. File page 284 is printed page 3-1-4 and file page 285 is printed page 3-1-5. Read here directly; snes-driver-python and snes-mapper-python pin the same file."
     }
   }
 }

@@ -8,7 +8,7 @@
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** 款晶片共用 **5** 個微碼映像檔，讀出 **121** 種交換，來自 **36** 盒零售版卡帶，其中 **62** 種在晶片上重播，**0** 次失敗，**0** 個以人手描述的命令，**993** 項測試，**100%** 語句及分支覆蓋率，沒有任何依賴套件
+**6** 款晶片共用 **5** 個微碼映像檔，讀出 **121** 種交換，來自 **36** 盒零售版卡帶，其中 **62** 種在晶片上重播，**0** 次失敗，**0** 個以人手描述的命令，**996** 項測試，**100%** 語句及分支覆蓋率，沒有任何依賴套件
 
 ```python
 import snesdsp
@@ -81,18 +81,18 @@ python3 snesdsp/doctor.py
 
 ### 呼叫
 
-| 呼叫                        | 效果                                                                                    |
-| :-------------------------- | :-------------------------------------------------------------------------------------- |
-| `write(value)`              | 向數據埠寫入一個位元組，然後執行 `gap` 條指令                                           |
-| `read()`                    | 最多等待 `patience` 條指令讓晶片發出請求，從數據埠讀取一個位元組，然後執行 `gap` 條指令 |
-| `read_status()`             | 狀態暫存器。第 7 位元是 RQM，在晶片請求下一個位元組期間設定                             |
-| `write_bus(address, value)` | `address` 的第 0 位元為 0 時執行 `write(value)`，為 1 時寫入狀態埠。傳回該晶片          |
-| `read_bus(address)`         | `address` 的第 0 位元為 0 時執行 `read()`，為 1 時執行 `read_status()`                  |
-| `step(count=None)`          | 執行 `count` 條指令，省略 `count` 時執行 `gap` 條                                       |
-| `elapsed(master_clocks)`    | 執行晶片在該數量的主機主時鐘內所執行的指令數。傳回該晶片                                |
-| `waited()`                  | 逐步執行直至晶片發出請求，最多 `patience` 條指令。晶片發出請求時為 True                 |
-| `settle()`                  | `waited()`，晶片始終沒有發出請求時引發 `NeverReady`                                     |
-| `reset()`                   | 重建處理器，重新載入相同的映像檔位元組並再次啟動。傳回該晶片                            |
+| 呼叫                        | 效果                                                                                              |
+| :-------------------------- | :------------------------------------------------------------------------------------------------ |
+| `write(value)`              | 向數據埠寫入一個位元組，然後執行 `gap` 條指令                                                     |
+| `read()`                    | 最多等待 `patience` 條指令讓晶片發出請求，從數據埠讀取一個位元組，然後執行 `gap` 條指令           |
+| `read_status()`             | 狀態暫存器。第 7 位元是 RQM，在晶片請求下一個位元組期間設定                                       |
+| `write_bus(address, value)` | `address` 落在任一窗口的數據範圍時執行 `write(value)`，落在狀態範圍時寫入唯讀的狀態埠。傳回該晶片 |
+| `read_bus(address)`         | 在任一窗口的數據範圍執行 `read()`，在狀態範圍執行 `read_status()`                                 |
+| `step(count=None)`          | 執行 `count` 條指令，省略 `count` 時執行 `gap` 條                                                 |
+| `elapsed(master_clocks)`    | 執行晶片在該數量的主機主時鐘內所執行的指令數。傳回該晶片                                          |
+| `waited()`                  | 逐步執行直至晶片發出請求，最多 `patience` 條指令。晶片發出請求時為 True                           |
+| `settle()`                  | `waited()`，晶片始終沒有發出請求時引發 `NeverReady`                                               |
+| `reset()`                   | 重建處理器，重新載入相同的映像檔位元組並再次啟動。傳回該晶片                                      |
 
 ### 狀態
 
@@ -171,6 +171,7 @@ no model was named, and this package will not choose one for you. Name one of: d
 | `Unrecognised`      | 傳給 `snesdsp.identify` 的位元組，其 SHA-256 與清單中任何映像檔都不符。訊息會說明該檔案最可能是甚麼 |
 | `Corrupt`           | 映像檔的 SHA-256 相符，但與清單記錄的另一個摘要不符                                                 |
 | `WrongShape`        | `image` 的長度不是其 `identity` 所需的長度：每個程式字 3 個位元組，每個數據字 2 個位元組            |
+| `NotDecoded`        | 傳給 `read_bus` 或 `write_bus` 的位址不在電路板為晶片解碼的任何一個窗口內                           |
 
 ```python
 from pathlib import Path
@@ -249,7 +250,7 @@ certutil -hashfile firmware\dsp1.bin SHA256     # Windows
 
 ## 以主機的方式驅動晶片
 
-主機透過位址存取晶片。位址的第 0 位元選擇埠：0 是數據埠，1 是狀態暫存器。較高的位元都不解碼，因此一款晶片會在整個位址窗口內回應。
+主機透過 Nintendo 的 Book II 圖 3-1-4 和圖 3-1-5 所印兩個窗口之一中的位址存取晶片。在 Mode 20 下晶片在 bank `$30` 至 `$3F` 和 `$B0` 至 `$BF` 回應，數據由 `$8000` 起，狀態由 `$C000` 至 `$FFFF`，因此由位址線 14 選擇埠。在 Mode 21 下它在 bank `$00` 至 `$0F` 和 `$80` 至 `$8F` 回應，數據由 `$6000` 起，狀態由 `$7000` 至 `$7FFF`，因此由位址線 12 選擇。兩張圖都把狀態暫存器標為唯讀。不在任一窗口內的位址會引發 `NotDecoded`。
 
 晶片以 7,600,000 Hz 運行，每個時鐘執行一條指令。主機以 21,477,273 Hz 計算主時鐘，一次慢速卡帶存取花費其中 8 個。65816 對長位址的一次儲存需要 5 個週期，因此主機在兩次存取之間最少留給晶片 40 個主時鐘，即 14 條指令。這就是預設的 `gap`。花費更長時間的主機以 `elapsed` 表明。
 
@@ -257,7 +258,7 @@ certutil -hashfile firmware\dsp1.bin SHA256     # Windows
 import snesdsp
 
 part = snesdsp.Chip("dsp1")
-print(f"{part.read_bus(0x3F8001):#04x}", part.asking)
+print(f"{part.read_bus(0x3FC000):#04x}", part.asking)
 
 part.write_bus(0x3F8000, 0x00)
 for word in (0x4000, 0x2000):
@@ -276,7 +277,7 @@ print(part.elapsed(snesdsp.MASTER_CLOCK // 60) is part, part.reset() is part)
 True True
 ```
 
-奇數位址讀取狀態暫存器，啟動後 RQM 已設定。偶數位址傳送 DSP-1 的乘法命令 `0x00` 及其兩個參數。`0x4000 * 0x2000 >> 15` 等於 `0x1000`。
+`$3F:C000` 讀取狀態暫存器，啟動後 RQM 已設定。`$3F:8000` 傳送 DSP-1 的乘法命令 `0x00` 及其兩個參數。`0x4000 * 0x2000 >> 15` 等於 `0x1000`。
 
 ## 驅動每款晶片
 
@@ -454,7 +455,7 @@ DSP-1B 修正了一個算術錯誤，因此必定有某些輸入會令兩個光�
 | 從卡帶讀出的交換               | 晶片能回答已發售遊戲所提出的要求             | 沒有遊戲提出的任何要求                                                                  |
 | 同一晶片的行為模型             | 甚麼都不能確定：從不跟從它                   | 只在其出現分歧之處記錄於 [`conformance/divergences.json`](conformance/divergences.json) |
 
-Nintendo 沒有發表過任何有關這些晶片的資料。節奏、啟動長度及第 0 位元以上的解碼都是界限值，[OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) 列出了每一項及可確定它的量度方法。[`conformance/hardware.json`](conformance/hardware.json) 記錄了權威次序，以及本成員所比較的對象。
+Nintendo 的 Book II 在圖 3-1-4 和圖 3-1-5 中印出了埠解碼，但沒有涉及節奏或啟動。節奏和啟動長度都是界限值，[OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) 列出了每一項及可確定它的量度方法。[`conformance/hardware.json`](conformance/hardware.json) 記錄了權威次序，以及本成員所比較的對象。
 
 ## 參與開發
 
@@ -485,6 +486,7 @@ python3 -m conformance.speed
 ## 參考資料
 
 - NEC，_uPD7725/uPD96050 Digital Signal Processor_ 數據表。從中取得的每項事實都連同頁碼記錄於 [nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python)，本儲存庫將其作為子模組附帶。該數據表不可再分發，亦不在本儲存庫中。
+- Nintendo，_SNES Development Manual, Book II_，附文字層的掃描頁，29,575,127 位元組，SHA-256 為 `05197923d9b73b63845fc5c2d609e753ec634dc1e4b403ce7a57326e1259c3ed`，來自 https://archive.org/details/SNESDevManual 。圖 3-1-4 和圖 3-1-5 給出了埠解碼，從頁面圖像讀出。它不可再分發，也不在本儲存庫中。
 - snes9x，提交 `2971061cf07fdc6fc7d18883edf4e648eb16a6d2` 的 `dsp3.cpp`，https://github.com/snes9xgit/snes9x ，只為說明那一項已記錄的分歧而閱讀。這裏沒有任何內容跟從它。
 - [snes-driver-python](https://github.com/gufranco/snes-driver-python)，用於讀取卡帶自身程式碼向其協處理器發送的內容。
 - 讀者擁有的零售版卡帶，每盒在讀取前都會以摘要對照 [`cartridges.manifest.json`](cartridges.manifest.json) 確認。

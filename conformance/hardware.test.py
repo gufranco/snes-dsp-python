@@ -223,7 +223,7 @@ class StandingTest(unittest.TestCase):
         # Assert
         self.assertIn("load-bearing", why)
 
-    def test_four_of_the_six_facts_are_documented(self) -> None:
+    def test_six_of_the_eight_facts_are_documented(self) -> None:
         # Arrange
         facts = declared()["facts"]
 
@@ -231,7 +231,7 @@ class StandingTest(unittest.TestCase):
         verified = [name for name, fact in facts.items() if fact["verified"]]
 
         # Assert
-        self.assertEqual(len(verified), 4)
+        self.assertEqual(len(verified), 6)
 
     def test_a_faster_oscillator_would_change_what_the_part_gets_done(self) -> None:
         # Arrange

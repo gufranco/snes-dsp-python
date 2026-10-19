@@ -12,7 +12,8 @@ create a second copy free to disagree with the first.
 
 What is left for this repository is everything Nintendo put around that
 processor: the port decode, the pacing, the boot handshake and which image each
-part runs. Nintendo published nothing about any of it.
+part runs. Nintendo's Book II prints the port decode in Figures 3-1-4 and 3-1-5,
+and nothing about the rest.
 
 Every entry is also in
 [`conformance/divergences.json`](conformance/divergences.json) with its status
@@ -72,21 +73,6 @@ a program that never becomes ready fails loudly instead of hanging.
 **What would settle or reopen it.** Nothing published would. Measuring each
 image's own settling time on hardware would.
 
-### What the port decodes above its lowest bit.
-
-**The document says.** Nothing.
-
-**What this project follows.** That the lowest bit of the address chooses between
-the data port and the status register, and that nothing above it is examined.
-
-**Why.** It follows from the only bit any driver varies. Every exchange read out
-of thirty six cartridges touches one of two addresses that differ in that bit
-alone, so the decode above it is unconstrained by anything observed rather than
-established as absent.
-
-**What would settle or reopen it.** A driver that addresses the part somewhere
-else, or a board schematic.
-
 ## Where a source disagrees and neither can be promoted
 
 ### What a DSP-3 answers to command `0x1c`.
@@ -143,6 +129,15 @@ So the boundary is visible rather than implied:
 
 - **What each command computes.** The program decides, and the program is run.
   Nothing here describes a command.
+- **The port decode.** Book II's Figure 3-1-4 prints the Mode 20 window, banks
+  `30` to `3F` and `B0` to `BF` with data from `8000H` and status from `C000H` to
+  `FFFFH`, and Figure 3-1-5 the Mode 21 window, banks `00` to `0F` and `80` to
+  `8F` with data from `6000H` and status from `7000H` to `7FFFH`. `read_bus` and
+  `write_bus` decode by those windows, address line 14 or 12 picking the port,
+  and refuse any address outside both. The figures are images; they were read
+  off the scanned page, and [`conformance/hardware.json`](conformance/hardware.json)
+  pins the scan by digest. Until 2026-10-19 the model took the lowest address
+  bit, which no figure supports.
 - **Which image each part runs.** Recorded with a deciding digest, so a supplied
   file is confirmed rather than trusted.
 - **That the pacing follows from the two oscillators.** Derived rather than
