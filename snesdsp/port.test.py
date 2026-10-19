@@ -24,6 +24,8 @@ DOCUMENTED_GAP = 14
 
 SLOW_ACCESS = 8
 
+BUS_CYCLE_INSTRUCTIONS = 2
+
 A_SIXTIETH_OF_A_SECOND = 126666
 
 
@@ -274,6 +276,52 @@ class PacingTest(unittest.TestCase):
         self.assertEqual(run, 5)
 
 
+class WordTest(unittest.TestCase):
+    def test_the_two_bytes_of_a_word_are_one_bus_cycle_apart(self) -> None:
+        # Arrange
+        part = a_part()
+
+        # Act
+        run = spent(part, lambda: part.write_word(0x1234))
+
+        # Assert
+        self.assertEqual(
+            (run, part.bus_cycle), (BUS_CYCLE_INSTRUCTIONS + DOCUMENTED_GAP, BUS_CYCLE_INSTRUCTIONS)
+        )
+
+    def test_a_word_reaches_the_data_register_low_byte_first(self) -> None:
+        # Arrange
+        part = a_part()
+
+        # Act
+        part.write_word(0x1234)
+
+        # Assert
+        self.assertEqual(part.core.registers.dr, 0x1234)
+
+    def test_a_word_read_takes_the_low_byte_then_the_high_one_a_bus_cycle_later(self) -> None:
+        # Arrange
+        part = a_part()
+        part.core.registers.dr = 0xBEEF
+
+        # Act
+        run = spent(part, part.read_word)
+
+        # Assert
+        self.assertEqual(run, BUS_CYCLE_INSTRUCTIONS + DOCUMENTED_GAP)
+
+    def test_and_answers_the_word_the_data_register_held(self) -> None:
+        # Arrange
+        part = a_part()
+        part.core.registers.dr = 0xBEEF
+
+        # Act
+        found = part.read_word()
+
+        # Assert
+        self.assertEqual(found, 0xBEEF)
+
+
 class StatusTest(unittest.TestCase):
     def test_a_part_that_has_not_asked_shows_rqm_clear(self) -> None:
         # Arrange
@@ -374,7 +422,7 @@ class WaitingTest(unittest.TestCase):
         # Assert
         self.assertIn("32 instructions", str(refused.exception))
 
-    def test_but_reading_from_it_waits_out_its_patience_and_then_the_gap(self) -> None:
+    def test_but_reading_from_it_does_not_wait_the_way_a_console_does_not(self) -> None:
         # Arrange
         part = a_part(patience=32)
 
@@ -382,7 +430,19 @@ class WaitingTest(unittest.TestCase):
         run = spent(part, part.read)
 
         # Assert
-        self.assertEqual(run, 32 + DOCUMENTED_GAP)
+        self.assertEqual(run, DOCUMENTED_GAP)
+
+    def test_a_read_while_the_part_is_not_asking_takes_what_the_data_register_holds(self) -> None:
+        # Arrange
+        part = a_part()
+        part.core.registers.sr.rqm = False
+        part.core.registers.dr = 0x1234
+
+        # Act
+        found = [part.read(), part.read()]
+
+        # Assert
+        self.assertEqual(found, [0x34, 0x12])
 
     def test_a_part_that_is_asking_reports_that_it_has_something_to_say(self) -> None:
         # Arrange

@@ -8,11 +8,11 @@
   "exchanges": [
     {
       "shape": "poll1 write1 write2 write2 write2 write2 write2 write2 write2 poll2 read2 read2 read2 read2 write1 write2 read2 read2 read2 read2 poll2 write2 write2 write2 write2",
-      "said": ["84", "1010", "4bbb", "a260", "de80", "8080", "a734", "a734", "59fd", "041f", "8080"]
+      "said": ["84", "8080", "0354", "c3ee", "2764", "8080", "a734", "a734", "4914", "8e22", "8080"]
     },
     {
       "shape": "write1 write2 write2 write2 write2 poll1 write1 write2 write2 write2 read2 read2 read2",
-      "said": ["90", "0000", "0000", "0000"]
+      "said": ["80", "6b55", "6b55", "0000"]
     },
     {
       "shape": "write1 write2 write2 write2 write2 write2 write2 write2 poll2 read2 read2 read2 read2",
@@ -20,15 +20,15 @@
     },
     {
       "shape": "poll1 write1 write2 write2 write2 read2 read2 write1 write2 write2 write2 read2",
-      "said": ["84", "0000", "0000", "0000"]
+      "said": ["84", "697a", "697a", "75d3"]
     },
     {
       "shape": "write1 write2 poll2 read2 read2 read2 read2 poll2 write2 write2 write2 write2",
-      "said": ["8080", "dbb2", "ce95", "264d", "8080", "8484"]
+      "said": ["8080", "dbb2", "dbb2", "dbb2", "ce95", "8080"]
     },
     {
       "shape": "write1 write2 read2 read2 read2 read2 poll2 write2 write2 write2 write2",
-      "said": ["0073", "0073", "0000", "0000", "9090"]
+      "said": ["7300", "7300", "0000", "0000", "8080"]
     },
     {
       "shape": "poll1 read1 read1 read1 write1 write2 write2 write2",
@@ -36,11 +36,11 @@
     },
     {
       "shape": "write1 write2 write2 write2 poll2 read2 read2 read2",
-      "said": ["9090", "2e10", "2e10", "2e10"]
+      "said": ["8080", "2e10", "2e10", "2e10"]
     },
     {
       "shape": "write1 write2 write2 write2 poll1 read2 read2",
-      "said": ["00", "0000", "0000"]
+      "said": ["80", "0000", "0000"]
     },
     {
       "shape": "write1 write2 write2 write2 poll2 read2 read2",
@@ -56,11 +56,11 @@
     },
     {
       "shape": "write1 write2 write2 poll2 read2 read2",
-      "said": ["9090", "e262", "e262"]
+      "said": ["8080", "e262", "e262"]
     },
     {
       "shape": "write1 write2 write2 write2 poll2 read2",
-      "said": ["9090", "a4e5"]
+      "said": ["8080", "a4e5"]
     },
     {
       "shape": "write1 write2 write2 read2 read2",
@@ -68,7 +68,7 @@
     },
     {
       "shape": "write1 write2 write2 read2",
-      "said": ["0081"]
+      "said": ["8100"]
     },
     {
       "shape": "write1 poll1 read1 read1",

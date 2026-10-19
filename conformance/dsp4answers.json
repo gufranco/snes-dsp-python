@@ -16,7 +16,7 @@
     },
     {
       "shape": "write1 write1 write1 read1 read1 write1 write1 read1 read1",
-      "said": ["00", "ff", "ff", "ff"]
+      "said": ["2d", "f6", "33", "a7"]
     },
     {
       "shape": "write1 write1 write1 read1 read1 write1 write1 write1 read1",
@@ -24,7 +24,7 @@
     },
     {
       "shape": "write1 read1 read1 write2 write2 write2 read2 read2",
-      "said": ["ff", "ff", "00ff", "ffff"]
+      "said": ["ff", "ff", "ffff", "ffff"]
     },
     {
       "shape": "write1 write1 write1 write1 read1 write1 write1 read1",
@@ -52,7 +52,7 @@
     },
     {
       "shape": "write1 write1 read1 write1 write1 read1 read1",
-      "said": ["00", "ff", "ff"]
+      "said": ["12", "ef", "7b"]
     },
     {
       "shape": "write1 write1 write1 read1 read1 read1 read1",
@@ -76,7 +76,7 @@
     },
     {
       "shape": "write1 write1 read1 read1 write1",
-      "said": ["00", "00"]
+      "said": ["72", "22"]
     },
     {
       "shape": "write1 write1 write1 write1 read1",
@@ -100,7 +100,7 @@
     },
     {
       "shape": "write1 write1 read1 write1",
-      "said": ["00"]
+      "said": ["92"]
     },
     {
       "shape": "write1 write1 write1 read1",

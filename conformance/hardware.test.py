@@ -223,7 +223,7 @@ class StandingTest(unittest.TestCase):
         # Assert
         self.assertIn("load-bearing", why)
 
-    def test_six_of_the_eight_facts_are_documented(self) -> None:
+    def test_six_of_the_nine_facts_are_documented(self) -> None:
         # Arrange
         facts = declared()["facts"]
 

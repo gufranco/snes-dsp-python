@@ -98,6 +98,7 @@ class Chip:
         "_image",
         "_models",
         "_ports",
+        "bus_cycle",
         "console",
         "core",
         "gap",
@@ -147,6 +148,7 @@ class Chip:
         self.identity = identity
         self.patience = patience
         self.gap = gap
+        self.bus_cycle = timing.BUS_CYCLE
 
         self._ports = ports
         self._models = models
@@ -222,10 +224,19 @@ class Chip:
         return found
 
     def read(self) -> int:
-        self.waited()
         value: int = self.console.read(self._ports.DATA)
         self.step()
         return value
+
+    def write_word(self, word: int) -> None:
+        self.console.write(self._ports.DATA, word & 0xFF)
+        self.step(self.bus_cycle)
+        self.write(word >> 8)
+
+    def read_word(self) -> int:
+        low: int = self.console.read(self._ports.DATA)
+        self.step(self.bus_cycle)
+        return low | self.read() << 8
 
     @override
     def __repr__(self) -> str:

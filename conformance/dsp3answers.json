@@ -20,7 +20,7 @@
     },
     {
       "shape": "write1 write2 write2 write2 read2 read2",
-      "said": ["33d5", "0080"]
+      "said": ["2a92", "2a92"]
     },
     {
       "shape": "write1 write2 poll2 read2 poll2 read2",
@@ -32,7 +32,7 @@
     },
     {
       "shape": "read1 write1 write2 read2",
-      "said": ["80", "80f8"]
+      "said": ["80", "8000"]
     },
     {
       "shape": "write1 write2 read2",

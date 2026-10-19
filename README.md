@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** parts on **5** microcode images, **121** exchanges read out of **36** retail cartridges, **62** of them played at the part, **0** failures, **0** commands described by hand, **996** tests, **100%** statement and branch coverage, no dependencies
+**6** parts on **5** microcode images, **121** exchanges read out of **36** retail cartridges, **62** of them played at the part, **0** failures, **0** commands described by hand, **1005** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 import snesdsp
@@ -61,7 +61,7 @@ Releases follow [Semantic Versioning](https://semver.org/) and are cut from the 
 | Option     | Default  | Meaning                                                                             |
 | :--------- | :------- | :---------------------------------------------------------------------------------- |
 | `gap`      | `14`     | Instructions the part runs after each access, the least a console can leave it      |
-| `patience` | `400000` | Instructions a read waits for the part to ask before reading anyway                 |
+| `patience` | `400000` | Instructions `waited()` and `settle()` run while waiting for the part to ask        |
 | `boot`     | `20000`  | Instructions run after loading, before the first access                             |
 | `fill`     | `0`      | The value the processor's memories hold before the image is loaded                  |
 | `image`    | none     | The image bytes, handed in so no directory is searched. Needs `identity`            |
@@ -81,32 +81,35 @@ Releases follow [Semantic Versioning](https://semver.org/) and are cut from the 
 
 ### Calls
 
-| Call                        | Effect                                                                                                                                                           |
-| :-------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `write(value)`              | One byte into the data port, then `gap` instructions                                                                                                             |
-| `read()`                    | Waits up to `patience` instructions for the part to ask, reads one byte from the data port, then runs `gap` instructions                                         |
-| `read_status()`             | The status register. Bit 7 is RQM, set while the part asks for the next byte                                                                                     |
-| `write_bus(address, value)` | `write(value)` when `address` falls in the data range of either window, a write to the read-only status port when it falls in the status range. Returns the part |
-| `read_bus(address)`         | `read()` in the data range of either window, `read_status()` in the status range                                                                                 |
-| `step(count=None)`          | Runs `count` instructions, or `gap` when `count` is left out                                                                                                     |
-| `elapsed(master_clocks)`    | Runs as many instructions as the part executes in that many console master clocks. Returns the part                                                              |
-| `waited()`                  | Steps until the part asks, up to `patience` instructions. True when it asked                                                                                     |
-| `settle()`                  | `waited()`, raising `NeverReady` when the part never asked                                                                                                       |
-| `reset()`                   | Rebuilds the processor, reloads the same image bytes and boots again. Returns the part                                                                           |
+| Call                        | Effect                                                                                                                                                                                           |
+| :-------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `write(value)`              | One byte into the data port, then `gap` instructions                                                                                                                                             |
+| `read()`                    | Reads one byte from the data port as it stands, whether or not the part is asking, then runs `gap` instructions. A console does not wait, and a driver that must polls the status register first |
+| `write_word(word)`          | Writes the low byte and then the high byte one console bus cycle later, `bus_cycle` instructions, then runs `gap`: one 16-bit store                                                              |
+| `read_word()`               | Reads the low byte and then the high byte one bus cycle later, then runs `gap`, and returns the word: one 16-bit load                                                                            |
+| `read_status()`             | The status register. Bit 7 is RQM, set while the part asks for the next byte                                                                                                                     |
+| `write_bus(address, value)` | `write(value)` when `address` falls in the data range of either window, a write to the read-only status port when it falls in the status range. Returns the part                                 |
+| `read_bus(address)`         | `read()` in the data range of either window, `read_status()` in the status range                                                                                                                 |
+| `step(count=None)`          | Runs `count` instructions, or `gap` when `count` is left out                                                                                                                                     |
+| `elapsed(master_clocks)`    | Runs as many instructions as the part executes in that many console master clocks. Returns the part                                                                                              |
+| `waited()`                  | Steps until the part asks, up to `patience` instructions. True when it asked                                                                                                                     |
+| `settle()`                  | `waited()`, raising `NeverReady` when the part never asked                                                                                                                                       |
+| `reset()`                   | Rebuilds the processor, reloads the same image bytes and boots again. Returns the part                                                                                                           |
 
 ### State
 
-| Attribute         | Meaning                                                                                |
-| :---------------- | :------------------------------------------------------------------------------------- |
-| `model`, `part`   | The canonical model name                                                               |
-| `identity`        | The image's `Identity`: `part`, `processor`, `revision`, `program_words`, `data_words` |
-| `processor`       | The processor the image runs on, `upd7725` for every part here                         |
-| `asking`          | True while RQM is set                                                                  |
-| `pending_output`  | 1 while the part asks, else 0                                                          |
-| `clock`           | The part's clock in Hz                                                                 |
-| `gap`, `patience` | The two options above, writable                                                        |
-| `core`            | The `upd7725` processor running the image                                              |
-| `console`         | The processor's host port the calls above go through                                   |
+| Attribute         | Meaning                                                                                                                |
+| :---------------- | :--------------------------------------------------------------------------------------------------------------------- |
+| `model`, `part`   | The canonical model name                                                                                               |
+| `identity`        | The image's `Identity`: `part`, `processor`, `revision`, `program_words`, `data_words`                                 |
+| `processor`       | The processor the image runs on, `upd7725` for every part here                                                         |
+| `asking`          | True while RQM is set                                                                                                  |
+| `pending_output`  | 1 while the part asks, else 0                                                                                          |
+| `clock`           | The part's clock in Hz                                                                                                 |
+| `gap`, `patience` | The two options above, writable                                                                                        |
+| `bus_cycle`       | Instructions the part runs in one console bus cycle, 2, which is how far apart the two bytes of a 16-bit access arrive |
+| `core`            | The `upd7725` processor running the image                                                                              |
+| `console`         | The processor's host port the calls above go through                                                                   |
 
 ### Module contents
 
@@ -250,7 +253,7 @@ certutil -hashfile firmware\dsp1.bin SHA256     # Windows
 
 A console reaches the part through an address, in one of the two windows Figures 3-1-4 and 3-1-5 of Nintendo's Book II print. Under Mode 20 the part answers in banks `$30` to `$3F` and `$B0` to `$BF`, data from `$8000` and status from `$C000` to `$FFFF`, so address line 14 picks the port. Under Mode 21 it answers in banks `$00` to `$0F` and `$80` to `$8F`, data from `$6000` and status from `$7000` to `$7FFF`, so line 12 picks it. Both figures mark the status register read only. An address in neither window raises `NotDecoded`.
 
-The part runs one instruction per clock at 7,600,000 Hz. The console counts master clocks at 21,477,273 Hz and spends 8 of them on a slow cartridge access. A 65816 store to a long address takes 5 cycles, so the least a console can leave the part between two accesses is 40 master clocks, which is 14 instructions. That is the default `gap`. A console that spent longer says so with `elapsed`.
+The part runs one instruction per clock at 7,600,000 Hz. The console counts master clocks at 21,477,273 Hz and spends 8 of them on a slow cartridge access. A 65816 store to a long address takes 5 cycles, so the least a console can leave the part between two accesses is 40 master clocks, which is 14 instructions. That is the default `gap`. A console that spent longer says so with `elapsed`. The two bytes of one 16-bit access arrive on consecutive bus cycles, 8 master clocks apart, so `write_word` and `read_word` leave the part 2 instructions between them rather than a whole `gap`.
 
 ```python
 import snesdsp

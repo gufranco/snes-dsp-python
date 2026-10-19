@@ -114,13 +114,32 @@ def drive(
     said: list[list[int]] = []
     for step in steps:
         if step.what == WRITE:
-            for byte in next(giving):
-                part.write(byte)
+            written(part, next(giving))
         elif step.what == READ:
-            said.append([part.read() for _ in range(step.width)])
+            said.append(taken(part, step.width))
         else:
+            waited = getattr(part, "waited", None)
+            if callable(waited):
+                waited()
             said.append([part.read_status() for _ in range(step.width)])
     return said
+
+
+def written(part: Watched, held: Sequence[int]) -> None:
+    word = getattr(part, "write_word", None)
+    if len(held) == WIDTHS[1] and callable(word):
+        word(held[0] | held[1] << 8)
+        return
+    for byte in held:
+        part.write(byte)
+
+
+def taken(part: Watched, width: int) -> list[int]:
+    word = getattr(part, "read_word", None)
+    if width == WIDTHS[1] and callable(word):
+        found = int(word())
+        return [found & 0xFF, found >> 8]
+    return [part.read() for _ in range(width)]
 
 
 def rolls(seed: int = DEFAULT_SEED) -> random.Random:

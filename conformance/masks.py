@@ -101,7 +101,14 @@ def answer(
     for word in arguments:
         chip.write(word & 0xFF)
         chip.write((word >> 8) & 0xFF)
-    return bytes(chip.read() for _ in range(reads))
+    return bytes(polled(chip) for _ in range(reads))
+
+
+def polled(chip: Driven) -> int:
+    waited = getattr(chip, "waited", None)
+    if callable(waited):
+        waited()
+    return chip.read()
 
 
 def first_difference(first: bytes, second: bytes) -> int:

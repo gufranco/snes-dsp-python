@@ -22,3 +22,6 @@ def steps_for(master_clocks: int, clock: int = DSP_CLOCK, master: int = MASTER_C
 
 
 GAP = steps_for(LONG_STORE_CYCLES * SLOW_ACCESS)
+
+
+BUS_CYCLE = steps_for(SLOW_ACCESS)

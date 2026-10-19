@@ -29,15 +29,16 @@ interface appears here.
 every member of the family takes first, and the name is the kind rather than the
 chip so a traceback says what sort of thing it was.
 
-| Call                                            | What it does                                                     |
-| :---------------------------------------------- | :--------------------------------------------------------------- |
-| `write(byte)`                                   | One byte into the data port                                      |
-| `read()`                                        | One byte out of the data port                                    |
-| `read_status()`                                 | The status register, whose top bit is whether the part is asking |
-| `write_bus(address, byte)`, `read_bus(address)` | The same two, addressed the way a console addresses them         |
-| `elapsed(master_clocks)`                        | Run the part for as long as the console spent                    |
-| `step(count)`                                   | Run the part for a number of its own steps                       |
-| `reset()`                                       | Back to power on with the same program, handed back for chaining |
+| Call                                            | What it does                                                      |
+| :---------------------------------------------- | :---------------------------------------------------------------- |
+| `write(byte)`                                   | One byte into the data port                                       |
+| `read()`                                        | One byte out of the data port, read as it stands: no wait for RQM |
+| `write_word(word)`, `read_word()`               | One 16-bit access: two bytes one console bus cycle apart          |
+| `read_status()`                                 | The status register, whose top bit is whether the part is asking  |
+| `write_bus(address, byte)`, `read_bus(address)` | The same two, addressed the way a console addresses them          |
+| `elapsed(master_clocks)`                        | Run the part for as long as the console spent                     |
+| `step(count)`                                   | Run the part for a number of its own steps                        |
+| `reset()`                                       | Back to power on with the same program, handed back for chaining  |
 
 ## The authority ladder
 

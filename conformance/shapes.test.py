@@ -312,5 +312,54 @@ class DriveTest(unittest.TestCase):
         self.assertEqual(shapes.drive(part, shapes.parse("write1"), [[0]]), [])
 
 
+class Console(Recorder):
+    def __init__(self, answers: Any = None) -> None:
+        super().__init__(answers)
+        self.calls: list[str] = []
+
+    def write_word(self, word: int) -> None:
+        self.calls.append(f"write_word {word:#06x}")
+
+    def read_word(self) -> int:
+        self.calls.append("read_word")
+        return 0xBEEF
+
+    def waited(self) -> bool:
+        self.calls.append("waited")
+        return True
+
+
+class WordTest(unittest.TestCase):
+    def test_a_word_is_written_as_one_access_low_byte_first(self) -> None:
+        # Arrange
+        part = Console()
+
+        # Act
+        shapes.drive(part, shapes.parse("write1 write2"), [[0x11], [0x22, 0x33]])
+
+        # Assert
+        self.assertEqual((part.given, part.calls), ([0x11], ["write_word 0x3322"]))
+
+    def test_and_read_as_one_access(self) -> None:
+        # Arrange
+        part = Console([7])
+
+        # Act
+        said = shapes.drive(part, shapes.parse("write1 read1 read2"), [[0]])
+
+        # Assert
+        self.assertEqual((said, part.calls), ([[7], [0xEF, 0xBE]], ["read_word"]))
+
+    def test_a_poll_waits_for_the_part_the_way_a_driver_s_loop_does(self) -> None:
+        # Arrange
+        part = Console()
+
+        # Act
+        said = shapes.drive(part, shapes.parse("write1 poll2"), [[0]])
+
+        # Assert
+        self.assertEqual((said, part.calls, part.polls), ([[0x80, 0x80]], ["waited"], 2))
+
+
 if __name__ == "__main__":
     unittest.main()

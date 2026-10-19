@@ -46,9 +46,18 @@ number.
 figure, and the NEC data sheet describes the part rather than the board it sits
 on.
 
-**What this project follows.** A floor derived from what one store to a long
-address costs on the console's processor, which is the shortest gap a driver
-could produce even if it tried.
+**What this project follows.** Between two accesses, a floor derived from what
+one store to a long address costs on the console's processor, which is the
+shortest gap a driver could produce even if it tried. Within one 16-bit access,
+one bus cycle: the 65816 core in mos65xx-python puts the two bytes of
+`sta $3F8000` on consecutive cycles, to `$3F:8000` and `$3F:8001`, and Book I's
+Figure 2-21-1 makes each of those cycles 8 master clocks, which is 2 of the
+part's instructions. Until 2026-10-19 the replay gave each byte of a word the
+whole floor.
+
+A read takes what the data register holds, whether or not the part is asking,
+because a console does not wait; a shape's poll is where a driver waits, and the
+replay waits there.
 
 **Why.** It is a bound rather than a measurement, and a bound is the honest shape
 for a figure nobody printed. A driver that leaves more time than the floor is
@@ -56,7 +65,9 @@ served correctly by it; one that leaves less does not exist, because the
 instruction that writes the port takes at least that long.
 
 **What would settle or reopen it.** A capture of a real cartridge's accesses with
-timestamps, or a Nintendo document naming a minimum.
+timestamps, or shapes that carry the 65816 cycles each driver spends between
+two accesses, which snes-driver-python's walk could count and does not yet
+record.
 
 ### How long an image spends booting before it will answer.
 

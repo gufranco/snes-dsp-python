@@ -97,6 +97,32 @@ class _Fixed:
         return 0x33
 
 
+class _Polled(_Fixed):
+    def __init__(self, part: str) -> None:
+        super().__init__(part, None)
+        self.waits = 0
+
+    def waited(self) -> bool:
+        self.waits += 1
+        return True
+
+
+class PolledTest(unittest.TestCase):
+    def test_every_answer_byte_is_read_after_the_part_asks_the_way_a_driver_polls(self) -> None:
+        # Arrange
+        built: list[_Polled] = []
+
+        def build(part: str) -> _Polled:
+            built.append(_Polled(part))
+            return built[-1]
+
+        # Act
+        found = masks.answer(build, "dsp1", 0x00, (1, 2), reads=3)
+
+        # Assert
+        self.assertEqual((found, built[0].waits), (bytes([0x33, 0x33, 0x33]), 3))
+
+
 class CheckTest(unittest.TestCase):
     def _build(self, first: int = 0x11, second: int = 0x22) -> Any:
         def build(part: str) -> Any:

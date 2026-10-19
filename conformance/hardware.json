@@ -124,11 +124,21 @@
         "snesdsp/port.test.py::BusTest.test_every_bank_of_each_window_and_its_mirror_reaches_the_part"
       ],
       "source": "developmentManualBookIIScan"
+    },
+    "wordAccessBusCycle": {
+      "value": 2,
+      "verified": false,
+      "derivation": "The 65816 core in mos65xx-python, held to WDC's data sheet in that member, writes the two bytes of a 16-bit sta $3F8000 on consecutive bus cycles, to 3F8000 and 3F8001. Book I's Figure 2-21-1, recorded in snes-mapper-python, makes an access at 8000 and up in banks 30 to 3F, and at 6000 to 7FFF in banks 00 to 3F, run at 2.68 MHz, 8 master clocks. 8 master clocks of 21477273 Hz at 7600000 Hz is 2.83 of the part's instructions, rounded down to 2.",
+      "why": "Unverified because the part's clock, 7.6 MHz, is itself unverified, and because banks B0 to BF may run at 3.58 MHz on a cartridge that asks for it, which is 6 master clocks and still 2 instructions.",
+      "howToSettleIt": "A logic analyser on a cartridge edge connector during a 16-bit store to the part.",
+      "heldBy": [
+        "snesdsp/port.test.py::WordTest.test_the_two_bytes_of_a_word_are_one_bus_cycle_apart"
+      ]
     }
   },
   "notStated": [
     "The crystal on any cartridge board. No manufacturer document on this machine carries one.",
-    "How many of its own instructions a driver puts between two accesses. That is a property of each game, and the floor used here comes from what one store to a long address costs rather than from any document.",
+    "How many of its own instructions a driver puts between two accesses. That is a property of each game, and the floor used here comes from what one store to a long address costs rather than from any document. Within one 16-bit access the two bytes are one bus cycle apart, which follows from the processor and the bus speed rather than from the game.",
     "Where a board decodes the part for anything Book II's two figures do not show. The two windows and the address line that picks the status register are printed; whether a write to the status register, which both figures mark read only, does anything on a real board is not.",
     "The boot handshake. How long an image spends setting itself up before it will answer is a property of each image, and the limit used here is a bound rather than a documented figure."
   ],
