@@ -28,15 +28,15 @@ interface appears here.
 every member of the family takes first, and the name is the kind rather than the
 chip so a traceback says what sort of thing it was.
 
-| Call | What it does |
-|:--|:--|
-| `write(byte)` | One byte into the data port |
-| `read()` | One byte out of the data port |
-| `read_status()` | The status register, whose top bit is whether the part is asking |
-| `write_bus(address, byte)`, `read_bus(address)` | The same two, addressed the way a console addresses them |
-| `elapsed(master_clocks)` | Run the part for as long as the console spent |
-| `step(count)` | Run the part for a number of its own steps |
-| `reset()` | Back to power on with the same program, handed back for chaining |
+| Call                                            | What it does                                                     |
+| :---------------------------------------------- | :--------------------------------------------------------------- |
+| `write(byte)`                                   | One byte into the data port                                      |
+| `read()`                                        | One byte out of the data port                                    |
+| `read_status()`                                 | The status register, whose top bit is whether the part is asking |
+| `write_bus(address, byte)`, `read_bus(address)` | The same two, addressed the way a console addresses them         |
+| `elapsed(master_clocks)`                        | Run the part for as long as the console spent                    |
+| `step(count)`                                   | Run the part for a number of its own steps                       |
+| `reset()`                                       | Back to power on with the same program, handed back for chaining |
 
 ## The authority ladder
 
@@ -190,6 +190,21 @@ their reasons live here:
   building a part needs a file this repository does not carry, so on a runner
   without it the family tests that build one are skipped.
 
+The formatter's ignores in [`.prettierignore`](.prettierignore) carry no
+comments either, so their reasons live here:
+
+- `pnpm-lock.yaml` and `package-lock.json`: the package manager writes them, in
+  its own layout, on every install.
+- `node_modules/`, `.venv/`, `venv/`, `build/`, `dist/` and `*.egg-info/`:
+  installed or built, never written by hand.
+- `.coverage`, `coverage.json`, `htmlcov/` and the tool caches: the output of a
+  run, never committed.
+- `docs/`, `specs/`, `.work/` and `.claude/`: local working material, never
+  committed.
+- `nec-upd7725-96050-python/` and `snes-driver-python/`: submodules. Each is a
+  member that formats and checks itself, and the commit pinned here is not this
+  repository's to change.
+
 ## Layout
 
 ```text
@@ -238,6 +253,7 @@ nec-upd7725-96050-python/  the processor all of these are, as a submodule at the
   ```
 
   Change one and change the other two in the same task.
+
 - **The submodule is not optional.** Without it nothing here can run, and the
   refusal says so rather than falling back to a guess.
 - **A part cannot be built without an image.** `Chip("dsp1")` raises `NoFirmware`

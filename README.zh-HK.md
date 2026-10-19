@@ -30,11 +30,11 @@ print(part, part.model, part.identity.part)
 
 ## 安裝
 
-| 要求 | 版本 |
-|:--|:--|
-| Python | 3.12 或更新版本 |
-| git | 任何版本，用於取得子模組 |
-| 微碼 | 你擁有的每個想執行的映像檔副本，列於[你提供的微碼](#the-microcode-you-supply) |
+| 要求   | 版本                                                                          |
+| :----- | :---------------------------------------------------------------------------- |
+| Python | 3.12 或更新版本                                                               |
+| git    | 任何版本，用於取得子模組                                                      |
+| 微碼   | 你擁有的每個想執行的映像檔副本，列於[你提供的微碼](#the-microcode-you-supply) |
 
 ```bash
 git clone --recurse-submodules https://github.com/gufranco/snes-dsp-python.git
@@ -58,75 +58,75 @@ python3 snesdsp/doctor.py
 
 `snesdsp.Chip(model, **options)` 建立一款晶片並將其啟動。`model` 為必填，比對時不區分大小寫、連字號或底線。只有映像檔存在時才會建立晶片：沒有後備方案，無法建立的晶片會引發 `NoFirmware`。
 
-| 選項 | 預設值 | 意義 |
-|:--|:--|:--|
-| `gap` | `14` | 每次存取後晶片執行的指令數，即主機最少會留給它的數量 |
-| `patience` | `400000` | 讀取時等待晶片發出請求的指令數，超過後照樣讀取 |
-| `boot` | `20000` | 載入後、首次存取前執行的指令數 |
-| `fill` | `0` | 載入映像檔前處理器記憶體所持有的值 |
-| `image` | 無 | 映像檔的位元組，直接傳入，因此不搜尋任何目錄。需要 `identity` |
-| `identity` | 無 | `image` 是甚麼，即 `snesdsp.identify(image)` 傳回的值 |
-| `images` | 無 | 由晶片名稱對應到 `(identity, path)` 的映射，取代目錄搜尋 |
+| 選項       | 預設值   | 意義                                                          |
+| :--------- | :------- | :------------------------------------------------------------ |
+| `gap`      | `14`     | 每次存取後晶片執行的指令數，即主機最少會留給它的數量          |
+| `patience` | `400000` | 讀取時等待晶片發出請求的指令數，超過後照樣讀取                |
+| `boot`     | `20000`  | 載入後、首次存取前執行的指令數                                |
+| `fill`     | `0`      | 載入映像檔前處理器記憶體所持有的值                            |
+| `image`    | 無       | 映像檔的位元組，直接傳入，因此不搜尋任何目錄。需要 `identity` |
+| `identity` | 無       | `image` 是甚麼，即 `snesdsp.identify(image)` 傳回的值         |
+| `images`   | 無       | 由晶片名稱對應到 `(identity, path)` 的映射，取代目錄搜尋      |
 
 ### 型號
 
-| 型號 | 別名 | 執行的映像檔 | 程式的功能 |
-|:--|:--|:--|:--|
-| `dsp1` | `dsp-1`, `upd77c25dsp1`, `nintendodsp1` | `dsp1` | 31 個定點 3D 數學命令：一部攝影機、三個姿態矩陣、投影及旋轉 |
-| `dsp1a` | `dsp-1a`, `upd77c25dsp1a`, `nintendodsp1a` | `dsp1` | 在較小晶粒上的 DSP-1 程式及數據 ROM |
-| `dsp1b` | `dsp-1b`, `upd77c25dsp1b`, `nintendodsp1b` | `dsp1b` | 最後一版 DSP-1 光罩，31 個命令，修正了一個算術錯誤 |
-| `dsp2` | `dsp-2`, `upd77c25dsp2`, `nintendodsp2` | `dsp2` | 6 個命令：圖塊轉換、透明色、合併、鏡像、乘法及重新縮放 |
-| `dsp3` | `dsp-3`, `upd77c25dsp3`, `nintendodsp3` | `dsp3` | 13 個命令：一個解壓器、一個位元平面轉換器，以及在六角網格上的搜尋 |
-| `dsp4` | `dsp-4`, `upd77c25dsp4`, `nintendodsp4` | `dsp4` | 15 個命令，其中 7 個是道路渲染器，會在中途暫停並其後恢復 |
+| 型號    | 別名                                       | 執行的映像檔 | 程式的功能                                                        |
+| :------ | :----------------------------------------- | :----------- | :---------------------------------------------------------------- |
+| `dsp1`  | `dsp-1`, `upd77c25dsp1`, `nintendodsp1`    | `dsp1`       | 31 個定點 3D 數學命令：一部攝影機、三個姿態矩陣、投影及旋轉       |
+| `dsp1a` | `dsp-1a`, `upd77c25dsp1a`, `nintendodsp1a` | `dsp1`       | 在較小晶粒上的 DSP-1 程式及數據 ROM                               |
+| `dsp1b` | `dsp-1b`, `upd77c25dsp1b`, `nintendodsp1b` | `dsp1b`      | 最後一版 DSP-1 光罩，31 個命令，修正了一個算術錯誤                |
+| `dsp2`  | `dsp-2`, `upd77c25dsp2`, `nintendodsp2`    | `dsp2`       | 6 個命令：圖塊轉換、透明色、合併、鏡像、乘法及重新縮放            |
+| `dsp3`  | `dsp-3`, `upd77c25dsp3`, `nintendodsp3`    | `dsp3`       | 13 個命令：一個解壓器、一個位元平面轉換器，以及在六角網格上的搜尋 |
+| `dsp4`  | `dsp-4`, `upd77c25dsp4`, `nintendodsp4`    | `dsp4`       | 15 個命令，其中 7 個是道路渲染器，會在中途暫停並其後恢復          |
 
 ### 呼叫
 
-| 呼叫 | 效果 |
-|:--|:--|
-| `write(value)` | 向數據埠寫入一個位元組，然後執行 `gap` 條指令 |
-| `read()` | 最多等待 `patience` 條指令讓晶片發出請求，從數據埠讀取一個位元組，然後執行 `gap` 條指令 |
-| `read_status()` | 狀態暫存器。第 7 位元是 RQM，在晶片請求下一個位元組期間設定 |
-| `write_bus(address, value)` | `address` 的第 0 位元為 0 時執行 `write(value)`，為 1 時寫入狀態埠。傳回該晶片 |
-| `read_bus(address)` | `address` 的第 0 位元為 0 時執行 `read()`，為 1 時執行 `read_status()` |
-| `step(count=None)` | 執行 `count` 條指令，省略 `count` 時執行 `gap` 條 |
-| `elapsed(master_clocks)` | 執行晶片在該數量的主機主時鐘內所執行的指令數。傳回該晶片 |
-| `waited()` | 逐步執行直至晶片發出請求，最多 `patience` 條指令。晶片發出請求時為 True |
-| `settle()` | `waited()`，晶片始終沒有發出請求時引發 `NeverReady` |
-| `reset()` | 重建處理器，重新載入相同的映像檔位元組並再次啟動。傳回該晶片 |
+| 呼叫                        | 效果                                                                                    |
+| :-------------------------- | :-------------------------------------------------------------------------------------- |
+| `write(value)`              | 向數據埠寫入一個位元組，然後執行 `gap` 條指令                                           |
+| `read()`                    | 最多等待 `patience` 條指令讓晶片發出請求，從數據埠讀取一個位元組，然後執行 `gap` 條指令 |
+| `read_status()`             | 狀態暫存器。第 7 位元是 RQM，在晶片請求下一個位元組期間設定                             |
+| `write_bus(address, value)` | `address` 的第 0 位元為 0 時執行 `write(value)`，為 1 時寫入狀態埠。傳回該晶片          |
+| `read_bus(address)`         | `address` 的第 0 位元為 0 時執行 `read()`，為 1 時執行 `read_status()`                  |
+| `step(count=None)`          | 執行 `count` 條指令，省略 `count` 時執行 `gap` 條                                       |
+| `elapsed(master_clocks)`    | 執行晶片在該數量的主機主時鐘內所執行的指令數。傳回該晶片                                |
+| `waited()`                  | 逐步執行直至晶片發出請求，最多 `patience` 條指令。晶片發出請求時為 True                 |
+| `settle()`                  | `waited()`，晶片始終沒有發出請求時引發 `NeverReady`                                     |
+| `reset()`                   | 重建處理器，重新載入相同的映像檔位元組並再次啟動。傳回該晶片                            |
 
 ### 狀態
 
-| 屬性 | 意義 |
-|:--|:--|
-| `model`, `part` | 標準型號名稱 |
-| `identity` | 映像檔的 `Identity`：`part`、`processor`、`revision`、`program_words`、`data_words` |
-| `processor` | 映像檔執行所在的處理器，這裏每款晶片都是 `upd7725` |
-| `asking` | RQM 設定期間為 True |
-| `pending_output` | 晶片發出請求時為 1，否則為 0 |
-| `clock` | 晶片的時鐘，單位為 Hz |
-| `gap`, `patience` | 上述兩個選項，可寫入 |
-| `core` | 執行映像檔的 `upd7725` 處理器 |
-| `console` | 上述呼叫所經過的處理器主機埠 |
+| 屬性              | 意義                                                                                |
+| :---------------- | :---------------------------------------------------------------------------------- |
+| `model`, `part`   | 標準型號名稱                                                                        |
+| `identity`        | 映像檔的 `Identity`：`part`、`processor`、`revision`、`program_words`、`data_words` |
+| `processor`       | 映像檔執行所在的處理器，這裏每款晶片都是 `upd7725`                                  |
+| `asking`          | RQM 設定期間為 True                                                                 |
+| `pending_output`  | 晶片發出請求時為 1，否則為 0                                                        |
+| `clock`           | 晶片的時鐘，單位為 Hz                                                               |
+| `gap`, `patience` | 上述兩個選項，可寫入                                                                |
+| `core`            | 執行映像檔的 `upd7725` 處理器                                                       |
+| `console`         | 上述呼叫所經過的處理器主機埠                                                        |
 
 ### 模組內容
 
-| 名稱 | 內容 |
-|:--|:--|
-| `snesdsp.MODELS` | 六個 `Model` 記錄，以標準名稱為鍵。每個記錄都有 `name`、`aliases`、`summary` 及 `image` |
-| `snesdsp.Model` | 這些記錄的型別 |
-| `snesdsp.SHARES_MICROCODE` | `{"dsp1a": "dsp1"}`，唯一執行另一款晶片映像檔的晶片 |
-| `snesdsp.available(held=None)` | 映像檔位於本機的晶片，以晶片名稱對應到 `(identity, path)` 的映射表示。傳入形狀相同的映射 `held` 時，會讀取它而不進行搜尋 |
-| `snesdsp.why_not(held=None)` | 至少有一款晶片可以建立時為 `None`，否則為說明為何一款都無法建立的句子。接受同樣的 `held` |
-| `snesdsp.MASTER_CLOCK` | `21477273`，主機的主時鐘，單位為 Hz，是 NTSC 色彩副載波的六倍 |
-| `snesdsp.DSP_CLOCK` | `7600000`，晶片的時鐘，單位為 Hz，每個時鐘一條指令 |
-| `snesdsp.GAP` | `14`，`gap` 的預設值 |
-| `snesdsp.clock_of(model)` | 該型號的時鐘，單位為 Hz。名稱未知時引發 `UnknownModelError` |
-| `snesdsp.steps_for(master_clocks, clock=DSP_CLOCK, master=MASTER_CLOCK)` | 在該數量的主時鐘內執行的指令數，向下取整 |
-| `snesdsp.__version__` | 已安裝的版本 |
-| `snesdsp.identify(image, catalogue=None)` | 映像檔的 `Identity`，按 SHA-256 在清單或形狀相同的映射 `catalogue` 中尋找。會引發 `Unrecognised` 或 `Corrupt` |
-| `snesdsp.digests_of(image)` | 映像檔的 CRC32、MD5、SHA-1 及 SHA-256，以 `crc32`、`md5`、`sha1` 及 `sha256` 為鍵的小寫十六進位 |
-| `snesdsp.directories(environment=None)` | 搜尋按次序讀取的目錄，取自 `environment` 或程序的環境變數 |
-| `snesdsp.search(places=None, catalogue=None)` | 在 `places` 或 `directories()` 中找到的每個映像檔，以 `(identity, path)` 配對列出，每款晶片以最先找到的檔案為準 |
+| 名稱                                                                     | 內容                                                                                                                     |
+| :----------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------- |
+| `snesdsp.MODELS`                                                         | 六個 `Model` 記錄，以標準名稱為鍵。每個記錄都有 `name`、`aliases`、`summary` 及 `image`                                  |
+| `snesdsp.Model`                                                          | 這些記錄的型別                                                                                                           |
+| `snesdsp.SHARES_MICROCODE`                                               | `{"dsp1a": "dsp1"}`，唯一執行另一款晶片映像檔的晶片                                                                      |
+| `snesdsp.available(held=None)`                                           | 映像檔位於本機的晶片，以晶片名稱對應到 `(identity, path)` 的映射表示。傳入形狀相同的映射 `held` 時，會讀取它而不進行搜尋 |
+| `snesdsp.why_not(held=None)`                                             | 至少有一款晶片可以建立時為 `None`，否則為說明為何一款都無法建立的句子。接受同樣的 `held`                                 |
+| `snesdsp.MASTER_CLOCK`                                                   | `21477273`，主機的主時鐘，單位為 Hz，是 NTSC 色彩副載波的六倍                                                            |
+| `snesdsp.DSP_CLOCK`                                                      | `7600000`，晶片的時鐘，單位為 Hz，每個時鐘一條指令                                                                       |
+| `snesdsp.GAP`                                                            | `14`，`gap` 的預設值                                                                                                     |
+| `snesdsp.clock_of(model)`                                                | 該型號的時鐘，單位為 Hz。名稱未知時引發 `UnknownModelError`                                                              |
+| `snesdsp.steps_for(master_clocks, clock=DSP_CLOCK, master=MASTER_CLOCK)` | 在該數量的主時鐘內執行的指令數，向下取整                                                                                 |
+| `snesdsp.__version__`                                                    | 已安裝的版本                                                                                                             |
+| `snesdsp.identify(image, catalogue=None)`                                | 映像檔的 `Identity`，按 SHA-256 在清單或形狀相同的映射 `catalogue` 中尋找。會引發 `Unrecognised` 或 `Corrupt`            |
+| `snesdsp.digests_of(image)`                                              | 映像檔的 CRC32、MD5、SHA-1 及 SHA-256，以 `crc32`、`md5`、`sha1` 及 `sha256` 為鍵的小寫十六進位                          |
+| `snesdsp.directories(environment=None)`                                  | 搜尋按次序讀取的目錄，取自 `environment` 或程序的環境變數                                                                |
+| `snesdsp.search(places=None, catalogue=None)`                            | 在 `places` 或 `directories()` 中找到的每個映像檔，以 `(identity, path)` 配對列出，每款晶片以最先找到的檔案為準          |
 
 ```python
 import snesdsp
@@ -163,14 +163,14 @@ no model was named, and this package will not choose one for you. Name one of: d
 
 ### 錯誤
 
-| 錯誤 | 引發時機 |
-|:--|:--|
-| `UnknownModelError` | 缺少型號名稱，或沒有型號使用該名稱。訊息會列出每個型號 |
-| `NoFirmware` | 處理器子模組未簽出、找不到該晶片的映像檔，或傳入了 `image` 但沒有 `identity` |
-| `NeverReady` | `settle()` 執行了 `patience` 條指令，晶片始終沒有發出請求 |
-| `Unrecognised` | 傳給 `snesdsp.identify` 的位元組，其 SHA-256 與清單中任何映像檔都不符。訊息會說明該檔案最可能是甚麼 |
-| `Corrupt` | 映像檔的 SHA-256 相符，但與清單記錄的另一個摘要不符 |
-| `WrongShape` | `image` 的長度不是其 `identity` 所需的長度：每個程式字 3 個位元組，每個數據字 2 個位元組 |
+| 錯誤                | 引發時機                                                                                            |
+| :------------------ | :-------------------------------------------------------------------------------------------------- |
+| `UnknownModelError` | 缺少型號名稱，或沒有型號使用該名稱。訊息會列出每個型號                                              |
+| `NoFirmware`        | 處理器子模組未簽出、找不到該晶片的映像檔，或傳入了 `image` 但沒有 `identity`                        |
+| `NeverReady`        | `settle()` 執行了 `patience` 條指令，晶片始終沒有發出請求                                           |
+| `Unrecognised`      | 傳給 `snesdsp.identify` 的位元組，其 SHA-256 與清單中任何映像檔都不符。訊息會說明該檔案最可能是甚麼 |
+| `Corrupt`           | 映像檔的 SHA-256 相符，但與清單記錄的另一個摘要不符                                                 |
+| `WrongShape`        | `image` 的長度不是其 `identity` 所需的長度：每個程式字 3 個位元組，每個數據字 2 個位元組            |
 
 ```python
 from pathlib import Path
@@ -222,13 +222,13 @@ dsp1 did not ask for attention within 0 instructions
 
 本儲存庫不附帶微碼，不會下載微碼，也不提供連結。每個映像檔在其任何一個位元組執行前，都會先以 SHA-256 識別。[`snesdsp/artifacts.manifest.json`](snesdsp/artifacts.manifest.json) 存放各個摘要。
 
-| 映像檔 | 執行它的晶片 | 位元組 | CRC32 | SHA-256 |
-|:--|:--|--:|:--|:--|
-| `dsp1` | `dsp1`, `dsp1a` | 8,192 | `27124599` | `5f2e5ed06b362be023b978b5978813ecb9a07c76592454b45c2a1ed17a0de349` |
-| `dsp1b` | `dsp1b` | 8,192 | `588279b4` | `4d42db0f36faef263d6b93f508e8c1c4ae8fc2605fd35e3390ecc02905cd420c` |
-| `dsp2` | `dsp2` | 8,192 | `f0221c90` | `5efbdf96ed0652790855225964f3e90e6a4d466cfa64df25b110933c6cf94ea1` |
-| `dsp3` | `dsp3` | 8,192 | `e3b54e6a` | `2e635f72e4d4681148bc35429421c9b946e4f407590e74e31b93b8987b63ba90` |
-| `dsp4` | `dsp4` | 8,192 | `ca09e176` | `63ede17322541c191ed1fdf683872554a0a57306496afc43c59de7c01a6e764a` |
+| 映像檔  | 執行它的晶片    | 位元組 | CRC32      | SHA-256                                                            |
+| :------ | :-------------- | -----: | :--------- | :----------------------------------------------------------------- |
+| `dsp1`  | `dsp1`, `dsp1a` |  8,192 | `27124599` | `5f2e5ed06b362be023b978b5978813ecb9a07c76592454b45c2a1ed17a0de349` |
+| `dsp1b` | `dsp1b`         |  8,192 | `588279b4` | `4d42db0f36faef263d6b93f508e8c1c4ae8fc2605fd35e3390ecc02905cd420c` |
+| `dsp2`  | `dsp2`          |  8,192 | `f0221c90` | `5efbdf96ed0652790855225964f3e90e6a4d466cfa64df25b110933c6cf94ea1` |
+| `dsp3`  | `dsp3`          |  8,192 | `e3b54e6a` | `2e635f72e4d4681148bc35429421c9b946e4f407590e74e31b93b8987b63ba90` |
+| `dsp4`  | `dsp4`          |  8,192 | `ca09e176` | `63ede17322541c191ed1fdf683872554a0a57306496afc43c59de7c01a6e764a` |
 
 搜尋會依序從以下目錄讀取以 `.bin` 或 `.rom` 結尾的檔案，每款晶片以最先找到的檔案為準：
 
@@ -403,17 +403,17 @@ print([hex(part.read()) for _ in range(6)])
 
 命令計算出甚麼，就是程式的答案，因此這裏的檢查涵蓋程式以外的一切：埠、節奏、每個映像檔的身分，以及真實遊戲進行的交換。
 
-| 檢查 | 命令 | 需要映像檔 |
-|:--|:--|:--:|
-| 處理器，逐條指令 | 位於 [nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python) | 否 |
-| 埠、節奏、狀態暫存器及匯流排解碼 | 每個模組旁的單元測試 | 否 |
-| 每個型號、別名及映像檔，以及每個映像檔都有一個決定性的摘要 | 每個模組旁的單元測試 | 否 |
-| 卡帶進行的每次交換都得到回答 | `python3 -m conformance.against_cartridges <part>` | 是 |
-| 每款晶片的回答仍與擷取語料庫時相同 | `python3 -m conformance.answers` | 是 |
-| DSP-1 及 DSP-1B 映像檔仍在當初發現分歧之處出現分歧 | `python3 -m conformance.masks` | 是 |
-| 沒有任何隨附微碼令返回堆疊超過 4 層 | `python3 -m conformance.stack` | 是 |
-| README 的每個範例都輸出其所述的內容 | `python3 -m conformance.documented` | 是 |
-| 逐步執行保持在每秒 150,000 條指令以上 | `python3 -m conformance.speed` | 是 |
+| 檢查                                                       | 命令                                                                                  | 需要映像檔 |
+| :--------------------------------------------------------- | :------------------------------------------------------------------------------------ | :--------: |
+| 處理器，逐條指令                                           | 位於 [nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python) |     否     |
+| 埠、節奏、狀態暫存器及匯流排解碼                           | 每個模組旁的單元測試                                                                  |     否     |
+| 每個型號、別名及映像檔，以及每個映像檔都有一個決定性的摘要 | 每個模組旁的單元測試                                                                  |     否     |
+| 卡帶進行的每次交換都得到回答                               | `python3 -m conformance.against_cartridges <part>`                                    |     是     |
+| 每款晶片的回答仍與擷取語料庫時相同                         | `python3 -m conformance.answers`                                                      |     是     |
+| DSP-1 及 DSP-1B 映像檔仍在當初發現分歧之處出現分歧         | `python3 -m conformance.masks`                                                        |     是     |
+| 沒有任何隨附微碼令返回堆疊超過 4 層                        | `python3 -m conformance.stack`                                                        |     是     |
+| README 的每個範例都輸出其所述的內容                        | `python3 -m conformance.documented`                                                   |     是     |
+| 逐步執行保持在每秒 150,000 條指令以上                      | `python3 -m conformance.speed`                                                        |     是     |
 
 每個需要映像檔的工具在一個映像檔都沒有時，都會以 2 結束並說明缺少甚麼，而不是當作通過。
 
@@ -421,12 +421,12 @@ print([hex(part.read()) for _ in range(6)])
 
 遊戲發送的內容由 [snes-driver-python](https://github.com/gufranco/snes-driver-python) 從卡帶中讀出，它會反組譯驅動晶片的常式。每個結果都是一個形態：存取的次序及寬度，不含有效負載。[`cartridges.manifest.json`](cartridges.manifest.json) 以摘要指明每盒卡帶，並不儲存任何卡帶的任何位元組。
 
-| 晶片 | 卡帶 | 形態 | 在晶片上重播 | 存取位置 |
-|:--|--:|--:|--:|--:|
-| DSP-1 | 29 | 50 | 22 | 1,384 |
-| DSP-2 | 3 | 13 | 1 | 270 |
-| DSP-3 | 1 | 20 | 10 | 182 |
-| DSP-4 | 3 | 38 | 29 | 910 |
+| 晶片  | 卡帶 | 形態 | 在晶片上重播 | 存取位置 |
+| :---- | ---: | ---: | -----------: | -------: |
+| DSP-1 |   29 |   50 |           22 |    1,384 |
+| DSP-2 |    3 |   13 |            1 |      270 |
+| DSP-3 |    1 |   20 |           10 |      182 |
+| DSP-4 |    3 |   38 |           29 |      910 |
 
 DSP-1 的各列來自 29 個不同的驅動程式。DSP-3 的各列來自一盒卡帶，也是唯一搭載該晶片的卡帶。
 
@@ -447,24 +447,24 @@ DSP-1B 修正了一個算術錯誤，因此必定有某些輸入會令兩個光�
 
 ### 證據來源
 
-| 證據 | 能確定甚麼 | 不能確定甚麼 |
-|:--|:--|:--|
-| NEC 的數據表，經由處理器的記錄 | 寬度、記憶體大小、4 層堆疊、每條指令的時鐘數 | NEC 沒有印出的行為 |
-| 在該處理器上執行的微碼 | 每個命令計算出甚麼 | 埠是否在正確時刻交給它正確的位元組 |
-| 從卡帶讀出的交換 | 晶片能回答已發售遊戲所提出的要求 | 沒有遊戲提出的任何要求 |
-| 同一晶片的行為模型 | 甚麼都不能確定：從不跟從它 | 只在其出現分歧之處記錄於 [`conformance/divergences.json`](conformance/divergences.json) |
+| 證據                           | 能確定甚麼                                   | 不能確定甚麼                                                                            |
+| :----------------------------- | :------------------------------------------- | :-------------------------------------------------------------------------------------- |
+| NEC 的數據表，經由處理器的記錄 | 寬度、記憶體大小、4 層堆疊、每條指令的時鐘數 | NEC 沒有印出的行為                                                                      |
+| 在該處理器上執行的微碼         | 每個命令計算出甚麼                           | 埠是否在正確時刻交給它正確的位元組                                                      |
+| 從卡帶讀出的交換               | 晶片能回答已發售遊戲所提出的要求             | 沒有遊戲提出的任何要求                                                                  |
+| 同一晶片的行為模型             | 甚麼都不能確定：從不跟從它                   | 只在其出現分歧之處記錄於 [`conformance/divergences.json`](conformance/divergences.json) |
 
 Nintendo 沒有發表過任何有關這些晶片的資料。節奏、啟動長度及第 0 位元以上的解碼都是界限值，[OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) 列出了每一項及可確定它的量度方法。[`conformance/hardware.json`](conformance/hardware.json) 記錄了權威次序，以及本成員所比較的對象。
 
 ## 參與開發
 
-| 需要 | 位置 |
-|:--|:--|
-| 每個關卡檢查及其執行次序 | [CONTRIBUTING.md](CONTRIBUTING.md) |
-| 供編程代理使用的相同資料 | [AGENTS.md](AGENTS.md) |
-| 本儲存庫與家族其他成員共用的標準 | [FAMILY.md](FAMILY.md) |
-| 錯誤報告及錯誤答案 | [GitHub Issues](https://github.com/gufranco/snes-dsp-python/issues)，附上診斷腳本的輸出 |
-| 保安報告 | [SECURITY.md](SECURITY.md) |
+| 需要                             | 位置                                                                                    |
+| :------------------------------- | :-------------------------------------------------------------------------------------- |
+| 每個關卡檢查及其執行次序         | [CONTRIBUTING.md](CONTRIBUTING.md)                                                      |
+| 供編程代理使用的相同資料         | [AGENTS.md](AGENTS.md)                                                                  |
+| 本儲存庫與家族其他成員共用的標準 | [FAMILY.md](FAMILY.md)                                                                  |
+| 錯誤報告及錯誤答案               | [GitHub Issues](https://github.com/gufranco/snes-dsp-python/issues)，附上診斷腳本的輸出 |
+| 保安報告                         | [SECURITY.md](SECURITY.md)                                                              |
 
 ```bash
 uvx ruff@0.16.3 format --check .
@@ -484,7 +484,7 @@ python3 -m conformance.speed
 
 ## 參考資料
 
-- NEC，*uPD7725/uPD96050 Digital Signal Processor* 數據表。從中取得的每項事實都連同頁碼記錄於 [nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python)，本儲存庫將其作為子模組附帶。該數據表不可再分發，亦不在本儲存庫中。
+- NEC，_uPD7725/uPD96050 Digital Signal Processor_ 數據表。從中取得的每項事實都連同頁碼記錄於 [nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python)，本儲存庫將其作為子模組附帶。該數據表不可再分發，亦不在本儲存庫中。
 - snes9x，提交 `2971061cf07fdc6fc7d18883edf4e648eb16a6d2` 的 `dsp3.cpp`，https://github.com/snes9xgit/snes9x ，只為說明那一項已記錄的分歧而閱讀。這裏沒有任何內容跟從它。
 - [snes-driver-python](https://github.com/gufranco/snes-driver-python)，用於讀取卡帶自身程式碼向其協處理器發送的內容。
 - 讀者擁有的零售版卡帶，每盒在讀取前都會以摘要對照 [`cartridges.manifest.json`](cartridges.manifest.json) 確認。
