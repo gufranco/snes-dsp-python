@@ -39,6 +39,10 @@ DECIDES = "sha256"
 
 DIGEST_WIDTHS = {"crc32": 8, "md5": 32, "sha1": 40, "sha256": 64}
 
+HIGH_BYTE_FIRST = "highByteFirst"
+
+LOW_BYTE_FIRST = "lowByteFirst"
+
 
 def digests_of(image: bytes) -> dict[str, str]:
     return {
@@ -50,7 +54,7 @@ def digests_of(image: bytes) -> dict[str, str]:
 
 
 class Identity:
-    __slots__ = ("data_words", "part", "processor", "program_words", "revision")
+    __slots__ = ("data_words", "order", "part", "processor", "program_words", "revision")
 
     def __init__(
         self,
@@ -59,12 +63,14 @@ class Identity:
         revision: str,
         program_words: int,
         data_words: int,
+        order: str = HIGH_BYTE_FIRST,
     ) -> None:
         self.part = part
         self.processor = processor
         self.revision = revision
         self.program_words = program_words
         self.data_words = data_words
+        self.order = order
 
     @override
     def __repr__(self) -> str:
@@ -93,24 +99,49 @@ def directories(environment: Mapping[str, str] | None = None) -> tuple[Path, ...
     return tuple(seen)
 
 
-def identify(image: bytes, catalogue: dict[str, Any] | None = None) -> Identity:
+def _reversed_words(body: bytes, width: int) -> bytes:
+    return b"".join(body[at : at + width][::-1] for at in range(0, len(body), width))
+
+
+def reordered(image: bytes, program_words: int) -> bytes:
+    split = program_words * PROGRAM_BYTES_PER_WORD
+    program = _reversed_words(image[:split], PROGRAM_BYTES_PER_WORD)
+    return program + _reversed_words(image[split:], TABLE_BYTES_PER_WORD)
+
+
+def canonical(image: bytes, identity: Any) -> bytes:
+    if getattr(identity, "order", HIGH_BYTE_FIRST) == LOW_BYTE_FIRST:
+        return reordered(image, identity.program_words)
+    return image
+
+
+def _matched(image: bytes, entry: dict[str, Any], order: str) -> Identity | None:
     found = digests_of(image)
+    for accepted in entry["accepted"]:
+        if accepted[DECIDES] != found[DECIDES]:
+            continue
+        _confirm(entry, accepted, found)
+        return Identity(
+            part=entry["part"],
+            processor=entry["processor"],
+            revision=accepted["revision"],
+            program_words=entry["programWords"],
+            data_words=entry["dataWords"],
+            order=order,
+        )
+    return None
+
+
+def identify(image: bytes, catalogue: dict[str, Any] | None = None) -> Identity:
     entries = (catalogue or manifest())["artifacts"]
-
     for entry in entries:
-        for accepted in entry["accepted"]:
-            if accepted[DECIDES] != found[DECIDES]:
-                continue
-            _confirm(entry, accepted, found)
-            return Identity(
-                part=entry["part"],
-                processor=entry["processor"],
-                revision=accepted["revision"],
-                program_words=entry["programWords"],
-                data_words=entry["dataWords"],
-            )
+        found = _matched(image, entry, HIGH_BYTE_FIRST)
+        if found is None and len(image) == entry["bytes"]:
+            found = _matched(reordered(image, entry["programWords"]), entry, LOW_BYTE_FIRST)
+        if found is not None:
+            return found
 
-    raise Unrecognised(_diagnosis(image, found[DECIDES], entries))
+    raise Unrecognised(_diagnosis(image, digests_of(image)[DECIDES], entries))
 
 
 def _confirm(entry: dict[str, Any], accepted: dict[str, Any], found: dict[str, str]) -> None:

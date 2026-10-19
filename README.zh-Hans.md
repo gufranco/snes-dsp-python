@@ -8,7 +8,7 @@
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** 个部件，基于 **5** 个微码镜像；从 **36** 个零售版卡带中读出 **143** 个交换，其中 **53** 个在部件上回放；**0** 个失败，**0** 个手工描述的命令，**1024** 个测试，**100%** 语句和分支覆盖率，无依赖
+**6** 个部件，基于 **5** 个微码镜像；从 **36** 个零售版卡带中读出 **143** 个交换，其中 **53** 个在部件上回放；**0** 个失败，**0** 个手工描述的命令，**1031** 个测试，**100%** 语句和分支覆盖率，无依赖
 
 ```python
 import snesdsp
@@ -98,38 +98,39 @@ python3 snesdsp/doctor.py
 
 ### 状态
 
-| 属性              | 含义                                                                                 |
-| :---------------- | :----------------------------------------------------------------------------------- |
-| `model`, `part`   | 规范型号名                                                                           |
-| `identity`        | 镜像的 `Identity`：`part`、`processor`、`revision`、`program_words`、`data_words`    |
-| `processor`       | 镜像运行所在的处理器，这里的每个部件都是 `upd7725`                                   |
-| `asking`          | RQM 置位时为 True                                                                    |
-| `pending_output`  | 部件发出请求时为 1，否则为 0                                                         |
-| `clock`           | 部件的时钟，单位 Hz                                                                  |
-| `gap`, `patience` | 上面的两个选项，可写                                                                 |
-| `bus_cycle`       | 部件在一个主机总线周期内运行的指令数，即 2，也就是一次 16 位访问的两个字节之间的间隔 |
-| `core`            | 运行镜像的 `upd7725` 处理器                                                          |
-| `console`         | 上述调用所经过的处理器主机端口                                                       |
+| 属性              | 含义                                                                                                                                                                           |
+| :---------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `model`, `part`   | 规范型号名                                                                                                                                                                     |
+| `identity`        | 镜像的 `Identity`：`part`、`processor`、`revision`、`program_words`、`data_words`，以及 `order`：公开布局为 `HIGH_BYTE_FIRST`，每个字以低字节在前存放的转储为 `LOW_BYTE_FIRST` |
+| `processor`       | 镜像运行所在的处理器，这里的每个部件都是 `upd7725`                                                                                                                             |
+| `asking`          | RQM 置位时为 True                                                                                                                                                              |
+| `pending_output`  | 部件发出请求时为 1，否则为 0                                                                                                                                                   |
+| `clock`           | 部件的时钟，单位 Hz                                                                                                                                                            |
+| `gap`, `patience` | 上面的两个选项，可写                                                                                                                                                           |
+| `bus_cycle`       | 部件在一个主机总线周期内运行的指令数，即 2，也就是一次 16 位访问的两个字节之间的间隔                                                                                           |
+| `core`            | 运行镜像的 `upd7725` 处理器                                                                                                                                                    |
+| `console`         | 上述调用所经过的处理器主机端口                                                                                                                                                 |
 
 ### 模块内容
 
-| 名称                                                                     | 内容                                                                                                           |
-| :----------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
-| `snesdsp.MODELS`                                                         | 六个 `Model` 记录，以规范名称为键。每个记录有 `name`、`aliases`、`summary` 和 `image`                          |
-| `snesdsp.Model`                                                          | 这些记录的类型                                                                                                 |
-| `snesdsp.SHARES_MICROCODE`                                               | `{"dsp1a": "dsp1"}`，唯一一个运行另一部件镜像的部件                                                            |
-| `snesdsp.available(held=None)`                                           | 镜像在本机上的部件，形式为部件名到 `(identity, path)` 的映射。传入形状相同的映射 `held` 时，读取它而不进行搜索 |
-| `snesdsp.why_not(held=None)`                                             | 至少有一个部件能构建时为 `None`，否则为说明为何一个都无法构建的句子。接受同样的 `held`                         |
-| `snesdsp.MASTER_CLOCK`                                                   | `21477273`，主机的主时钟，单位 Hz，是 NTSC 彩色副载波的六倍                                                    |
-| `snesdsp.DSP_CLOCK`                                                      | `7600000`，部件的时钟，单位 Hz，每个时钟一条指令                                                               |
-| `snesdsp.GAP`                                                            | `14`，`gap` 的默认值                                                                                           |
-| `snesdsp.clock_of(model)`                                                | 该型号的时钟，单位 Hz。名称未知时抛出 `UnknownModelError`                                                      |
-| `snesdsp.steps_for(master_clocks, clock=DSP_CLOCK, master=MASTER_CLOCK)` | 这么多个主时钟内运行的指令数，向下取整                                                                         |
-| `snesdsp.__version__`                                                    | 已安装的版本                                                                                                   |
-| `snesdsp.identify(image, catalogue=None)`                                | 镜像的 `Identity`，按 SHA-256 在清单或形状相同的映射 `catalogue` 中查找。会抛出 `Unrecognised` 或 `Corrupt`    |
-| `snesdsp.digests_of(image)`                                              | 镜像的 CRC32、MD5、SHA-1 和 SHA-256，以 `crc32`、`md5`、`sha1` 和 `sha256` 为键的小写十六进制                  |
-| `snesdsp.directories(environment=None)`                                  | 搜索按顺序读取的目录，取自 `environment` 或进程环境                                                            |
-| `snesdsp.search(places=None, catalogue=None)`                            | 在 `places` 或 `directories()` 中找到的每个镜像，以 `(identity, path)` 对给出，每个部件以最先找到的文件为准    |
+| 名称                                                                     | 内容                                                                                                                                                                                                                      |
+| :----------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `snesdsp.MODELS`                                                         | 六个 `Model` 记录，以规范名称为键。每个记录有 `name`、`aliases`、`summary` 和 `image`                                                                                                                                     |
+| `snesdsp.Model`                                                          | 这些记录的类型                                                                                                                                                                                                            |
+| `snesdsp.SHARES_MICROCODE`                                               | `{"dsp1a": "dsp1"}`，唯一一个运行另一部件镜像的部件                                                                                                                                                                       |
+| `snesdsp.available(held=None)`                                           | 镜像在本机上的部件，形式为部件名到 `(identity, path)` 的映射。传入形状相同的映射 `held` 时，读取它而不进行搜索                                                                                                            |
+| `snesdsp.why_not(held=None)`                                             | 至少有一个部件能构建时为 `None`，否则为说明为何一个都无法构建的句子。接受同样的 `held`                                                                                                                                    |
+| `snesdsp.MASTER_CLOCK`                                                   | `21477273`，主机的主时钟，单位 Hz，是 NTSC 彩色副载波的六倍                                                                                                                                                               |
+| `snesdsp.DSP_CLOCK`                                                      | `7600000`，部件的时钟，单位 Hz，每个时钟一条指令                                                                                                                                                                          |
+| `snesdsp.GAP`                                                            | `14`，`gap` 的默认值                                                                                                                                                                                                      |
+| `snesdsp.clock_of(model)`                                                | 该型号的时钟，单位 Hz。名称未知时抛出 `UnknownModelError`                                                                                                                                                                 |
+| `snesdsp.steps_for(master_clocks, clock=DSP_CLOCK, master=MASTER_CLOCK)` | 这么多个主时钟内运行的指令数，向下取整                                                                                                                                                                                    |
+| `snesdsp.__version__`                                                    | 已安装的版本                                                                                                                                                                                                              |
+| `snesdsp.identify(image, catalogue=None)`                                | 镜像的 `Identity`，按 SHA-256 在清单或形状相同的映射 `catalogue` 中查找。像某些收藏中的转储那样，把每个 3 字节程序字和 2 字节表字都以低字节在前存放的文件，会被重排并按公开的摘要识别。会抛出 `Unrecognised` 或 `Corrupt` |
+| `snesdsp.canonical(image, identity)`                                     | 按公开顺序排列的 `image`：`identity.order` 为 `LOW_BYTE_FIRST` 时重排，否则保持原样。部件总是由它运行                                                                                                                     |
+| `snesdsp.digests_of(image)`                                              | 镜像的 CRC32、MD5、SHA-1 和 SHA-256，以 `crc32`、`md5`、`sha1` 和 `sha256` 为键的小写十六进制                                                                                                                             |
+| `snesdsp.directories(environment=None)`                                  | 搜索按顺序读取的目录，取自 `environment` 或进程环境                                                                                                                                                                       |
+| `snesdsp.search(places=None, catalogue=None)`                            | 在 `places` 或 `directories()` 中找到的每个镜像，以 `(identity, path)` 对给出，每个部件以最先找到的文件为准                                                                                                               |
 
 ```python
 import snesdsp

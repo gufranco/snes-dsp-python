@@ -8,7 +8,7 @@
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** 款晶片共用 **5** 個微碼映像檔，讀出 **143** 種交換，來自 **36** 盒零售版卡帶，其中 **53** 種在晶片上重播，**0** 次失敗，**0** 個以人手描述的命令，**1024** 項測試，**100%** 語句及分支覆蓋率，沒有任何依賴套件
+**6** 款晶片共用 **5** 個微碼映像檔，讀出 **143** 種交換，來自 **36** 盒零售版卡帶，其中 **53** 種在晶片上重播，**0** 次失敗，**0** 個以人手描述的命令，**1031** 項測試，**100%** 語句及分支覆蓋率，沒有任何依賴套件
 
 ```python
 import snesdsp
@@ -98,38 +98,39 @@ python3 snesdsp/doctor.py
 
 ### 狀態
 
-| 屬性              | 意義                                                                                       |
-| :---------------- | :----------------------------------------------------------------------------------------- |
-| `model`, `part`   | 標準型號名稱                                                                               |
-| `identity`        | 映像檔的 `Identity`：`part`、`processor`、`revision`、`program_words`、`data_words`        |
-| `processor`       | 映像檔執行所在的處理器，這裏每款晶片都是 `upd7725`                                         |
-| `asking`          | RQM 設定期間為 True                                                                        |
-| `pending_output`  | 晶片發出請求時為 1，否則為 0                                                               |
-| `clock`           | 晶片的時鐘，單位為 Hz                                                                      |
-| `gap`, `patience` | 上述兩個選項，可寫入                                                                       |
-| `bus_cycle`       | 晶片在一個主機匯流排週期內執行的指令數，即 2，也就是一次 16 位元存取的兩個位元組之間的間隔 |
-| `core`            | 執行映像檔的 `upd7725` 處理器                                                              |
-| `console`         | 上述呼叫所經過的處理器主機埠                                                               |
+| 屬性              | 意義                                                                                                                                                                               |
+| :---------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `model`, `part`   | 標準型號名稱                                                                                                                                                                       |
+| `identity`        | 映像檔的 `Identity`：`part`、`processor`、`revision`、`program_words`、`data_words`，以及 `order`：公開佈局為 `HIGH_BYTE_FIRST`，每個字以低位元組在前存放的轉儲為 `LOW_BYTE_FIRST` |
+| `processor`       | 映像檔執行所在的處理器，這裏每款晶片都是 `upd7725`                                                                                                                                 |
+| `asking`          | RQM 設定期間為 True                                                                                                                                                                |
+| `pending_output`  | 晶片發出請求時為 1，否則為 0                                                                                                                                                       |
+| `clock`           | 晶片的時鐘，單位為 Hz                                                                                                                                                              |
+| `gap`, `patience` | 上述兩個選項，可寫入                                                                                                                                                               |
+| `bus_cycle`       | 晶片在一個主機匯流排週期內執行的指令數，即 2，也就是一次 16 位元存取的兩個位元組之間的間隔                                                                                         |
+| `core`            | 執行映像檔的 `upd7725` 處理器                                                                                                                                                      |
+| `console`         | 上述呼叫所經過的處理器主機埠                                                                                                                                                       |
 
 ### 模組內容
 
-| 名稱                                                                     | 內容                                                                                                                     |
-| :----------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------- |
-| `snesdsp.MODELS`                                                         | 六個 `Model` 記錄，以標準名稱為鍵。每個記錄都有 `name`、`aliases`、`summary` 及 `image`                                  |
-| `snesdsp.Model`                                                          | 這些記錄的型別                                                                                                           |
-| `snesdsp.SHARES_MICROCODE`                                               | `{"dsp1a": "dsp1"}`，唯一執行另一款晶片映像檔的晶片                                                                      |
-| `snesdsp.available(held=None)`                                           | 映像檔位於本機的晶片，以晶片名稱對應到 `(identity, path)` 的映射表示。傳入形狀相同的映射 `held` 時，會讀取它而不進行搜尋 |
-| `snesdsp.why_not(held=None)`                                             | 至少有一款晶片可以建立時為 `None`，否則為說明為何一款都無法建立的句子。接受同樣的 `held`                                 |
-| `snesdsp.MASTER_CLOCK`                                                   | `21477273`，主機的主時鐘，單位為 Hz，是 NTSC 色彩副載波的六倍                                                            |
-| `snesdsp.DSP_CLOCK`                                                      | `7600000`，晶片的時鐘，單位為 Hz，每個時鐘一條指令                                                                       |
-| `snesdsp.GAP`                                                            | `14`，`gap` 的預設值                                                                                                     |
-| `snesdsp.clock_of(model)`                                                | 該型號的時鐘，單位為 Hz。名稱未知時引發 `UnknownModelError`                                                              |
-| `snesdsp.steps_for(master_clocks, clock=DSP_CLOCK, master=MASTER_CLOCK)` | 在該數量的主時鐘內執行的指令數，向下取整                                                                                 |
-| `snesdsp.__version__`                                                    | 已安裝的版本                                                                                                             |
-| `snesdsp.identify(image, catalogue=None)`                                | 映像檔的 `Identity`，按 SHA-256 在清單或形狀相同的映射 `catalogue` 中尋找。會引發 `Unrecognised` 或 `Corrupt`            |
-| `snesdsp.digests_of(image)`                                              | 映像檔的 CRC32、MD5、SHA-1 及 SHA-256，以 `crc32`、`md5`、`sha1` 及 `sha256` 為鍵的小寫十六進位                          |
-| `snesdsp.directories(environment=None)`                                  | 搜尋按次序讀取的目錄，取自 `environment` 或程序的環境變數                                                                |
-| `snesdsp.search(places=None, catalogue=None)`                            | 在 `places` 或 `directories()` 中找到的每個映像檔，以 `(identity, path)` 配對列出，每款晶片以最先找到的檔案為準          |
+| 名稱                                                                     | 內容                                                                                                                                                                                                                              |
+| :----------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `snesdsp.MODELS`                                                         | 六個 `Model` 記錄，以標準名稱為鍵。每個記錄都有 `name`、`aliases`、`summary` 及 `image`                                                                                                                                           |
+| `snesdsp.Model`                                                          | 這些記錄的型別                                                                                                                                                                                                                    |
+| `snesdsp.SHARES_MICROCODE`                                               | `{"dsp1a": "dsp1"}`，唯一執行另一款晶片映像檔的晶片                                                                                                                                                                               |
+| `snesdsp.available(held=None)`                                           | 映像檔位於本機的晶片，以晶片名稱對應到 `(identity, path)` 的映射表示。傳入形狀相同的映射 `held` 時，會讀取它而不進行搜尋                                                                                                          |
+| `snesdsp.why_not(held=None)`                                             | 至少有一款晶片可以建立時為 `None`，否則為說明為何一款都無法建立的句子。接受同樣的 `held`                                                                                                                                          |
+| `snesdsp.MASTER_CLOCK`                                                   | `21477273`，主機的主時鐘，單位為 Hz，是 NTSC 色彩副載波的六倍                                                                                                                                                                     |
+| `snesdsp.DSP_CLOCK`                                                      | `7600000`，晶片的時鐘，單位為 Hz，每個時鐘一條指令                                                                                                                                                                                |
+| `snesdsp.GAP`                                                            | `14`，`gap` 的預設值                                                                                                                                                                                                              |
+| `snesdsp.clock_of(model)`                                                | 該型號的時鐘，單位為 Hz。名稱未知時引發 `UnknownModelError`                                                                                                                                                                       |
+| `snesdsp.steps_for(master_clocks, clock=DSP_CLOCK, master=MASTER_CLOCK)` | 在該數量的主時鐘內執行的指令數，向下取整                                                                                                                                                                                          |
+| `snesdsp.__version__`                                                    | 已安裝的版本                                                                                                                                                                                                                      |
+| `snesdsp.identify(image, catalogue=None)`                                | 映像檔的 `Identity`，按 SHA-256 在清單或形狀相同的映射 `catalogue` 中尋找。像某些收藏中的轉儲那樣，把每個 3 位元組程式字及 2 位元組表字都以低位元組在前存放的檔案，會被重排並按公開的摘要識別。會引發 `Unrecognised` 或 `Corrupt` |
+| `snesdsp.canonical(image, identity)`                                     | 按公開次序排列的 `image`：`identity.order` 為 `LOW_BYTE_FIRST` 時重排，否則保持原樣。晶片總是由它執行                                                                                                                             |
+| `snesdsp.digests_of(image)`                                              | 映像檔的 CRC32、MD5、SHA-1 及 SHA-256，以 `crc32`、`md5`、`sha1` 及 `sha256` 為鍵的小寫十六進位                                                                                                                                   |
+| `snesdsp.directories(environment=None)`                                  | 搜尋按次序讀取的目錄，取自 `environment` 或程序的環境變數                                                                                                                                                                         |
+| `snesdsp.search(places=None, catalogue=None)`                            | 在 `places` 或 `directories()` 中找到的每個映像檔，以 `(identity, path)` 配對列出，每款晶片以最先找到的檔案為準                                                                                                                   |
 
 ```python
 import snesdsp

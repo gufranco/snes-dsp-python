@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import snesdsp
 from conformance.driven import Build, Driven
-from snesdsp import chip
+from snesdsp import chip, firmware
 
 ROOT = Path(__file__).resolve().parent
 
@@ -90,7 +90,9 @@ def _default_digest(part: str) -> str:  # pragma: no cover
     held = chip.available()
     if wanted not in held:
         return "no image on this machine"
-    return hashlib.sha256(Path(held[wanted][1]).read_bytes()).hexdigest()
+    return hashlib.sha256(
+        firmware.canonical(Path(held[wanted][1]).read_bytes(), held[wanted][0])
+    ).hexdigest()
 
 
 def answer(

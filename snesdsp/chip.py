@@ -135,7 +135,7 @@ class Chip:
                     f" run. {WHY_NOT_FIRMWARE}"
                 )
             identity, path = images[wanted]
-            image = path.read_bytes()
+            image = firmware.canonical(path.read_bytes(), identity)
         elif identity is None:
             raise NoFirmware(
                 "an image was supplied without saying what it is, and the processor"

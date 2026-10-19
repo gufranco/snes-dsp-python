@@ -257,6 +257,13 @@ nec-upd7725-96050-python/  the processor all of these are, as a submodule at the
 
   Change one and change the other two in the same task.
 
+- **Some collections store each word low byte first.** The program dumps in
+  `snes-roms/5 Tools & Service Test Carts/CPU/` keep every 3-byte program word
+  and 2-byte table word reversed; reversing them gives exactly the digests the
+  manifest pins, checked on 2026-10-19 for all five. `identify` tries that order
+  when the published one does not match, records it as `order`, and the part
+  always runs `canonical(image, identity)`, so a digest printed anywhere is the
+  published one.
 - **The submodule is not optional.** Without it nothing here can run, and the
   refusal says so rather than falling back to a guess.
 - **A part cannot be built without an image.** `Chip("dsp1")` raises `NoFirmware`

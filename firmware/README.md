@@ -17,8 +17,9 @@ same bytes and either they agree or one of them is wrong about the part.
 Every image is checked by name **and** by content before it is used. `sha256`
 decides; the other three are confirmed too rather than published and ignored,
 because a file can be the right length under the right name and still be a bad
-dump. The digests live in the processor's manifest, which is what does the
-checking, and are printed here so you can confirm a copy before you supply it.
+dump. The digests live in `snesdsp/artifacts.manifest.json`, which is what does
+the checking, and are printed here so you can confirm a copy before you supply
+it.
 
 | Part  | Revision | Bytes | crc32      | md5                                |
 | ----- | -------- | ----: | ---------- | ---------------------------------- |
@@ -56,15 +57,21 @@ shasum -a 256 dsp1.bin
 | DSP-3  | 8,192 | `dsp3.rom`, `dsp3.bin`          |
 | DSP-4  | 8,192 | `dsp4.rom`, `dsp4.bin`          |
 
-Every file is identified by digest before it is run, against the manifest in the
-`processor` submodule. A file that does not match is diagnosed rather than
-refused.
+Every file is identified by digest before it is run, against
+`snesdsp/artifacts.manifest.json`. A file that does not match is diagnosed
+rather than refused.
+
+A dump that stores each 3-byte program word and 2-byte table word low byte
+first, as the files in `snes-roms/5 Tools & Service Test Carts/CPU/` do, is
+accepted as it is: reversing each word gives the digest above, and the part is
+run from the reordered image.
 
 ## How to use it
 
 ```bash
 git submodule update --init
-python3 conformance/against_firmware.py
+python3 snesdsp/doctor.py
+python3 -m conformance.answers
 ```
 
 With nothing here, every check that needs an image reports as skipped rather than

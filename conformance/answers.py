@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import snesdsp
 from conformance import shapes as shapes_module
 from conformance.driven import BuildWatched, Watched
-from snesdsp import chip, models
+from snesdsp import chip, firmware, models
 
 ROOT = Path(__file__).resolve().parent
 
@@ -72,7 +72,9 @@ def _default_digest(part: str) -> str:  # pragma: no cover
     held = chip.available()
     if wanted not in held:
         raise WrongImage(f"no image for {wanted} is on this machine")
-    return hashlib.sha256(Path(held[wanted][1]).read_bytes()).hexdigest()
+    return hashlib.sha256(
+        firmware.canonical(Path(held[wanted][1]).read_bytes(), held[wanted][0])
+    ).hexdigest()
 
 
 def recorded_shapes(part: str) -> list[dict[str, Any]]:

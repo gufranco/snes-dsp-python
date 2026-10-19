@@ -246,6 +246,23 @@ class DigestTest(unittest.TestCase):
         # Assert
         self.assertEqual(found, f", sha256 {hashlib.sha256(OWNED).hexdigest()}")
 
+    def test_a_dump_stored_low_byte_first_reports_the_digest_of_what_is_run(self) -> None:
+        # Arrange
+        dumped = bytes(range(6)) + bytes(8186)
+        where = Path(tempfile.mkdtemp()) / "dump.bin"
+        where.write_bytes(dumped)
+        identity = SimpleNamespace(order=snesdsp.LOW_BYTE_FIRST, program_words=2048)
+        run = bytes([2, 1, 0, 5, 4, 3]) + bytes(8186)
+
+        # Act
+        found = doctor.digest_of("dsp1", {"dsp1": (identity, where)})
+
+        # Assert
+        self.assertEqual(
+            found,
+            f", sha256 {hashlib.sha256(run).hexdigest()}, stored low byte first and reordered",
+        )
+
     def test_a_file_that_cannot_be_read_says_so_rather_than_going_quiet(self) -> None:
         # Arrange
         held = {"dsp1": ("identity", Path(tempfile.mkdtemp()) / "absent.bin")}

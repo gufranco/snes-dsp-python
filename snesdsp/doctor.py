@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from snesdsp import chip, environment, models, timing  # noqa: E402
+from snesdsp import chip, environment, firmware, models, timing  # noqa: E402
 from snesdsp.version import VERSION  # noqa: E402
 
 
@@ -128,7 +128,9 @@ def digest_of(wanted: str, images: Images | None) -> str:
         raw = Path(held[1]).read_bytes()
     except OSError as trouble:
         return f", but its file could not be read: {trouble}"
-    return f", sha256 {hashlib.sha256(raw).hexdigest()}"
+    run = firmware.canonical(raw, held[0])
+    stored = "" if run == raw else ", stored low byte first and reordered"
+    return f", sha256 {hashlib.sha256(run).hexdigest()}{stored}"
 
 
 def _default_beneath() -> list[Finding]:

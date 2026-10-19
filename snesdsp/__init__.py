@@ -12,7 +12,15 @@ from .errors import (
     Unrecognised,
     WrongShape,
 )
-from .firmware import digests_of, directories, identify, search
+from .firmware import (
+    HIGH_BYTE_FIRST,
+    LOW_BYTE_FIRST,
+    canonical,
+    digests_of,
+    directories,
+    identify,
+    search,
+)
 from .models import MODELS, SHARES_MICROCODE, Model
 from .timing import DSP_CLOCK, GAP, MASTER_CLOCK, clock_of, steps_for
 from .version import VERSION
@@ -27,6 +35,8 @@ def Chip(model: str | None = None, **options: "Any") -> chip.Chip:  # noqa: N802
 __all__ = [
     "DSP_CLOCK",
     "GAP",
+    "HIGH_BYTE_FIRST",
+    "LOW_BYTE_FIRST",
     "MASTER_CLOCK",
     "MODELS",
     "SHARES_MICROCODE",
@@ -41,6 +51,7 @@ __all__ = [
     "WrongShape",
     "__version__",
     "available",
+    "canonical",
     "clock_of",
     "digests_of",
     "directories",

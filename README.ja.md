@@ -8,7 +8,7 @@ PythonによるNintendo DSP-1、DSP-1A、DSP-1B、DSP-2、DSP-3、DSP-4です。
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**5**個のマイクロコードイメージ上の**6**種類のチップ、**36**本の市販カートリッジから読み出した**143**件のやり取り、そのうち**53**件をチップに対して再生、失敗**0**件、手作業で記述したコマンド**0**個、テスト**1024**件、ステートメントとブランチのカバレッジ**100%**、依存関係なし
+**5**個のマイクロコードイメージ上の**6**種類のチップ、**36**本の市販カートリッジから読み出した**143**件のやり取り、そのうち**53**件をチップに対して再生、失敗**0**件、手作業で記述したコマンド**0**個、テスト**1031**件、ステートメントとブランチのカバレッジ**100%**、依存関係なし
 
 ```python
 import snesdsp
@@ -98,38 +98,39 @@ python3 snesdsp/doctor.py
 
 ### 状態
 
-| 属性              | 意味                                                                                                    |
-| :---------------- | :------------------------------------------------------------------------------------------------------ |
-| `model`, `part`   | 正規のモデル名                                                                                          |
-| `identity`        | イメージの`Identity`。`part`、`processor`、`revision`、`program_words`、`data_words`                    |
-| `processor`       | イメージが動作するプロセッサ。ここではすべてのチップで`upd7725`です                                     |
-| `asking`          | RQMがセットされている間True                                                                             |
-| `pending_output`  | チップが要求している間は1、それ以外は0                                                                  |
-| `clock`           | チップのクロック(Hz)                                                                                    |
-| `gap`, `patience` | 上記の2つのオプション。書き込み可能です                                                                 |
-| `bus_cycle`       | コンソールの1バスサイクルの間にチップが実行する命令数、2。16ビットアクセスの2バイトはこの間隔で届きます |
-| `core`            | イメージを実行している`upd7725`プロセッサ                                                               |
-| `console`         | 上記の呼び出しが経由する、プロセッサのホストポート                                                      |
+| 属性              | 意味                                                                                                                                                                                                       |
+| :---------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `model`, `part`   | 正規のモデル名                                                                                                                                                                                             |
+| `identity`        | イメージの`Identity`。`part`、`processor`、`revision`、`program_words`、`data_words`、そして`order`。公開されたレイアウトなら`HIGH_BYTE_FIRST`、各ワードを下位バイトから格納したダンプなら`LOW_BYTE_FIRST` |
+| `processor`       | イメージが動作するプロセッサ。ここではすべてのチップで`upd7725`です                                                                                                                                        |
+| `asking`          | RQMがセットされている間True                                                                                                                                                                                |
+| `pending_output`  | チップが要求している間は1、それ以外は0                                                                                                                                                                     |
+| `clock`           | チップのクロック(Hz)                                                                                                                                                                                       |
+| `gap`, `patience` | 上記の2つのオプション。書き込み可能です                                                                                                                                                                    |
+| `bus_cycle`       | コンソールの1バスサイクルの間にチップが実行する命令数、2。16ビットアクセスの2バイトはこの間隔で届きます                                                                                                    |
+| `core`            | イメージを実行している`upd7725`プロセッサ                                                                                                                                                                  |
+| `console`         | 上記の呼び出しが経由する、プロセッサのホストポート                                                                                                                                                         |
 
 ### モジュールの内容
 
-| 名前                                                                     | 内容                                                                                                                                              |
-| :----------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `snesdsp.MODELS`                                                         | 正規名をキーとする6つの`Model`レコード。それぞれ`name`、`aliases`、`summary`、`image`を持ちます                                                   |
-| `snesdsp.Model`                                                          | それらのレコードの型                                                                                                                              |
-| `snesdsp.SHARES_MICROCODE`                                               | `{"dsp1a": "dsp1"}`。別のチップのイメージを実行する唯一のチップです                                                                               |
-| `snesdsp.available(held=None)`                                           | このマシンにイメージがあるチップ。チップ名から`(identity, path)`へのマッピングです。同じ形のマッピング`held`を渡すと、検索せずにそれを読みます    |
-| `snesdsp.why_not(held=None)`                                             | 少なくとも1つのチップを構築できる場合は`None`、そうでなければどれも構築できない理由を述べる文。同じ`held`を受け取ります                           |
-| `snesdsp.MASTER_CLOCK`                                                   | `21477273`。コンソールのマスタークロック(Hz)で、NTSCカラーキャリアの6倍です                                                                       |
-| `snesdsp.DSP_CLOCK`                                                      | `7600000`。チップのクロック(Hz)で、1クロックにつき1命令です                                                                                       |
-| `snesdsp.GAP`                                                            | `14`。デフォルトの`gap`です                                                                                                                       |
-| `snesdsp.clock_of(model)`                                                | そのモデルのクロック(Hz)。不明な名前には`UnknownModelError`を送出します                                                                           |
-| `snesdsp.steps_for(master_clocks, clock=DSP_CLOCK, master=MASTER_CLOCK)` | その数のマスタークロックで実行される命令数。切り捨てです                                                                                          |
-| `snesdsp.__version__`                                                    | インストールされているバージョン                                                                                                                  |
-| `snesdsp.identify(image, catalogue=None)`                                | イメージの`Identity`。マニフェスト、または同じ形のマッピング`catalogue`からSHA-256で見つけます。`Unrecognised`または`Corrupt`を送出します         |
-| `snesdsp.digests_of(image)`                                              | イメージのCRC32、MD5、SHA-1、SHA-256。`crc32`、`md5`、`sha1`、`sha256`をキーとする小文字の16進数です                                              |
-| `snesdsp.directories(environment=None)`                                  | 検索が読むディレクトリを順に並べたもの。`environment`またはプロセスの環境変数から求めます                                                         |
-| `snesdsp.search(places=None, catalogue=None)`                            | `places`、または`directories()`で見つかったすべてのイメージを`(identity, path)`の組で返します。チップごとに最初に見つかったファイルが優先されます |
+| 名前                                                                     | 内容                                                                                                                                                                                                                                                                                                                                |
+| :----------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `snesdsp.MODELS`                                                         | 正規名をキーとする6つの`Model`レコード。それぞれ`name`、`aliases`、`summary`、`image`を持ちます                                                                                                                                                                                                                                     |
+| `snesdsp.Model`                                                          | それらのレコードの型                                                                                                                                                                                                                                                                                                                |
+| `snesdsp.SHARES_MICROCODE`                                               | `{"dsp1a": "dsp1"}`。別のチップのイメージを実行する唯一のチップです                                                                                                                                                                                                                                                                 |
+| `snesdsp.available(held=None)`                                           | このマシンにイメージがあるチップ。チップ名から`(identity, path)`へのマッピングです。同じ形のマッピング`held`を渡すと、検索せずにそれを読みます                                                                                                                                                                                      |
+| `snesdsp.why_not(held=None)`                                             | 少なくとも1つのチップを構築できる場合は`None`、そうでなければどれも構築できない理由を述べる文。同じ`held`を受け取ります                                                                                                                                                                                                             |
+| `snesdsp.MASTER_CLOCK`                                                   | `21477273`。コンソールのマスタークロック(Hz)で、NTSCカラーキャリアの6倍です                                                                                                                                                                                                                                                         |
+| `snesdsp.DSP_CLOCK`                                                      | `7600000`。チップのクロック(Hz)で、1クロックにつき1命令です                                                                                                                                                                                                                                                                         |
+| `snesdsp.GAP`                                                            | `14`。デフォルトの`gap`です                                                                                                                                                                                                                                                                                                         |
+| `snesdsp.clock_of(model)`                                                | そのモデルのクロック(Hz)。不明な名前には`UnknownModelError`を送出します                                                                                                                                                                                                                                                             |
+| `snesdsp.steps_for(master_clocks, clock=DSP_CLOCK, master=MASTER_CLOCK)` | その数のマスタークロックで実行される命令数。切り捨てです                                                                                                                                                                                                                                                                            |
+| `snesdsp.__version__`                                                    | インストールされているバージョン                                                                                                                                                                                                                                                                                                    |
+| `snesdsp.identify(image, catalogue=None)`                                | イメージの`Identity`。マニフェスト、または同じ形のマッピング`catalogue`からSHA-256で見つけます。3バイトのプログラムワードと2バイトのテーブルワードをそれぞれ下位バイトから格納したファイルは、一部のコレクションのダンプがそうであるように、並べ替えて公開されたダイジェストで識別します。`Unrecognised`または`Corrupt`を送出します |
+| `snesdsp.canonical(image, identity)`                                     | 公開された順序の`image`。`identity.order`が`LOW_BYTE_FIRST`なら並べ替え、そうでなければそのまま。チップは常にこれから実行されます                                                                                                                                                                                                   |
+| `snesdsp.digests_of(image)`                                              | イメージのCRC32、MD5、SHA-1、SHA-256。`crc32`、`md5`、`sha1`、`sha256`をキーとする小文字の16進数です                                                                                                                                                                                                                                |
+| `snesdsp.directories(environment=None)`                                  | 検索が読むディレクトリを順に並べたもの。`environment`またはプロセスの環境変数から求めます                                                                                                                                                                                                                                           |
+| `snesdsp.search(places=None, catalogue=None)`                            | `places`、または`directories()`で見つかったすべてのイメージを`(identity, path)`の組で返します。チップごとに最初に見つかったファイルが優先されます                                                                                                                                                                                   |
 
 ```python
 import snesdsp

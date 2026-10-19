@@ -192,6 +192,17 @@ class FoundOnDiskTest(unittest.TestCase):
         # Assert
         self.assertEqual((part.part, part.identity.part), ("dsp1a", "dsp1"))
 
+    def test_a_dump_storing_words_low_byte_first_is_run_in_the_published_order(self) -> None:
+        # Arrange
+        identity, where = on_disk()["dsp1"]
+        held = {"dsp1": (SimpleNamespace(**vars(identity), order=snesdsp.LOW_BYTE_FIRST), where)}
+
+        # Act
+        part = snesdsp.Chip("dsp1", images=held, boot=BOOT)
+
+        # Assert
+        self.assertEqual(part.core.stores.program[0], 0x020100)
+
     def test_with_an_image_present_there_is_no_reason_it_cannot_run(self) -> None:
         # Arrange
         held = on_disk()
