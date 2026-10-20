@@ -8,44 +8,48 @@
   "assumed": 23,
   "exchanges": [
     {
-      "shape": "write? write? write? write? write? write? write? write? read2 read2 read2 read2",
-      "said": ["8db4", "8db4", "8db4", "8db4"]
+      "shape": "write? write2 write1 write1 write1 write1 write1 write1 write1 write1 read2 read2 read2 read2",
+      "said": ["b931", "b931", "b931", "b931"]
     },
     {
       "shape": "write? write2 write2 write2 poll2 read2 read2",
-      "said": ["8080", "2df6", "1d00"]
+      "said": ["8080", "a734", "a734"]
+    },
+    {
+      "shape": "write? write? write? read? read? read? write?",
+      "said": ["00", "d4", "00"]
     },
     {
       "shape": "write? write2 write2 write2 read2 read2",
-      "said": ["e5e5", "e5e5"]
+      "said": ["2a92", "2a92"]
     },
     {
       "shape": "write? write2 poll2 read2 poll2 read2",
-      "said": ["8080", "0707", "8080", "0700"]
+      "said": ["8484", "6767", "8484", "6767"]
     },
     {
       "shape": "write? write? write2 read2 read2",
-      "said": ["9200", "9200"]
+      "said": ["9898", "9898"]
     },
     {
       "shape": "write? write2 write2 read2 read2",
-      "said": ["d5d5", "d5d5"]
+      "said": ["ac6b", "ac00"]
+    },
+    {
+      "shape": "write? write? write? read? read?",
+      "said": ["00", "86"]
+    },
+    {
+      "shape": "write? write2 poll2 read2",
+      "said": ["8484", "0000"]
     },
     {
       "shape": "write? write2 read2",
-      "said": ["3800"]
-    },
-    {
-      "shape": "read? read? write?",
-      "said": ["80", "80"]
-    },
-    {
-      "shape": "write? read? read?",
-      "said": ["f8", "f8"]
+      "said": ["80f8"]
     },
     {
       "shape": "write? read?",
-      "said": ["ac"]
+      "said": ["44"]
     }
   ]
 }

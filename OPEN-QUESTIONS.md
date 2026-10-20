@@ -133,11 +133,14 @@ cartridge's code sets it, `*` where a run of the image used it, `~` where a
 headless MAME trace saw the bus move it at that instruction, and `?` where
 nothing shows it. A `?` is replayed as one byte, as every width was before the
 labels existed, and every replay says how many accesses rest on one. Read on
-2026-10-19, the 3,468 DSP-1 accesses are 630 known, 220 traced and 2,618
-assumed; the DSP-2's 580 are 120 known, 30 traced and 430 assumed; the DSP-3's
-430 are 76 known and 354 assumed; and all 2,372 of the DSP-4's are assumed. 93
-of the 143 shapes carry at least one `?`: 45 of 84 on the DSP-1, 6 of 16 on the
-DSP-2, 20 of 21 on the DSP-3 and all 22 on the DSP-4.
+2026-10-20 from the reader at `62d619b`, which walks both arms of every forward
+conditional branch, the 3,588 DSP-1 accesses are 647 known, 230 traced and
+2,711 assumed; the DSP-2's 622 are 153 known, 30 traced and 439 assumed; the
+DSP-3's 453 are 97 known and 356 assumed; and all 2,450 of the DSP-4's are
+assumed. 112 of the 163 shapes carry at least one `?`: 56 of 94 on the DSP-1,
+10 of 22 on the DSP-2, 22 of 23 on the DSP-3 and all 24 on the DSP-4. Read on
+2026-10-19 from the reader at `adc1b8c`, which took only the arm a branch falls
+through to, there were 143 shapes and 3,468, 580, 430 and 2,372 accesses.
 
 **Why.** Dropping a shape for one unknown width would leave the DSP-4 with no
 exchange at all, and a two-byte guess is no better founded than a one-byte one.

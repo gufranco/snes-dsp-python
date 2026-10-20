@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** parts on **5** microcode images, **143** exchanges read out of **36** retail cartridges, **53** of them played at the part, **0** failures, **0** commands described by hand, **1065** tests, **100%** statement and branch coverage, no dependencies
+**6** parts on **5** microcode images, **163** exchanges read out of **36** retail cartridges, **57** of them played at the part, **0** failures, **0** commands described by hand, **1065** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 import snesdsp
@@ -424,14 +424,14 @@ What a game sends is read out of the cartridge by [snes-driver-python](https://g
 
 | Part  | Cartridges | Shapes | Played at the part | Access sites |
 | :---- | ---------: | -----: | -----------------: | -----------: |
-| DSP-1 |         29 |     84 |                 30 |        2,388 |
-| DSP-2 |          3 |     16 |                  2 |          445 |
-| DSP-3 |          1 |     21 |                 10 |          327 |
-| DSP-4 |          3 |     22 |                 11 |        1,220 |
+| DSP-1 |         29 |     94 |                 32 |        2,420 |
+| DSP-2 |          3 |     22 |                  2 |          451 |
+| DSP-3 |          1 |     23 |                 11 |          329 |
+| DSP-4 |          3 |     24 |                 12 |        1,244 |
 
 The DSP-1 rows come from 29 different drivers. The DSP-3 rows come from one cartridge, the only one that carries the part.
 
-A shape carries no payload, so its bytes are generated from a fixed seed. A shape the part answers with silence is played again under each of the 256 command bytes, and counts as silent only when all 256 are. Four shapes, one on each part, read before they write: on a console they read what an earlier exchange left, so they are reported apart rather than counted as silence. Every other shape gets an answer.
+A shape carries no payload, so its bytes are generated from a fixed seed. A shape the part answers with silence is played again under each of the 256 command bytes, and counts as silent only when all 256 are. Six shapes read before they write, three on the DSP-1, one on the DSP-2 and two on the DSP-4: on a console they read what an earlier exchange left, so they are reported apart rather than counted as silence. Every other shape gets an answer.
 
 ```bash
 python3 -m conformance.against_cartridges dsp1

@@ -9,7 +9,7 @@
       "why": "the only game that carries the DSP-4; the Japanese release is titled The Planet's Champ TG 3000",
       "bytes": 1048576,
       "layout": "lorom",
-      "shapes": 22,
+      "shapes": 24,
       "crc32": "b9b9df06",
       "md5": "6ae194d9f8022c9a2962a423ffbc40cc",
       "sha1": "3e7f10e13065424a28c93871b4a1e458817d754c",
@@ -21,7 +21,7 @@
       "why": "the only game that carries the DSP-4; the Japanese release is titled The Planet's Champ TG 3000",
       "bytes": 1048576,
       "layout": "lorom",
-      "shapes": 22,
+      "shapes": 24,
       "crc32": "493fdb13",
       "md5": "462e15c018c653335ba634d3c1cd06c9",
       "sha1": "777d8732023a300a2c566f2d48bc354e0aa1da7e",
@@ -33,7 +33,7 @@
       "why": "the only game that carries the DSP-4; the Japanese release is titled The Planet's Champ TG 3000",
       "bytes": 1048576,
       "layout": "lorom",
-      "shapes": 22,
+      "shapes": 24,
       "crc32": "a20be998",
       "md5": "23eaa07e3f3315fa43f4b4d94ec97a7b",
       "sha1": "058aadf1ee719cb9e0c7333e665797f990a6381d",
@@ -68,7 +68,7 @@
     },
     {
       "shape": "write? write? read? read?",
-      "seen": 39,
+      "seen": 42,
       "cartridges": 3
     },
     {
@@ -98,7 +98,7 @@
     },
     {
       "shape": "read? read? read?",
-      "seen": 6,
+      "seen": 9,
       "cartridges": 3
     },
     {
@@ -113,7 +113,7 @@
     },
     {
       "shape": "write? write?",
-      "seen": 111,
+      "seen": 129,
       "cartridges": 3
     },
     {
@@ -123,7 +123,12 @@
     },
     {
       "shape": "read? read?",
-      "seen": 9,
+      "seen": 21,
+      "cartridges": 3
+    },
+    {
+      "shape": "read? poll?",
+      "seen": 6,
       "cartridges": 3
     },
     {
@@ -137,13 +142,18 @@
       "cartridges": 3
     },
     {
+      "shape": "read? write?",
+      "seen": 3,
+      "cartridges": 3
+    },
+    {
       "shape": "write?",
-      "seen": 435,
+      "seen": 417,
       "cartridges": 3
     },
     {
       "shape": "read?",
-      "seen": 196,
+      "seen": 193,
       "cartridges": 3
     },
     {

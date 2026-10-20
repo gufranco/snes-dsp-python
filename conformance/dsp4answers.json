@@ -5,7 +5,7 @@
   "image": {
     "sha256": "63ede17322541c191ed1fdf683872554a0a57306496afc43c59de7c01a6e764a"
   },
-  "assumed": 45,
+  "assumed": 47,
   "exchanges": [
     {
       "shape": "write? write? write? read? read? read? read?",
@@ -49,6 +49,10 @@
     },
     {
       "shape": "write? read?",
+      "said": ["ff"]
+    },
+    {
+      "shape": "read? write?",
       "said": ["ff"]
     }
   ]

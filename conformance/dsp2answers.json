@@ -8,8 +8,8 @@
   "assumed": 2,
   "exchanges": [
     {
-      "shape": "write1 write1 write1 write1 write1 read1 read1 read1 read1",
-      "said": ["e2", "e2", "e2", "e2"]
+      "shape": "write1 write1 write1 write1 write1 write1 write1 write1 write1 write1 read1",
+      "said": ["b9"]
     },
     {
       "shape": "read? write?",

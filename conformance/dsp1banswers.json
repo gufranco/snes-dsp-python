@@ -5,7 +5,7 @@
   "image": {
     "sha256": "4d42db0f36faef263d6b93f508e8c1c4ae8fc2605fd35e3390ecc02905cd420c"
   },
-  "assumed": 20,
+  "assumed": 26,
   "exchanges": [
     {
       "shape": "poll2 write1 write2 write2 write2 write2 write2 write2 write2 poll2 read2 read2 read2 read2 write1 write2 poll2 read2 read2 read2 read2 poll2 write2 write2 write2 write2",
@@ -25,28 +25,32 @@
       ]
     },
     {
+      "shape": "write? write2 write2 write2 poll2 read2 read2 read2 write1 write2 write2 write2 poll2 read2 read2 read2",
+      "said": ["8080", "0000", "0000", "0000", "9090", "0000", "0000", "0000"]
+    },
+    {
       "shape": "write? write2 write2 write2 write2 poll1 write1 write2 write2 write2 read2 read2 read2",
-      "said": ["80", "6b55", "6b55", "0000"]
+      "said": ["80", "8f12", "8f12", "8f12"]
     },
     {
       "shape": "write? write2 write2 write2 write2 write2 write2 write2 poll2 read2 read2 read2 read2",
-      "said": ["8484", "8080", "8080", "8080", "8080"]
+      "said": ["8080", "0000", "0000", "0000", "0000"]
     },
     {
       "shape": "write1 write2 write2 write2 write2 write2 write2 write2 poll2 read2 read2 read2~",
-      "said": ["8080", "0000", "0000", "0000"]
+      "said": ["8080", "0d00", "0d00", "0d00"]
     },
     {
       "shape": "write1~ write2 poll2 read2 read2 read2 read2 poll2 write2 write2 write2 write2",
-      "said": ["8484", "7272", "7272", "7272", "7272", "8484"]
+      "said": ["8484", "e7e7", "e7e7", "e7e7", "e7e7", "8484"]
     },
     {
       "shape": "write1~ write2 write2 write2 write2 write2 write2 write2 poll2 read2 read2 read2~",
-      "said": ["8484", "5555", "5555", "5555"]
+      "said": ["8080", "9f4f", "090b", "faa1"]
     },
     {
       "shape": "write? write2 write2 write2 read2 read2 write1 write2 write2 write2 read2",
-      "said": ["a09f", "a09f", "024d"]
+      "said": ["0000", "0000", "0000"]
     },
     {
       "shape": "write1~ write2 write2 write2 read2 read2 write1 write2 write2 write2 read2",
@@ -58,87 +62,91 @@
     },
     {
       "shape": "write? write2 write2 write2 poll2 read2 read2 read2",
-      "said": ["8080", "f300", "f300", "f300"]
+      "said": ["8484", "d3d3", "d3d3", "d3d3"]
     },
     {
       "shape": "write1~ write2 write2 write2 poll1 read2 read2",
-      "said": ["80", "7f00", "7f00"]
+      "said": ["80", "f9af", "f9af"]
     },
     {
       "shape": "write1 write2 write2 write2 poll2 read2 read2",
-      "said": ["8484", "d3d3", "d3d3"]
-    },
-    {
-      "shape": "write? write2 write2 write2 poll2 read2 read2",
-      "said": ["8080", "f9af", "f9af"]
-    },
-    {
-      "shape": "write? write2 write2 write2 write2 read2",
-      "said": ["a35a"]
-    },
-    {
-      "shape": "write1~ write2 write2 write2 poll2 read2",
-      "said": ["8080", "0000"]
-    },
-    {
-      "shape": "write? write2 write2 poll2 read2 read2",
       "said": ["8080", "0000", "0000"]
     },
     {
-      "shape": "write? write2 write2 write2 read2 read2",
-      "said": ["32f5", "32f5"]
-    },
-    {
-      "shape": "write1~ write2 write2 poll2 read2 read2",
-      "said": ["8484", "4242", "4242"]
-    },
-    {
-      "shape": "write2~ read2~ read2~ read2~ write1",
-      "said": ["e6e6", "e6e6", "e6e6"]
-    },
-    {
-      "shape": "write? write2 write2 read2 read2",
-      "said": ["c250", "c250"]
-    },
-    {
-      "shape": "write? write2 write2 write2 read2",
-      "said": ["75d8"]
-    },
-    {
-      "shape": "write? write2 write2 read2",
-      "said": ["9e42"]
-    },
-    {
-      "shape": "write1 write1 write2 read2",
-      "said": ["55ba"]
-    },
-    {
-      "shape": "write1~ write2 poll1 read2",
-      "said": ["84", "8383"]
-    },
-    {
-      "shape": "write2~ poll2~ read2~ read2~",
+      "shape": "write? write2 write2 write2 poll2 read2 read2",
       "said": ["8080", "0000", "8080"]
     },
     {
-      "shape": "write2~ write2~ poll2~ read2~",
-      "said": ["8484", "dada"]
+      "shape": "write? write2 write2 write2 write2 read2",
+      "said": ["6f05"]
+    },
+    {
+      "shape": "write1~ write2 write2 poll2 read2 read2",
+      "said": ["8080", "0000", "0000"]
+    },
+    {
+      "shape": "write1~ write2 write2 write2 poll2 read2",
+      "said": ["8484", "e6e6"]
+    },
+    {
+      "shape": "write? write2 write2 poll2 read2 read2",
+      "said": ["8080", "24c2", "24c2"]
+    },
+    {
+      "shape": "write? write2 write2 write2 read2 read2",
+      "said": ["f775", "f775"]
+    },
+    {
+      "shape": "write2~ read2~ read2~ read2~ write1",
+      "said": ["4444", "4444", "4444"]
+    },
+    {
+      "shape": "write? write2 write2 read2 read2",
+      "said": ["1bac", "0000"]
+    },
+    {
+      "shape": "write? write2 write2 write2 read2",
+      "said": ["5e00"]
+    },
+    {
+      "shape": "write1~ write2 write2 poll2 read2",
+      "said": ["8484", "e8e8"]
+    },
+    {
+      "shape": "write? write2 write2 read2",
+      "said": ["6565"]
+    },
+    {
+      "shape": "write1 write1 write2 read2",
+      "said": ["2f00"]
+    },
+    {
+      "shape": "write1~ write2 poll1 read2",
+      "said": ["80", "b600"]
     },
     {
       "shape": "write? read? read?",
-      "said": ["e8", "e8"]
+      "said": ["32", "00"]
+    },
+    {
+      "shape": "read? write? poll?",
+      "said": ["80", "80"]
     },
     {
       "shape": "write? read? poll?",
-      "said": ["92", "84"]
-    },
-    {
-      "shape": "write? read2",
-      "said": ["4e4e"]
+      "said": ["d8", "84"]
     },
     {
       "shape": "write? read?",
-      "said": ["49"]
+      "said": ["67"]
+    },
+    {
+      "shape": "write? read2",
+      "said": ["3b00"]
+    },
+    {
+      "shape": "read? write?",
+      "said": ["80"]
     }
   ]
 }

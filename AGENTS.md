@@ -46,7 +46,7 @@ chip so a traceback says what sort of thing it was.
    what decides what a command answers, and it is run rather than described.
 2. **What a manufacturer printed**, reached through the sibling that read it.
    Every fact about the uPD77C25 lives in that member's record, not in this one.
-3. **Exchanges read out of retail cartridges**, 143 of them across 36 images,
+3. **Exchanges read out of retail cartridges**, 163 of them across 36 images,
    each confirmed by digest before a byte of it is disassembled.
 4. **A behavioural model of the same part**, recorded in
    [`conformance/divergences.json`](conformance/divergences.json) where it
