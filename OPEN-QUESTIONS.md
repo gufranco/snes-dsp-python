@@ -189,8 +189,9 @@ So the boundary is visible rather than implied:
   against NEC's own data sheet.
 - **That four return-stack levels are enough for every shipped program.**
   [`conformance/stack.py`](conformance/stack.py) drove every recorded part
-  under all 256 command bytes: 13,568 exchanges and 35,647 movements of the
-  pointer, over the shapes re-read on 2026-10-19 with each width labelled.
+  under all 256 command bytes: 14,592 exchanges and 39,207 movements of the
+  pointer, over the shapes re-read on 2026-10-20 along both arms of every
+  forward branch, with each width labelled.
   Every part reached slot 3, the last of four. Nothing went past it, so four
   instead of the
   sixteen most implementations carry changes no exchange a cartridge makes.
