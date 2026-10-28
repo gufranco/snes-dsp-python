@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 DRIVER = ROOT / "snes-driver-python"
 
-CARTRIDGES = ROOT / "cartridges"
+CARTRIDGES = ROOT / "external" / "cartridges"
 
 MANIFEST = ROOT / "cartridges.manifest.json"
 

@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** parts on **5** microcode images, **163** exchanges read out of **36** retail cartridges, **57** of them played at the part, **0** failures, **0** commands described by hand, **1065** tests, **100%** statement and branch coverage, no dependencies
+**6** parts on **5** microcode images, **163** exchanges read out of **36** retail cartridges, **57** of them played at the part, **0** failures, **0** commands described by hand, **1115** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 import snesdsp
@@ -237,17 +237,17 @@ The search reads files ending `.bin` or `.rom` from these directories, in order,
 
 1. Every directory in `SNES_DSP_FIRMWARE_DIR`, separated the way the operating system separates `PATH`.
 2. Every directory in `UPD7725_FIRMWARE_DIR`, the name this member once shared with snes-st-python.
-3. [`firmware/`](firmware/README.md) in the directory that holds this checkout, for when it is a submodule of another project.
-4. [`firmware/`](firmware/README.md) in this checkout.
+3. [`external/firmware/`](FIRMWARE.md) in the directory that holds this checkout, for when it is a submodule of another project.
+4. [`external/firmware/`](FIRMWARE.md) in this checkout.
 
 A file whose SHA-256 is not in the manifest is skipped by the search. Handed to `snesdsp.identify`, it is refused with a diagnosis: a copier header, a byte-swapped dump and a known bad dump are each recognised and named.
 
 Confirm a copy you hold:
 
 ```bash
-shasum -a 256 firmware/dsp1.bin                 # macOS
-sha256sum firmware/dsp1.bin                     # Linux
-certutil -hashfile firmware\dsp1.bin SHA256     # Windows
+shasum -a 256 external/firmware/dsp1.bin                 # macOS
+sha256sum external/firmware/dsp1.bin                     # Linux
+certutil -hashfile external\firmware\dsp1.bin SHA256     # Windows
 ```
 
 ## Driving it the way a console does
@@ -440,7 +440,7 @@ python3 -m conformance.answers
 python3 -m conformance.record
 ```
 
-`against_cartridges` takes one part, `dsp3` when none is named, and exits 1 when any exchange stays silent. The DSP-1A and DSP-1B are played the DSP-1 shapes, since no dump shows which mask a DSP-1 board carries and all three take the same commands. `answers` takes part names, all of them by default, exits 1 on a changed answer, and exits 2 when the image on this machine is not the one the corpus was taken from. It exits 1 with no image present when a part has no corpus, or when the corpus was not taken over the shapes swept today in the same order: every payload comes from one seeded stream, so a moved shape changes the payload of every shape after it. `--take` records answers instead of checking them. `record` re-reads every cartridge in [`cartridges/`](cartridges) or `SNES_CARTRIDGE_DIR` and exits 2 when none is present.
+`against_cartridges` takes one part, `dsp3` when none is named, and exits 1 when any exchange stays silent. The DSP-1A and DSP-1B are played the DSP-1 shapes, since no dump shows which mask a DSP-1 board carries and all three take the same commands. `answers` takes part names, all of them by default, exits 1 on a changed answer, and exits 2 when the image on this machine is not the one the corpus was taken from. It exits 1 with no image present when a part has no corpus, or when the corpus was not taken over the shapes swept today in the same order: every payload comes from one seeded stream, so a moved shape changes the payload of every shape after it. `--take` records answers instead of checking them. `record` re-reads every cartridge in [`external/cartridges/`](CARTRIDGES.md) or `SNES_CARTRIDGE_DIR` and exits 2 when none is present.
 
 ### The DSP-1B correction
 

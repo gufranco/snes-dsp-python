@@ -8,7 +8,7 @@ PythonによるNintendo DSP-1、DSP-1A、DSP-1B、DSP-2、DSP-3、DSP-4です。
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**5**個のマイクロコードイメージ上の**6**種類のチップ、**36**本の市販カートリッジから読み出した**163**件のやり取り、そのうち**57**件をチップに対して再生、失敗**0**件、手作業で記述したコマンド**0**個、テスト**1065**件、ステートメントとブランチのカバレッジ**100%**、依存関係なし
+**5**個のマイクロコードイメージ上の**6**種類のチップ、**36**本の市販カートリッジから読み出した**163**件のやり取り、そのうち**57**件をチップに対して再生、失敗**0**件、手作業で記述したコマンド**0**個、テスト**1115**件、ステートメントとブランチのカバレッジ**100%**、依存関係なし
 
 ```python
 import snesdsp
@@ -239,17 +239,17 @@ dsp1 did not ask for attention within 0 instructions
 
 1. `SNES_DSP_FIRMWARE_DIR`内のすべてのディレクトリ。オペレーティングシステムが`PATH`を区切るのと同じ方法で区切ります。
 2. `UPD7725_FIRMWARE_DIR`内のすべてのディレクトリ。このメンバーがかつてsnes-st-pythonと共有していた名前です。
-3. このチェックアウトを含むディレクトリ内の[`firmware/`](firmware/README.md)。これが別のプロジェクトのサブモジュールである場合のためです。
-4. このチェックアウト内の[`firmware/`](firmware/README.md)。
+3. このチェックアウトを含むディレクトリ内の[`external/firmware/`](FIRMWARE.md)。これが別のプロジェクトのサブモジュールである場合のためです。
+4. このチェックアウト内の[`external/firmware/`](FIRMWARE.md)。
 
 SHA-256がマニフェストにないファイルは、検索ではスキップされます。`snesdsp.identify`に渡すと、診断付きで拒否されます。コピー機のヘッダ、バイトスワップされたダンプ、既知の不良ダンプはそれぞれ認識され、名前が示されます。
 
 手元のコピーを確認します。
 
 ```bash
-shasum -a 256 firmware/dsp1.bin                 # macOS
-sha256sum firmware/dsp1.bin                     # Linux
-certutil -hashfile firmware\dsp1.bin SHA256     # Windows
+shasum -a 256 external/firmware/dsp1.bin                 # macOS
+sha256sum external/firmware/dsp1.bin                     # Linux
+certutil -hashfile external\firmware\dsp1.bin SHA256     # Windows
 ```
 
 ## コンソールと同じ方法で駆動する
@@ -444,7 +444,7 @@ python3 -m conformance.answers
 python3 -m conformance.record
 ```
 
-`against_cartridges`は1つのチップを受け取り、指定がなければ`dsp3`です。いずれかのやり取りが無応答のままなら終了コード1で終了します。DSP-1AとDSP-1BにはDSP-1のシェイプを再生します。DSP-1の基板がどのマスクを載せているかはダンプから判別できず、3つとも同じコマンドを受け付けるからです。`answers`はチップ名を受け取り、デフォルトではすべてです。答えが変わっていれば終了コード1で、このマシン上のイメージがコーパス取得時のものと異なれば終了コード2で終了します。イメージがなくても、コーパスが記録されていないチップや、コーパスが現在走査しているシェイプを同じ順序で取得したものでない場合は終了コード1で終了します。すべてのペイロードは1つのシード付き乱数列から作られるため、シェイプが1つ動くと、それ以降のすべてのシェイプのペイロードが変わるからです。`--take`は答えを確認する代わりに記録します。`record`は[`cartridges/`](cartridges)または`SNES_CARTRIDGE_DIR`内のすべてのカートリッジを再読み出しし、1本もなければ終了コード2で終了します。
+`against_cartridges`は1つのチップを受け取り、指定がなければ`dsp3`です。いずれかのやり取りが無応答のままなら終了コード1で終了します。DSP-1AとDSP-1BにはDSP-1のシェイプを再生します。DSP-1の基板がどのマスクを載せているかはダンプから判別できず、3つとも同じコマンドを受け付けるからです。`answers`はチップ名を受け取り、デフォルトではすべてです。答えが変わっていれば終了コード1で、このマシン上のイメージがコーパス取得時のものと異なれば終了コード2で終了します。イメージがなくても、コーパスが記録されていないチップや、コーパスが現在走査しているシェイプを同じ順序で取得したものでない場合は終了コード1で終了します。すべてのペイロードは1つのシード付き乱数列から作られるため、シェイプが1つ動くと、それ以降のすべてのシェイプのペイロードが変わるからです。`--take`は答えを確認する代わりに記録します。`record`は[`external/cartridges/`](CARTRIDGES.md)または`SNES_CARTRIDGE_DIR`内のすべてのカートリッジを再読み出しし、1本もなければ終了コード2で終了します。
 
 ### DSP-1Bの修正
 

@@ -12,9 +12,9 @@ MANIFEST = ROOT / "cartridges.manifest.json"
 
 DIRECTORY_VARIABLE = "SNES_CARTRIDGE_DIR"
 
-DEFAULT_DIRECTORY = ROOT / "cartridges"
+DEFAULT_DIRECTORY = ROOT / "external" / "cartridges"
 
-ALONGSIDE = ROOT.parent / "cartridges"
+ALONGSIDE = ROOT.parent / "external" / "cartridges"
 
 READABLE_SUFFIXES = (".sfc", ".smc")
 

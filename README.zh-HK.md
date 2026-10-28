@@ -8,7 +8,7 @@
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** 款晶片共用 **5** 個微碼映像檔，讀出 **163** 種交換，來自 **36** 盒零售版卡帶，其中 **57** 種在晶片上重播，**0** 次失敗，**0** 個以人手描述的命令，**1065** 項測試，**100%** 語句及分支覆蓋率，沒有任何依賴套件
+**6** 款晶片共用 **5** 個微碼映像檔，讀出 **163** 種交換，來自 **36** 盒零售版卡帶，其中 **57** 種在晶片上重播，**0** 次失敗，**0** 個以人手描述的命令，**1115** 項測試，**100%** 語句及分支覆蓋率，沒有任何依賴套件
 
 ```python
 import snesdsp
@@ -239,17 +239,17 @@ dsp1 did not ask for attention within 0 instructions
 
 1. `SNES_DSP_FIRMWARE_DIR` 中的每個目錄，分隔方式與作業系統分隔 `PATH` 的方式相同。
 2. `UPD7725_FIRMWARE_DIR` 中的每個目錄，這是本成員曾與 snes-st-python 共用的名稱。
-3. 存放本簽出副本的目錄中的 [`firmware/`](firmware/README.md)，適用於本儲存庫作為另一個專案的子模組時。
-4. 本簽出副本中的 [`firmware/`](firmware/README.md)。
+3. 存放本簽出副本的目錄中的 [`external/firmware/`](FIRMWARE.md)，適用於本儲存庫作為另一個專案的子模組時。
+4. 本簽出副本中的 [`external/firmware/`](FIRMWARE.md)。
 
 SHA-256 不在清單中的檔案會被搜尋略過。若交給 `snesdsp.identify`，它會被拒絕並附上診斷：複製器檔頭、位元組對調的傾印及已知的損壞傾印都會被識別並指出。
 
 確認你持有的副本：
 
 ```bash
-shasum -a 256 firmware/dsp1.bin                 # macOS
-sha256sum firmware/dsp1.bin                     # Linux
-certutil -hashfile firmware\dsp1.bin SHA256     # Windows
+shasum -a 256 external/firmware/dsp1.bin                 # macOS
+sha256sum external/firmware/dsp1.bin                     # Linux
+certutil -hashfile external\firmware\dsp1.bin SHA256     # Windows
 ```
 
 ## 以主機的方式驅動晶片
@@ -444,7 +444,7 @@ python3 -m conformance.answers
 python3 -m conformance.record
 ```
 
-`against_cartridges` 接收一款晶片，未指明時為 `dsp3`，任何交換保持沉默時以 1 結束。DSP-1A 及 DSP-1B 重播 DSP-1 的形狀，因為從傾印無法判斷一塊 DSP-1 電路板載有哪一版遮罩，而三者接受相同的命令。`answers` 接收晶片名稱，預設為全部，回答有變時以 1 結束，本機的映像檔並非擷取語料庫時所用的映像檔時以 2 結束。即使沒有映像檔，某款晶片沒有語料庫，或其語料庫並非按今天掃描的形狀以相同次序擷取時，亦以 1 結束：所有載荷都來自同一個帶種子的隨機序列，一個形狀移動了，其後每個形狀的載荷都會改變。`--take` 會記錄回答，而不是檢查回答。`record` 重新讀取 [`cartridges/`](cartridges) 或 `SNES_CARTRIDGE_DIR` 中的每盒卡帶，一盒都沒有時以 2 結束。
+`against_cartridges` 接收一款晶片，未指明時為 `dsp3`，任何交換保持沉默時以 1 結束。DSP-1A 及 DSP-1B 重播 DSP-1 的形狀，因為從傾印無法判斷一塊 DSP-1 電路板載有哪一版遮罩，而三者接受相同的命令。`answers` 接收晶片名稱，預設為全部，回答有變時以 1 結束，本機的映像檔並非擷取語料庫時所用的映像檔時以 2 結束。即使沒有映像檔，某款晶片沒有語料庫，或其語料庫並非按今天掃描的形狀以相同次序擷取時，亦以 1 結束：所有載荷都來自同一個帶種子的隨機序列，一個形狀移動了，其後每個形狀的載荷都會改變。`--take` 會記錄回答，而不是檢查回答。`record` 重新讀取 [`external/cartridges/`](CARTRIDGES.md) 或 `SNES_CARTRIDGE_DIR` 中的每盒卡帶，一盒都沒有時以 2 結束。
 
 ### DSP-1B 的修正
 

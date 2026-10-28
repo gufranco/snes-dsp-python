@@ -1,6 +1,7 @@
-# Cartridges go here
+# Cartridges
 
-Nothing in this directory is committed, and nothing in it ships.
+The images go in `external/cartridges/`. Nothing in that folder is committed,
+and nothing in it ships.
 
 The firmware beside this tells the part what to compute. A cartridge tells it
 _how to be asked_: how many bytes go each way for each command, in what order,
@@ -9,9 +10,9 @@ the game and the chip were built together and only had to agree with each other.
 
 So the game is the authority on its own protocol, and the way to read that
 authority is to run the routine inside it that drives the chip. A copy you
-already own goes here, under whatever name it already has.
+already own goes in `external/cartridges/`, under whatever name it already has.
 
-## What belongs here
+## What belongs in `external/cartridges/`
 
 Every file is identified by its digest before it is read, never by its name, and
 all four digests are checked rather than only the one that decides. Any file
@@ -63,7 +64,7 @@ them.
 | `Top Gear 3000 (Europe).sfc`                                                     | 1,048,576 | `493fdb13` | `4d7c81b0bad57a4c1c410fae4e58cd95fe25c29d7fb922778530cd457b5502e7` |
 | `Top Gear 3000 (USA).sfc`                                                        | 1,048,576 | `a20be998` | `6be49983976564f1fd9eff2f14f5bb41d3a0ff48573e39318088ecce286aca62` |
 
-MD5 and SHA-1 for each are in [`cartridges.manifest.json`](../cartridges.manifest.json).
+MD5 and SHA-1 for each are in [`cartridges.manifest.json`](cartridges.manifest.json).
 **SHA-256 decides**; the rest are published so a copy can be cross-checked against
 a database that keys on one of them, and none of them decides anything alone.
 
@@ -73,6 +74,6 @@ a database that keys on one of them, and none of them decides anything alone.
 python3 conformance/cartridges.py
 ```
 
-With nothing here, every check that needs a cartridge reports as skipped rather
+With nothing in `external/cartridges/`, every check that needs a cartridge reports as skipped rather
 than as passed. Point `SNES_CARTRIDGE_DIR` somewhere else to use a library you
 keep outside the repository instead.

@@ -93,8 +93,8 @@ so a cartridge run naming either mask drives that mask rather than refusing.
 
 [`conformance/testroms.json`](conformance/testroms.json) lists the test images
 that exercise this member, keyed by the SHA-256 of the file on disk and never
-committed. They live in `snes-roms/5 Tools & Service Test Carts/` in the local
-library.
+committed. Copies of the five program dumps sit in `external/cpu/`, taken from
+the `5 Tools & Service Test Carts/CPU/` folder of the cartridge library.
 
 - **The five DSP program dumps** in its `CPU/` folder, `run`. Each stores every
   word low byte first; the runner puts it back in the published order, builds
@@ -106,7 +106,7 @@ library.
   checks is what it draws.
 
 ```bash
-python3 -m conformance.testroms "../snes-roms/5 Tools & Service Test Carts/CPU"
+python3 -m conformance.testroms external/cpu
 python3 -m conformance.testroms FOLDER --record   # only after the answers were taken again
 ```
 
@@ -115,6 +115,30 @@ The runner compares each image with
 no folder, or a folder holding none of the images, it exits 2, and CI annotates
 that as a skip. `conformance/testroms.test.py` replays the recorded verdict on a
 machine that holds no image.
+
+## Files kept in `external/`
+
+Everything this member reads and may not ship sits in `external/`, which git
+ignores and Dropbox is told to leave alone, per FAMILY.md's "Where the files a
+member reads are kept". [`artifacts.manifest.json`](artifacts.manifest.json)
+names all 46 by size, CRC32, MD5, SHA-1 and SHA-256:
+
+- `external/firmware/`, the five DSP images the package finds there after
+  `SNES_DSP_FIRMWARE_DIR` and `UPD7725_FIRMWARE_DIR`. [FIRMWARE.md](FIRMWARE.md)
+  says which images belong there and how to check one.
+- `external/cartridges/`, the 36 retail cartridges whose routines give the
+  shape of each exchange. [CARTRIDGES.md](CARTRIDGES.md) lists them.
+- `external/cpu/`, the five program dumps the cartridge record pins, copied
+  from the cartridge library.
+
+```bash
+python3 -m conformance.external
+python3 -m conformance.external --describe external/<file>
+```
+
+The first says which are here, verified, missing or wrong. The second prints
+the manifest entry for a file being added, which gets its entry in the same
+change.
 
 ## Every gate, in the order to run them
 
@@ -250,6 +274,7 @@ conformance/
   family_*.test.py the family standard, held to this repository, one topic a file
   family_member.py what this member answers to them
   family_shared.py what more than one of them reads
+  external.py       which files in external/ are here, verified, missing or wrong
   against_cartridges.py  drives a part with the exchanges a real cartridge makes
   shapes.py       reads and replays those exchanges
   cartridges.py   finds and confirms the cartridges they were read from
@@ -262,6 +287,8 @@ conformance/
   speed.py        the throughput floor
   documented.py   every example the readme prints, run against the parts
 nec-upd7725-96050-python/  the processor all of these are, as a submodule at the root
+external/           the firmware images, the retail cartridges and the program dumps, never committed
+artifacts.manifest.json  every file in external/, by size and every digest
 ```
 
 ## Things that will bite you
@@ -286,7 +313,7 @@ nec-upd7725-96050-python/  the processor all of these are, as a submodule at the
   Change one and change the other two in the same task.
 
 - **Some collections store each word low byte first.** The program dumps in
-  `snes-roms/5 Tools & Service Test Carts/CPU/` keep every 3-byte program word
+  `external/cpu/`, from the library's `CPU/` folder, keep every 3-byte program word
   and 2-byte table word reversed; reversing them gives exactly the digests the
   manifest pins, checked on 2026-10-19 for all five. `identify` tries that order
   when the published one does not match, records it as `order`, and the part
@@ -316,5 +343,5 @@ which check and why rather than reporting a pass.
 A test that fails without the change and passes with it. An entry in
 [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) if it turned a settled thing into an open
 one, or removed one. A record entry with the sentence and the page if it added a
-fact from a document. Nothing in `firmware/` or `cartridges/` under version
+fact from a document. Nothing in `external/` under version
 control, ever.

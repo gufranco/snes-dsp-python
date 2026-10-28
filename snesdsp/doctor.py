@@ -99,8 +99,8 @@ def _part(name: str, images: Images, build: Build) -> Finding:
             name,
             False,
             f"no image for {wanted}",
-            f"put a copy you own in {ROOT.name}/firmware, in the firmware directory"
-            " of the project this one sits inside, or anywhere SNES_DSP_FIRMWARE_DIR"
+            f"put a copy you own in {ROOT.name}/external/firmware, in the external/firmware"
+            " directory of the project this one sits inside, or anywhere SNES_DSP_FIRMWARE_DIR"
             " or UPD7725_FIRMWARE_DIR names",
         )
     try:

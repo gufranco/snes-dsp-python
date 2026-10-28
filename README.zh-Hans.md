@@ -8,7 +8,7 @@
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**6** 个部件，基于 **5** 个微码镜像；从 **36** 个零售版卡带中读出 **163** 个交换，其中 **57** 个在部件上回放；**0** 个失败，**0** 个手工描述的命令，**1065** 个测试，**100%** 语句和分支覆盖率，无依赖
+**6** 个部件，基于 **5** 个微码镜像；从 **36** 个零售版卡带中读出 **163** 个交换，其中 **57** 个在部件上回放；**0** 个失败，**0** 个手工描述的命令，**1115** 个测试，**100%** 语句和分支覆盖率，无依赖
 
 ```python
 import snesdsp
@@ -239,17 +239,17 @@ dsp1 did not ask for attention within 0 instructions
 
 1. `SNES_DSP_FIRMWARE_DIR` 中的每个目录，分隔方式与操作系统分隔 `PATH` 的方式相同。
 2. `UPD7725_FIRMWARE_DIR` 中的每个目录，这是本成员曾与 snes-st-python 共用的名称。
-3. 存放本检出目录的目录中的 [`firmware/`](firmware/README.md)，用于本项目作为另一个项目子模块的情况。
-4. 本检出目录中的 [`firmware/`](firmware/README.md)。
+3. 存放本检出目录的目录中的 [`external/firmware/`](FIRMWARE.md)，用于本项目作为另一个项目子模块的情况。
+4. 本检出目录中的 [`external/firmware/`](FIRMWARE.md)。
 
 SHA-256 不在清单中的文件会被搜索跳过。如果把它交给 `snesdsp.identify`，它会被拒绝并附上诊断：拷贝机文件头、字节交换的转储和已知的坏转储都会被识别并指出。
 
 确认你持有的副本：
 
 ```bash
-shasum -a 256 firmware/dsp1.bin                 # macOS
-sha256sum firmware/dsp1.bin                     # Linux
-certutil -hashfile firmware\dsp1.bin SHA256     # Windows
+shasum -a 256 external/firmware/dsp1.bin                 # macOS
+sha256sum external/firmware/dsp1.bin                     # Linux
+certutil -hashfile external\firmware\dsp1.bin SHA256     # Windows
 ```
 
 ## 像主机那样驱动它
@@ -444,7 +444,7 @@ python3 -m conformance.answers
 python3 -m conformance.record
 ```
 
-`against_cartridges` 接收一个部件，未指定时为 `dsp3`，任何交换保持沉默时以 1 退出。DSP-1A 和 DSP-1B 回放 DSP-1 的形状，因为从转储无法判断一块 DSP-1 电路板装的是哪一版掩膜，而三者接受相同的命令。`answers` 接收部件名，默认全部，回答发生变化时以 1 退出，本机上的镜像不是采集语料时所用的镜像时以 2 退出。即使没有镜像，某个部件没有语料，或其语料并非按今天扫描的形状以相同顺序采集时，也以 1 退出：所有载荷都来自同一个带种子的随机序列，一个形状移动了，其后每个形状的载荷都会改变。`--take` 记录回答而不是检查回答。`record` 重新读取 [`cartridges/`](cartridges) 或 `SNES_CARTRIDGE_DIR` 中的每个卡带，一个都没有时以 2 退出。
+`against_cartridges` 接收一个部件，未指定时为 `dsp3`，任何交换保持沉默时以 1 退出。DSP-1A 和 DSP-1B 回放 DSP-1 的形状，因为从转储无法判断一块 DSP-1 电路板装的是哪一版掩膜，而三者接受相同的命令。`answers` 接收部件名，默认全部，回答发生变化时以 1 退出，本机上的镜像不是采集语料时所用的镜像时以 2 退出。即使没有镜像，某个部件没有语料，或其语料并非按今天扫描的形状以相同顺序采集时，也以 1 退出：所有载荷都来自同一个带种子的随机序列，一个形状移动了，其后每个形状的载荷都会改变。`--take` 记录回答而不是检查回答。`record` 重新读取 [`external/cartridges/`](CARTRIDGES.md) 或 `SNES_CARTRIDGE_DIR` 中的每个卡带，一个都没有时以 2 退出。
 
 ### DSP-1B 的修正
 

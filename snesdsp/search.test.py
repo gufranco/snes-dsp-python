@@ -154,7 +154,9 @@ class SearchPathTest(unittest.TestCase):
         found = snesdsp.directories(environment)
 
         # Assert
-        self.assertEqual(found, (ROOT.parent / "firmware", ROOT / "firmware"))
+        self.assertEqual(
+            found, (ROOT.parent / "external" / "firmware", ROOT / "external" / "firmware")
+        )
 
     def test_a_named_directory_is_looked_at_before_either(self) -> None:
         # Arrange
@@ -164,7 +166,10 @@ class SearchPathTest(unittest.TestCase):
         found = snesdsp.directories(environment)
 
         # Assert
-        self.assertEqual(found, (Path("/x"), ROOT.parent / "firmware", ROOT / "firmware"))
+        self.assertEqual(
+            found,
+            (Path("/x"), ROOT.parent / "external" / "firmware", ROOT / "external" / "firmware"),
+        )
 
     def test_more_than_one_can_be_named_and_an_empty_entry_is_passed_over(self) -> None:
         # Arrange
@@ -174,17 +179,19 @@ class SearchPathTest(unittest.TestCase):
         found = snesdsp.directories(environment)
 
         # Assert
-        self.assertEqual(found[:3], (Path("/x"), Path("/y"), ROOT.parent / "firmware"))
+        self.assertEqual(found[:3], (Path("/x"), Path("/y"), ROOT.parent / "external" / "firmware"))
 
     def test_no_directory_appears_twice(self) -> None:
         # Arrange
-        environment = {OWN_VARIABLE: str(ROOT / "firmware")}
+        environment = {OWN_VARIABLE: str(ROOT / "external" / "firmware")}
 
         # Act
         found = snesdsp.directories(environment)
 
         # Assert
-        self.assertEqual(found, (ROOT / "firmware", ROOT.parent / "firmware"))
+        self.assertEqual(
+            found, (ROOT / "external" / "firmware", ROOT.parent / "external" / "firmware")
+        )
 
     def test_the_name_this_member_used_to_share_still_works(self) -> None:
         # Arrange

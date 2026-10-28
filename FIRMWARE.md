@@ -1,6 +1,7 @@
-# Firmware goes here
+# Firmware
 
-Nothing in this directory is committed, and nothing in it ships.
+The images go in `external/firmware/`. Nothing in that folder is committed,
+and nothing in it ships.
 
 The models in this repository are behavioural: each command is written down as a
 function of its arguments, and they are settled against another implementation of
@@ -47,7 +48,7 @@ Check a copy before supplying it:
 shasum -a 256 dsp1.bin
 ```
 
-## What belongs here
+## What belongs in `external/firmware/`
 
 | Part   | Bytes | Names it is usually saved under |
 | :----- | ----: | :------------------------------ |
@@ -62,7 +63,7 @@ Every file is identified by digest before it is run, against
 rather than refused.
 
 A dump that stores each 3-byte program word and 2-byte table word low byte
-first, as the files in `snes-roms/5 Tools & Service Test Carts/CPU/` do, is
+first, as the files in `external/cpu/` do, is
 accepted as it is: reversing each word gives the digest above, and the part is
 run from the reordered image.
 
@@ -74,5 +75,5 @@ python3 snesdsp/doctor.py
 python3 -m conformance.answers
 ```
 
-With nothing here, every check that needs an image reports as skipped rather than
+With nothing in `external/firmware/`, every check that needs an image reports as skipped rather than
 as passed.
