@@ -21,7 +21,5 @@ specs/
 *.sfc
 *.smc
 firmware/*
-!firmware/README.md
 cartridges/*
-!cartridges/README.md
 external/
