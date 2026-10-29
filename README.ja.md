@@ -4,9 +4,11 @@ PythonによるNintendo DSP-1、DSP-1A、DSP-1B、DSP-2、DSP-3、DSP-4です。
 
 [English](README.md) | 日本語 | [简体中文](README.zh-Hans.md) | [繁體中文（香港）](README.zh-HK.md)
 
-[![CI](https://github.com/gufranco/snes-dsp-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/snes-dsp-python/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python)](https://github.com/gufranco/snes-dsp-python/releases)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![ci](https://img.shields.io/github/actions/workflow/status/gufranco/snes-dsp-python/ci.yml?branch=main&style=flat-square&label=ci)](https://github.com/gufranco/snes-dsp-python/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/gufranco/snes-dsp-python?style=flat-square&label=release)](https://github.com/gufranco/snes-dsp-python/releases/latest)
+[![coverage](https://img.shields.io/badge/coverage-100%25-brightgreen?style=flat-square)](https://github.com/gufranco/snes-dsp-python/actions/workflows/ci.yml)
+[![openssf scorecard](https://img.shields.io/ossf-scorecard/github.com/gufranco/snes-dsp-python?style=flat-square&label=openssf%20scorecard)](https://scorecard.dev/viewer/?uri=github.com/gufranco/snes-dsp-python)
+[![license](https://img.shields.io/github/license/gufranco/snes-dsp-python?style=flat-square&label=license)](LICENSE)
 
 **5**個のマイクロコードイメージ上の**6**種類のチップ、**36**本の市販カートリッジから読み出した**163**件のやり取り、そのうち**57**件をチップに対して再生、失敗**0**件、手作業で記述したコマンド**0**個、テスト**1117**件、ステートメントとブランチのカバレッジ**100%**、依存関係なし
 
