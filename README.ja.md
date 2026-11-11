@@ -10,7 +10,7 @@ PythonによるNintendo DSP-1、DSP-1A、DSP-1B、DSP-2、DSP-3、DSP-4です。
 [![openssf scorecard](https://img.shields.io/ossf-scorecard/github.com/gufranco/snes-dsp-python?style=flat-square&label=openssf%20scorecard)](https://scorecard.dev/viewer/?uri=github.com/gufranco/snes-dsp-python)
 [![license](https://img.shields.io/github/license/gufranco/snes-dsp-python?style=flat-square&label=license)](LICENSE)
 
-**5**個のマイクロコードイメージ上の**6**種類のチップ、**36**本の市販カートリッジから読み出した**163**件のやり取り、そのうち**57**件をチップに対して再生、失敗**0**件、手作業で記述したコマンド**0**個、テスト**1117**件、ステートメントとブランチのカバレッジ**100%**、依存関係なし
+**5**個のマイクロコードイメージ上の**6**種類のチップ、**36**本の市販カートリッジから読み出した**163**件のやり取り、そのうち**57**件をチップに対して再生、失敗**0**件、手作業で記述したコマンド**0**個、テスト**1118**件、ステートメントとブランチのカバレッジ**100%**、依存関係なし
 
 ```python
 import snesdsp

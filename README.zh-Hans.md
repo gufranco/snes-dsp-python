@@ -10,7 +10,7 @@
 [![openssf scorecard](https://img.shields.io/ossf-scorecard/github.com/gufranco/snes-dsp-python?style=flat-square&label=openssf%20scorecard)](https://scorecard.dev/viewer/?uri=github.com/gufranco/snes-dsp-python)
 [![license](https://img.shields.io/github/license/gufranco/snes-dsp-python?style=flat-square&label=license)](LICENSE)
 
-**6** 个部件，基于 **5** 个微码镜像；从 **36** 个零售版卡带中读出 **163** 个交换，其中 **57** 个在部件上回放；**0** 个失败，**0** 个手工描述的命令，**1117** 个测试，**100%** 语句和分支覆盖率，无依赖
+**6** 个部件，基于 **5** 个微码镜像；从 **36** 个零售版卡带中读出 **163** 个交换，其中 **57** 个在部件上回放；**0** 个失败，**0** 个手工描述的命令，**1118** 个测试，**100%** 语句和分支覆盖率，无依赖
 
 ```python
 import snesdsp
